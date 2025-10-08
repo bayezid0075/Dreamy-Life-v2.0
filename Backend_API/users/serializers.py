@@ -49,8 +49,20 @@ class RegisterSerializer(serializers.Serializer):
         return user
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    phone = serializers.CharField(required=False)  # phone number
+    email = serializers.CharField(required=False)  # email
     password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        phone = attrs.get('phone')
+        email = attrs.get('email')
+        if not phone and not email:
+            raise serializers.ValidationError("Either phone or email is required")
+        identifier = phone or email
+        if not (User.objects.filter(email=identifier).exists() or User.objects.filter(phone_number=identifier).exists()):
+            raise serializers.ValidationError("Invalid identifier")
+        attrs['identifier'] = identifier
+        return attrs
 
 class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
