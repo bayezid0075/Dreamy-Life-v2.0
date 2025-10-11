@@ -118,6 +118,50 @@ A Django REST API for a multi-level referral system with memberships, wallets, a
   }
   ```
 
+#### Update User Info
+
+- **URL**: `POST /api/users/userinfo/`
+- **Headers**: `Authorization: Bearer <access_token>`
+- **Body** (all fields optional):
+  ```json
+  {
+    "profile_picture": "https://example.com/image.jpg",
+    "is_verified": true,
+    "address": "123 Main St, City, Country",
+    "nid_or_brid": "1234567890",
+    "profession": "Software Engineer",
+    "blood_group": "O+",
+    "gender": "Male",
+    "marital_status": "Single",
+    "father_name": "John Doe",
+    "mother_name": "Jane Doe",
+    "working_place": "Tech Company"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "id": 1,
+    "user": 1,
+    "own_refercode": "12345678",
+    "level": 0,
+    "member_status": "user",
+    "profile_picture": "https://example.com/image.jpg",
+    "is_verified": true,
+    "address": "123 Main St, City, Country",
+    "nid_or_brid": "1234567890",
+    "profession": "Software Engineer",
+    "blood_group": "O+",
+    "gender": "Male",
+    "marital_status": "Single",
+    "father_name": "John Doe",
+    "mother_name": "Jane Doe",
+    "working_place": "Tech Company",
+    "created_at": "2023-01-01T00:00:00Z",
+    "updated_at": "2023-01-01T00:00:00Z"
+  }
+  ```
+
 ### Memberships
 
 #### List Memberships
@@ -203,6 +247,20 @@ curl -X POST http://localhost:8000/api/users/login/ \
 ```bash
 curl -X GET http://localhost:8000/api/users/downlines/ \
   -H "Authorization: Bearer TOKEN"
+```
+
+### Update user info (replace TOKEN with actual access token)
+
+```bash
+curl -X POST http://localhost:8000/api/users/userinfo/ \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "profile_picture": "https://example.com/image.jpg",
+    "is_verified": true,
+    "address": "123 Main St, City, Country",
+    "profession": "Software Engineer"
+  }'
 ```
 
 ### Get memberships

@@ -58,3 +58,13 @@ class MyDownlinesView(APIView):
         from referral.services import get_downlines
         downlines = get_downlines(user.id)
         return Response({"downlines": downlines})
+
+class UserInfoUpdateView(APIView):
+    """Update user info profile"""
+    def post(self, request):
+        user = request.user
+        user_info, created = UserInfo.objects.get_or_create(user=user)
+        serializer = UserInfoSerializer(user_info, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
