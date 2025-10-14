@@ -778,11 +778,45 @@ Backend_API/
 
 ## Vendor System Flow
 
-1. User applies for vendor role via `POST /api/vendors/applications/`
+1. User applies for vendor role via `POST /api/vendor/applications/` (multipart/form-data for banner)
 2. If user has VVIP membership, payment is waived (payment_status auto True)
-3. Upon successful payment (payment_status=True), Vendor profile is auto-created
-4. Vendor can now manage products via CRUD APIs at `/api/vendors/products/`
-5. Admins can manage categories, subcategories, and brands
+3. Upon successful payment (payment_status=True and verified via transaction_id), Vendor profile is auto-created
+4. Vendor can now manage products via CRUD APIs at `/api/vendor/products/`
+5. Only banner_image can be updated on Vendor profile via PATCH /api/vendor/vendors/<id>/
+6. Admins can manage categories, subcategories, and brands
+
+### Vendor API Usage Guide
+
+#### Apply for Vendor
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/vendor/applications/" \
+ -H "Authorization: Bearer <token>" \
+ -F "shop_name=My Shop" \
+ -F "address=Dhaka" \
+ -F "payment_status=true" \
+ -F "transaction_id=MOCK_SUCCESS" \
+ -F "banner=@/path/to/banner.jpg"
+```
+
+#### Update Vendor Banner (only banner allowed)
+
+```bash
+curl -X PATCH "http://127.0.0.1:8000/api/vendor/vendors/<vendor_id>/" \
+ -H "Authorization: Bearer <token>" \
+ -F "banner=@/path/new_banner.jpg"
+```
+
+#### Create Product (vendor only)
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/vendor/products/" \
+ -H "Authorization: Bearer <token>" \
+ -F "title=Phone Model X" \
+ -F "sku=PMX-001" \
+ -F "price=25000.00" \
+ -F "image=@/path/phone.jpg"
+```
 
 ## Background Tasks
 
