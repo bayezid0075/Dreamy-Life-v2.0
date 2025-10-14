@@ -415,6 +415,72 @@ A Django REST API for a multi-level referral system with memberships, wallets, a
   ```
 - **Commission Distribution**: Automatically distributes commissions to up to 10 levels of uplines based on `MembershipCommission` rules.
 
+📘 API Testing Guide (Using Postman or cURL)
+🔹 1️⃣ Create Vendor
+POST /api/vendors/
+
+json
+Copy code
+{
+"shop_name": "Tech Mart BD",
+"address": "Dhanmondi, Dhaka",
+"banner_image": "image.png",
+"payment_status": true
+}
+✅ Rules:
+
+If user member_status = VVIP → no need for payment.
+
+If normal user → must set "payment_status": true.
+
+🔹 2️⃣ Update Vendor Banner
+PATCH /api/vendors/1/
+
+json
+Copy code
+{
+"banner_image": "new_banner.png"
+}
+Only banner_image is editable.
+
+🔹 3️⃣ Add Product
+POST /api/products/
+
+json
+Copy code
+{
+"title": "Bluetooth Headphone",
+"description": "Wireless and noise-cancelling.",
+"sku": "HP001",
+"category": 1,
+"subcategory": 2,
+"brand": 3,
+"image": "product.png",
+"tags": "audio,bluetooth,wireless",
+"price": 2500.00,
+"discount_price": 2000.00,
+"reseller_mrp_price": 2700.00,
+"delivery_charge_inside_dhaka": 60.00,
+"delivery_charge_outside_dhaka": 120.00,
+"vat": 5.00
+}
+🔹 4️⃣ Update Product
+PATCH /api/products/1/
+
+json
+Copy code
+{
+"discount_price": 1900.00,
+"reseller_mrp_price": 2600.00,
+"delivery_charge_inside_dhaka": 50.00,
+"delivery_charge_outside_dhaka": 100.00
+}
+🔹 5️⃣ View All Products
+GET /api/products/
+
+🔹 6️⃣ Delete Product
+DELETE /api/products/1/
+
 ## Complete API Testing Guide
 
 ### User Registration & Authentication

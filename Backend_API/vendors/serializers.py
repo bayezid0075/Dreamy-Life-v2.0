@@ -1,58 +1,40 @@
 from rest_framework import serializers
-from .models import (
-    VendorApplication, Vendor, Category, SubCategory, Brand, Product
-)
+from .models import Vendor, Product, Category, SubCategory, Brand
 
-# Vendor application serializer
-class VendorApplicationSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
-    class Meta:
-        model = VendorApplication
-        fields = [
-            "id","user","shop_name","address","payment_status","created_at"
-        ]
-        read_only_fields = ["created_at"]
-
-# Vendor serializer - shop_name and address editable on create, only banner_image on update
 class VendorSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Vendor
-        fields = ["id","user","shop_name","address","banner_image","created_at"]
-        read_only_fields = ["id","user","created_at"]
+        fields = '__all__'
+        read_only_fields = ['user', 'payment_status']
 
     def update(self, instance, validated_data):
-        # only banner_image allowed
-        if 'banner_image' in validated_data:
-            instance.banner_image = validated_data['banner_image']
-            instance.save(update_fields=['banner_image'])
-            return instance
-        raise serializers.ValidationError({"detail":"Only 'banner_image' can be updated."})
+        # Only banner_image can be updated
+        instance.banner_image = validated_data.get('banner_image', instance.banner_image)
+        instance.save()
+        return instance
 
-# Category/SubCategory/Brand serializers
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = '__all__'
+        read_only_fields = ['vendor']
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ["id","name"]
+        fields = '__all__'
+
 
 class SubCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SubCategory
-        fields = ["id","category","name"]
+        fields = '__all__'
+
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = ["id","name"]
-
-# Product serializer - vendor set in view
-class ProductSerializer(serializers.ModelSerializer):
-    vendor = serializers.PrimaryKeyRelatedField(read_only=True)
-    class Meta:
-        model = Product
-        fields = [
-            "id","vendor","title","description","sku","category","sub_category","brand",
-            "image","tags","price","discount_price","vat","created_at"
-        ]
-        read_only_fields = ["id","vendor","created_at"]
+        fields = '__all__'
