@@ -54,6 +54,10 @@ class Product(models.Model):
     delivery_charge_inside_dhaka = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     delivery_charge_outside_dhaka = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     vat = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    # 🆕 New Multiple Fields
+    color = models.JSONField(default=list, blank=True)     # example: ["Red", "Black", "Blue"]
+    size = models.JSONField(default=list, blank=True)      # example: ["S", "M", "L", "XL"]
+    variant = models.JSONField(default=list, blank=True)   # example: ["4GB+64GB", "8GB+128GB"]
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
