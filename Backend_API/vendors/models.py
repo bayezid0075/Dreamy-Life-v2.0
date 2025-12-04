@@ -44,7 +44,7 @@ class Product(models.Model):
     description = models.TextField()
     sku = models.CharField(max_length=100, unique=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True)
+    sub_category = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True)
     image = models.ImageField(upload_to='product_images/')
     tags = models.CharField(max_length=255, blank=True)
