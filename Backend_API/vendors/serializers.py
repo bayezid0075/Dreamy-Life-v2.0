@@ -1,39 +1,49 @@
 from rest_framework import serializers
-from .models import Vendor, Product, Category, SubCategory, Brand
+from .models import Product, ProductImage, SubCategory, Vendor, Category, Brand
 
 
-class VendorSerializer(serializers.ModelSerializer):
+class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Vendor
-        fields = '__all__'
-        read_only_fields = ['user', 'payment_status']
-
-    def update(self, instance, validated_data):
-        instance.banner_image = validated_data.get('banner_image', instance.banner_image)
-        instance.save()
-        return instance
+        model = ProductImage
+        fields = ["id", "image"]
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+    sub_categories = serializers.PrimaryKeyRelatedField(
+        queryset=SubCategory.objects.all(),
+        many=True
+    )
+
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = "__all__"
         read_only_fields = ['vendor']
 
-        
-class CategorySerializer(serializers.ModelSerializer):
+
+class ProductCreateSerializer(serializers.ModelSerializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(), write_only=True, required=False
+    )
+    sub_categories = serializers.PrimaryKeyRelatedField(
+        queryset=SubCategory.objects.all(),
+        many=True
+    )
+
     class Meta:
-        model = Category
-        fields = '__all__'
+        model = Product
+        fields = "__all__"
+        read_only_fields = ['vendor']
 
+    def create(self, validated_data):
+        images = validated_data.pop("images", [])
+        sub_categories = validated_data.pop("sub_categories", [])
 
-class SubCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SubCategory
-        fields = '__all__'
+        product = Product.objects.create(**validated_data)
+        product.sub_categories.set(sub_categories)
 
+        # Upload multiple images
+        for img in images:
+            ProductImage.objects.create(product=product, image=img)
 
-class BrandSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Brand
-        fields = '__all__'
+        return product
