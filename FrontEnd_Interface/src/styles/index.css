@@ -3,6 +3,7 @@
 @import "./variants.css" layer(base);
 @import "./base.css" layer(base);
 @import "./layouts.css" layer(base);
+@import "./wallet.css" layer(base);
 
 @import "./app/index.css" layer(components);
 

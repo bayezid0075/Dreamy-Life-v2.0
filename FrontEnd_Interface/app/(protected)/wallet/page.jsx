@@ -1,15 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Page } from "components/shared/Page";
 import { MobileWalletHeader } from "components/wallet/MobileWalletHeader";
 import { FeatureGrid } from "components/wallet/FeatureGrid";
 import { PromotionalBanner } from "components/wallet/PromotionalBanner";
 import { QuickFeatures } from "components/wallet/QuickFeatures";
 import { BottomNavigation } from "components/wallet/BottomNavigation";
+import { useIsomorphicEffect } from "hooks";
 
 export default function Wallet() {
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Hide layout header and sidebar on mobile for wallet page
+  useIsomorphicEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      const header = document.querySelector(".app-header");
+      const sidebar = document.querySelector(".sidebar-panel");
+      const main = document.querySelector("main.main-content");
+      
+      if (header) {
+        header.style.display = "none";
+      }
+      if (sidebar) {
+        sidebar.style.display = "none";
+      }
+      if (main) {
+        main.style.marginLeft = "0";
+        main.style.marginRight = "0";
+      }
+      
+      return () => {
+        if (header) header.style.display = "";
+        if (sidebar) sidebar.style.display = "";
+        if (main) {
+          main.style.marginLeft = "";
+          main.style.marginRight = "";
+        }
+      };
+    }
+  }, []);
 
   const handleBalanceClick = () => {
     console.log("View balance clicked");
@@ -48,7 +78,7 @@ export default function Wallet() {
 
   return (
     <Page title="Wallet">
-      <div className="min-h-screen bg-gray-50 pb-20 dark:bg-dark-800 md:pb-0">
+      <div className="wallet-mobile-page min-h-screen bg-white pb-20 md:pb-0">
         {/* Mobile Wallet Header */}
         <MobileWalletHeader
           username="Bayezid Hoshen"
@@ -66,11 +96,10 @@ export default function Wallet() {
 
         {/* Promotional Banner */}
         <PromotionalBanner
-          offerText="First time 500 card to wallet if you do"
-          rewardAmount="600"
-          rewardSubtext="up to offer"
-          monthlyMax="max 75 per month"
-          terms="4 times during offer • terms apply"
+          offerText="১ম বার ৫০০"
+          offerSubtext="কার্ড টু বিকাশ করলে"
+          rewardAmount="৩০০"
+          monthlyMax="মাসে সার্বাচ্চ ৭৫"
           onTap={handleBannerTap}
           currentSlide={currentSlide}
           totalSlides={5}

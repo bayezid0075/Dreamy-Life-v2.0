@@ -1,0 +1,28 @@
+/* Wallet Mobile Page Styles */
+@media (max-width: 768px) {
+  .wallet-mobile-page ~ .app-header,
+  .wallet-mobile-page ~ .sidebar-panel,
+  body:has(.wallet-mobile-page) .app-header,
+  body:has(.wallet-mobile-page) .sidebar-panel {
+    display: none !important;
+  }
+  
+  body:has(.wallet-mobile-page) main.main-content {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* Alternative approach using data attribute */
+[data-wallet-mobile="true"] .app-header,
+[data-wallet-mobile="true"] .sidebar-panel {
+  display: none !important;
+}
+
+[data-wallet-mobile="true"] main.main-content {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
+}
+
