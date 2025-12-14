@@ -17,7 +17,7 @@ const navItems = [
     id: "home",
     label: "হোম",
     icon: HomeIcon,
-    path: "/dashboards/home",
+    path: "/user_dashboard",
   },
   {
     id: "wallet",
@@ -43,12 +43,13 @@ export function BottomNavigation() {
   const pathname = usePathname();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200/50 bg-white/95 backdrop-blur-md shadow-lg md:hidden">
+    <div className="dark:border-dark-600/80 dark:bg-dark-900/98 fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200/80 bg-white/98 shadow-2xl backdrop-blur-xl md:hidden">
       <div className="grid grid-cols-4">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.path || pathname.startsWith(item.path + "/");
-          
+          const isActive =
+            pathname === item.path || pathname.startsWith(item.path + "/");
+
           return (
             <Link
               key={item.id}
@@ -57,19 +58,19 @@ export function BottomNavigation() {
             >
               <Icon
                 className={clsx(
-                  "size-6 transition-colors",
+                  "size-6 transition-all",
                   isActive
-                    ? "text-pink-600"
-                    : "text-gray-600"
+                    ? "text-purple-600 dark:text-purple-400"
+                    : "text-gray-500 dark:text-gray-400",
                 )}
                 strokeWidth={isActive ? 2.5 : 1.5}
               />
               <span
                 className={clsx(
-                  "text-xs font-medium transition-colors",
+                  "text-xs font-semibold transition-colors",
                   isActive
-                    ? "text-pink-600"
-                    : "text-gray-600"
+                    ? "text-purple-600 dark:text-purple-400"
+                    : "text-gray-500 dark:text-gray-400",
                 )}
               >
                 {item.label}
@@ -81,4 +82,3 @@ export function BottomNavigation() {
     </div>
   );
 }
-

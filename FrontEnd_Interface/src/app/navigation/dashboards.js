@@ -16,7 +16,7 @@ export const dashboards = {
   childs: [
     {
       id: "dashboards.home",
-      path: path(ROOT_DASHBOARDS, "/home"),
+      path: "/user_dashboard",
       type: NAV_TYPE_ITEM,
       title: "Dashboard",
       transKey: "nav.dashboards.home",

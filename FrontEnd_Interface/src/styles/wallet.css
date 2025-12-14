@@ -1,12 +1,19 @@
 /* Wallet Mobile Page Styles */
 @media (max-width: 768px) {
-  .wallet-mobile-page ~ .app-header,
-  .wallet-mobile-page ~ .sidebar-panel,
-  body:has(.wallet-mobile-page) .app-header,
-  body:has(.wallet-mobile-page) .sidebar-panel {
+  /* Hide only the app header, but allow sidebar to toggle */
+  body:has(.wallet-mobile-page) .app-header {
     display: none !important;
   }
-  
+
+  /* Sidebar visibility is handled by layout.css - no need to override here */
+
+  /* When sidebar is open, ensure it's visible and above content */
+  body:has(.wallet-mobile-page).is-sidebar-open .sidebar-panel {
+    visibility: visible !important;
+    transform: translateX(0) !important;
+    z-index: 50 !important;
+  }
+
   body:has(.wallet-mobile-page) main.main-content {
     margin-left: 0 !important;
     margin-right: 0 !important;
@@ -15,9 +22,15 @@
 }
 
 /* Alternative approach using data attribute */
-[data-wallet-mobile="true"] .app-header,
-[data-wallet-mobile="true"] .sidebar-panel {
+[data-wallet-mobile="true"] .app-header {
   display: none !important;
+}
+
+/* When sidebar is open, ensure it's visible */
+[data-wallet-mobile="true"].is-sidebar-open .sidebar-panel {
+  visibility: visible !important;
+  transform: translateX(0) !important;
+  z-index: 50 !important;
 }
 
 [data-wallet-mobile="true"] main.main-content {
@@ -25,4 +38,3 @@
   margin-right: 0 !important;
   padding: 0 !important;
 }
-

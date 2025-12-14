@@ -16,7 +16,7 @@ export function CollapsibleItem({ data }) {
   const { t } = useTranslation();
   const { isRtl } = useLocaleContext();
 
-  const title = t(transKey) || data.title;
+  const title = (transKey && t(transKey) && t(transKey) !== transKey) ? t(transKey) : (data.title || transKey || "");
   const ChevronIcon = isRtl ? ChevronLeftIcon : ChevronRightIcon;
 
   return (

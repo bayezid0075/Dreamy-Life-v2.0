@@ -1,25 +1,26 @@
 "use client";
 import PropTypes from "prop-types";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { Avatar } from "components/ui";
+import { Search } from "components/template/Search";
+import { Notifications } from "components/template/Notifications";
+import { useSidebarContext } from "app/contexts/sidebar/context";
 
 // bKash 'b' Icon Component
 const BKashIcon = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
   </svg>
 );
 
-export function MobileWalletHeader({ 
+export function MobileWalletHeader({
   username = "Bayezid Hoshen",
   avatarSrc,
   onBalanceClick,
-  onSearchClick,
-  onMenuClick,
 }) {
+  const { toggle } = useSidebarContext();
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-pink-500 via-pink-400 to-rose-500 px-4 pt-4 pb-5">
+    <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-600 px-4 pt-4 pb-5 shadow-lg">
       {/* Abstract Landscape Background */}
       <div className="absolute inset-0 opacity-10">
         <svg
@@ -46,44 +47,18 @@ export function MobileWalletHeader({
 
       {/* Content */}
       <div className="relative z-10">
-        {/* Top Row - Profile and Icons */}
+        {/* Top Row - Hamburger, Profile and Icons */}
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar
-              src={avatarSrc}
-              name={username}
-              size={12}
-              className="ring-2 ring-white/20"
-            />
-            <div className="flex flex-col">
-              <h3 className="text-base font-semibold text-white leading-tight">{username}</h3>
-              {/* Balance Button - Below name */}
-              <button
-                onClick={onBalanceClick}
-                className={clsx(
-                  "mt-1 flex items-center gap-1.5 rounded-lg bg-white/20 px-2.5 py-1",
-                  "text-xs font-medium text-white transition-all hover:bg-white/30 active:scale-95"
-                )}
-              >
-                <BKashIcon className="size-3.5" />
-                <span>ব্যালেন্স দেখুন</span>
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+            {/* Hamburger Menu Button - Left side before profile */}
             <button
-              onClick={onSearchClick}
-              className="flex size-10 items-center justify-center rounded-full bg-white transition-all hover:bg-gray-100 active:scale-95"
-            >
-              <MagnifyingGlassIcon className="size-5 text-gray-800" />
-            </button>
-            <button
-              onClick={onMenuClick}
-              className="flex size-10 items-center justify-center rounded-full bg-white transition-all hover:bg-gray-100 active:scale-95"
+              onClick={toggle}
+              className="flex size-10 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur-sm transition-all hover:bg-white hover:shadow-lg active:scale-95"
+              aria-label="Toggle Sidebar"
             >
               {/* Menu Icon - Three horizontal lines */}
               <svg
-                className="size-5 text-pink-600"
+                className="size-5 text-purple-600"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -93,6 +68,59 @@ export function MobileWalletHeader({
                 <path d="M3 12h18M3 6h18M3 18h18" />
               </svg>
             </button>
+            <Avatar
+              src={avatarSrc}
+              name={username}
+              size={12}
+              className="ring-2 ring-white/20"
+            />
+            <div className="flex flex-col">
+              <h3 className="text-base leading-tight font-semibold text-white">
+                {username}
+              </h3>
+              {/* Balance Button - Below name */}
+              <button
+                onClick={onBalanceClick}
+                className={clsx(
+                  "mt-1 flex items-center gap-1.5 rounded-lg bg-white/20 px-2.5 py-1 backdrop-blur-sm",
+                  "text-xs font-medium text-white transition-all hover:bg-white/30 hover:shadow-md active:scale-95",
+                )}
+              >
+                <BKashIcon className="size-3.5" />
+                <span>ব্যালেন্স দেখুন</span>
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Search Component */}
+            <Search
+              renderButton={(open) => (
+                <button
+                  onClick={open}
+                  className="flex size-10 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur-sm transition-all hover:bg-white hover:shadow-lg active:scale-95"
+                  aria-label="Search"
+                >
+                  <svg
+                    className="size-5 text-gray-800"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </button>
+              )}
+            />
+            {/* Notifications Component */}
+            <div className="[&>div>button]:!flex [&>div>button]:!size-10 [&>div>button]:!items-center [&>div>button]:!justify-center [&>div>button]:!rounded-full [&>div>button]:!border-0 [&>div>button]:!bg-white/95 [&>div>button]:!shadow-md [&>div>button]:!backdrop-blur-sm [&>div>button]:!transition-all [&>div>button]:hover:!bg-white [&>div>button]:hover:!shadow-lg [&>div>button]:active:!scale-95 [&>div>button>svg]:!text-gray-800">
+              <Notifications />
+            </div>
           </div>
         </div>
       </div>
@@ -104,7 +132,4 @@ MobileWalletHeader.propTypes = {
   username: PropTypes.string,
   avatarSrc: PropTypes.string,
   onBalanceClick: PropTypes.func,
-  onSearchClick: PropTypes.func,
-  onMenuClick: PropTypes.func,
 };
-

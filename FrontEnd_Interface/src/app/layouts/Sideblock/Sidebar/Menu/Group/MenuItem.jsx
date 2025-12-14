@@ -18,7 +18,7 @@ export function MenuItem({ data }) {
   const { close } = useSidebarContext();
   const { t } = useTranslation();
 
-  const title = t(transKey) || data.title;
+  const title = (transKey && t(transKey) && t(transKey) !== transKey) ? t(transKey) : (data.title || transKey || "");
   const pathname = usePathname();
   const info = null; // useRouteLoaderData not available in Next.js
 

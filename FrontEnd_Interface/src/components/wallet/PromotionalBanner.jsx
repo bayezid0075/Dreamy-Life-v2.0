@@ -6,7 +6,13 @@ import clsx from "clsx";
 
 // Wallet Icon with Plus
 const WalletPlusIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <rect x="3" y="5" width="18" height="14" rx="2" />
     <path d="M3 10H21" />
     <path d="M12 15V9" />
@@ -14,7 +20,7 @@ const WalletPlusIcon = ({ className }) => (
   </svg>
 );
 
-export function PromotionalBanner({ 
+export function PromotionalBanner({
   offerText = "১ম বার ৫০০",
   offerSubtext = "কার্ড টু বিকাশ করলে",
   rewardAmount = "৩০০",
@@ -24,7 +30,7 @@ export function PromotionalBanner({
   totalSlides = 5,
 }) {
   return (
-    <div className="relative mx-4 my-4 overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 via-pink-400 to-rose-500 p-5">
+    <div className="relative mx-4 my-4 overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-600 p-5 shadow-xl">
       <div className="flex items-start justify-between gap-3">
         {/* Left Side - Icon and Offer Text */}
         <div className="flex-1">
@@ -34,10 +40,10 @@ export function PromotionalBanner({
             </div>
           </div>
           <div className="space-y-0.5">
-            <p className="text-sm font-semibold leading-tight text-white">
+            <p className="text-sm leading-tight font-semibold text-white">
               {offerText}
             </p>
-            <p className="text-sm font-semibold leading-tight text-white">
+            <p className="text-sm leading-tight font-semibold text-white">
               {offerSubtext}
             </p>
           </div>
@@ -46,12 +52,16 @@ export function PromotionalBanner({
         {/* Right Side - Reward Amount and Button */}
         <div className="flex flex-col items-end gap-2">
           <div className="flex flex-col items-end">
-            <span className="text-4xl font-bold leading-none text-yellow-300">{rewardAmount}</span>
-            <span className="mt-1 text-xs text-white/80">{monthlyMax}</span>
+            <span className="text-4xl leading-none font-bold text-yellow-300 drop-shadow-lg">
+              {rewardAmount}
+            </span>
+            <span className="mt-1 text-xs font-medium text-white/90">
+              {monthlyMax}
+            </span>
           </div>
           <button
             onClick={onTap}
-            className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-pink-600 transition-all hover:bg-pink-50 active:scale-95"
+            className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-purple-600 shadow-md transition-all hover:bg-purple-50 hover:shadow-lg active:scale-95"
           >
             ট্যাপ করুন
           </button>
@@ -65,9 +75,7 @@ export function PromotionalBanner({
             key={index}
             className={clsx(
               "h-1.5 rounded-full transition-all",
-              index === currentSlide
-                ? "w-6 bg-white"
-                : "w-1.5 bg-white/40"
+              index === currentSlide ? "w-6 bg-white" : "w-1.5 bg-white/40",
             )}
           />
         ))}
@@ -85,4 +93,3 @@ PromotionalBanner.propTypes = {
   currentSlide: PropTypes.number,
   totalSlides: PropTypes.number,
 };
-

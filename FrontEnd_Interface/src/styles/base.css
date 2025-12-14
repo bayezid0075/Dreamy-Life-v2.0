@@ -124,3 +124,9 @@ input.hide-number-arrow::-webkit-inner-spin-button {
 input[type="number"].hide-number-arrow {
   -moz-appearance: textfield;
 }
+
+/* Next.js Portal Override - Remove inline left and top positioning */
+nextjs-portal {
+  left: unset !important;
+  top: unset !important;
+}
