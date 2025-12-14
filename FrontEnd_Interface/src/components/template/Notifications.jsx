@@ -26,8 +26,8 @@ import { Link } from "components/shared/Link";
 // Local Imports
 import { Avatar, AvatarDot, Badge, Button } from "components/ui";
 import { useThemeContext } from "app/contexts/theme/context";
-import AlarmIcon from "assets/dualicons/alarm.svg?react";
-import GirlEmptyBox from "assets/illustrations/girl-empty-box.svg?react";
+import { AlarmIcon } from "components/shared/SvgIcons";
+import { GirlEmptyBox } from "components/shared/Illustrations";
 
 // ----------------------------------------------------------------------
 

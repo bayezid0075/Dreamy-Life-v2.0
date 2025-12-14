@@ -4,7 +4,7 @@ import { Link } from "components/shared/Link";
 import clsx from "clsx";
 
 // Local Imports
-import Logo from "assets/appLogo.svg?react";
+import { Logo } from "components/shared/Logo";
 import { Menu } from "./Menu";
 import { Item } from "./Menu/Item";
 import { Profile } from "../../Profile";

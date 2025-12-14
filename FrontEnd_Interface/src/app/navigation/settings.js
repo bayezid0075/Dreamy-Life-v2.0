@@ -3,7 +3,7 @@ import { UserIcon } from "@heroicons/react/24/outline";
 import { TbPalette } from "react-icons/tb";
 
 // Local Imports
-import SettingIcon from "assets/dualicons/setting.svg?react";
+import { SettingIcon } from "components/shared/SvgIcons";
 import { NAV_TYPE_ITEM } from "constants/app.constant";
 
 // ----------------------------------------------------------------------

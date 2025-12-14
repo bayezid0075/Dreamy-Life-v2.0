@@ -43,16 +43,23 @@ export function Group({ data }) {
       </div>
       <Collapse in={isOpened}>
         <div className="flex flex-col space-y-1.5">
-          {data.childs.map((item) => {
-            switch (item.type) {
-              case NAV_TYPE_COLLAPSE:
-                return <CollapsibleItem key={item.path} data={item} />;
-              case NAV_TYPE_ITEM:
-                return <MenuItem key={item.path} data={item} />;
-              default:
-                return null;
-            }
-          })}
+          {data.childs && data.childs.length > 0 ? (
+            data.childs.map((item) => {
+              switch (item.type) {
+                case NAV_TYPE_COLLAPSE:
+                  return <CollapsibleItem key={item.path} data={item} />;
+                case NAV_TYPE_ITEM:
+                  return <MenuItem key={item.path} data={item} />;
+                default:
+                  return null;
+              }
+            })
+          ) : (
+            // If no children, render the item itself as a MenuItem
+            data.type === NAV_TYPE_ITEM && (
+              <MenuItem key={data.path} data={data} />
+            )
+          )}
         </div>
       </Collapse>
     </div>

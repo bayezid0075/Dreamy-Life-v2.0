@@ -1,5 +1,5 @@
 // Local Imports
-import Logo from "assets/appLogo.svg?react";
+import { Logo } from "components/shared/Logo";
 import { Progress } from "components/ui";
 
 // ----------------------------------------------------------------------

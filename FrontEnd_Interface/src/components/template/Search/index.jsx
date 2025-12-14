@@ -74,8 +74,6 @@ export function Search({ renderButton }) {
           </TransitionChild>
         </Dialog>
       </Transition>
-
-      {renderButton ? renderButton(open) : null}
     </>
   );
 }

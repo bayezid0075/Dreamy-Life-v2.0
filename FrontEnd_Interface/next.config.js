@@ -6,6 +6,13 @@ const nextConfig = {
   images: {
     domains: [],
   },
+  // Suppress params enumeration warning in Next.js 15
+  // This is a known issue when serializing props in client components
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
   webpack: (config) => {
     const srcPath = path.resolve(__dirname, "./src");
     

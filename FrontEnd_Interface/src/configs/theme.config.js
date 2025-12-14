@@ -16,7 +16,7 @@ export const defaultTheme = {
     isMonochrome: false,  
     // If true, the theme uses a monochrome color palette  
 
-    themeLayout: "main-layout",  
+    themeLayout: "sideblock",  
     // Options: "main-layout", "sideblock"  
     cardSkin: "bordered",  
     // Options: "bordered", "shadow"  

@@ -3,8 +3,8 @@ import { Link } from "components/shared/Link";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 
 // Local Imports
-import Logo from "assets/appLogo.svg?react";
-import LogoType from "assets/logotype.svg?react";
+import { Logo } from "components/shared/Logo";
+import { LogoType } from "components/shared/SvgIcons";
 import { Button } from "components/ui";
 import { useSidebarContext } from "app/contexts/sidebar/context";
 

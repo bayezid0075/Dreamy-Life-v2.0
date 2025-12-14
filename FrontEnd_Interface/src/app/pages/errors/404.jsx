@@ -2,7 +2,7 @@
 import { Link } from "components/shared/Link";
 
 // Local Imports
-import Error404Magnify from "assets/illustrations/error-404-magnify.svg?react";
+import { Error404Magnify } from "components/shared/Illustrations";
 import { Page } from "components/shared/Page";
 import { Button } from "components/ui";
 import { useThemeContext } from "app/contexts/theme/context";

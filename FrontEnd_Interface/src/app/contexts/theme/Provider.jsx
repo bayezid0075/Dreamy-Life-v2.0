@@ -1,5 +1,6 @@
 // Import Dependencies
 import PropTypes from "prop-types";
+import { useRef } from "react";
 
 // Local Imports
 import { defaultTheme } from "configs/theme.config";
@@ -33,6 +34,7 @@ const getHtmlElement = () => {
 
 export function ThemeProvider({ children }) {
   const isDarkOS = useMediaQuery(COLOR_SCHEME_QUERY);
+  const hasSyncedLayout = useRef(false);
 
   const [settings, setSettings] = useLocalStorage("settings", {
     themeMode: initialState.themeMode,
@@ -201,6 +203,17 @@ export function ThemeProvider({ children }) {
       document.body.dataset.layout = settings.themeLayout;
     }
   }, [settings.themeLayout]);
+
+  // Sync themeLayout with config default if it differs (only once on mount)
+  useIsomorphicEffect(() => {
+    if (!hasSyncedLayout.current && settings.themeLayout !== initialState.themeLayout) {
+      hasSyncedLayout.current = true;
+      setSettings((prev) => ({
+        ...prev,
+        themeLayout: initialState.themeLayout,
+      }));
+    }
+  }, [settings.themeLayout, setSettings]);
 
   if (!children) {
     return null;

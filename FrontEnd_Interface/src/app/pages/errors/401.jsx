@@ -1,5 +1,5 @@
 // Local Imports
-import Authorize from "assets/illustrations/authorize.svg?react";
+import { Authorize } from "components/shared/Illustrations";
 import { Page } from "components/shared/Page";
 import { useThemeContext } from "app/contexts/theme/context";
 

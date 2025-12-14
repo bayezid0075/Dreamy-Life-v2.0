@@ -1,5 +1,5 @@
 // Local Imports
-import RepairServer from "assets/illustrations/repair-server.svg?react";
+import { RepairServer } from "components/shared/Illustrations";
 import { Page } from "components/shared/Page";
 import { useThemeContext } from "app/contexts/theme/context";
 

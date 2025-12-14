@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 
 // Local Imports
-import SearchIcon from "assets/dualicons/search.svg?react";
+import { SearchIcon } from "components/shared/SearchIcon";
 import { SidebarToggleBtn } from "components/shared/SidebarToggleBtn";
 import { Button } from "components/ui";
 import { Notifications } from "components/template/Notifications";

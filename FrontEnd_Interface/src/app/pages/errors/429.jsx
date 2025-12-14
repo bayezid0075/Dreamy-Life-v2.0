@@ -1,5 +1,5 @@
 // Local Imports
-import WindowCrash from "assets/illustrations/window-crash.svg?react";
+import { WindowCrash } from "components/shared/Illustrations";
 import { Page } from "components/shared/Page";
 import { useThemeContext } from "app/contexts/theme/context";
 

@@ -10,7 +10,7 @@ import {
 // Local Imports
 import { Button, ScrollShadow } from "components/ui";
 import { useDisclosure } from "hooks";
-import VerticalSliderIcon from "assets/dualicons/vertical-slider.svg?react";
+import { VerticalSliderIcon } from "components/shared/SvgIcons";
 import { Header } from "./Header";
 
 // ----------------------------------------------------------------------
