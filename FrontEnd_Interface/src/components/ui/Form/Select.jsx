@@ -19,6 +19,10 @@ import { useThemeContext } from "app/contexts/theme/context";
  * @returns {string|null} - The background color of the nearest parent or `null` if none is found.
  */
 function findNearestBackgroundColor(element) {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return null;
+  }
+  
   if (!(element instanceof HTMLElement)) {
     throw new TypeError("The input must be an HTMLElement.");
   }

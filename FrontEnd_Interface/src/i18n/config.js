@@ -5,8 +5,14 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 // Local Imports
 import { defaultTheme } from "configs/theme.config";
+import { isServer } from "utils/isServer";
 
 // ----------------------------------------------------------------------
+
+const getInitialLang = () => {
+  if (isServer) return defaultTheme.defaultLang;
+  return localStorage.getItem("i18nextLng") || defaultTheme.defaultLang;
+};
 
 i18n
   .use(LanguageDetector)
@@ -18,7 +24,7 @@ i18n
       lookupSessionStorage: 'i18nextLng',
     },
     fallbackLng: defaultTheme.fallbackLang,
-    lng: localStorage.getItem("i18nextLng") || defaultTheme.defaultLang,
+    lng: getInitialLang(),
     supportedLngs: ["en", "es", "ar", "zh-cn"],
     ns: ["translations"],
     defaultNS: "translations",

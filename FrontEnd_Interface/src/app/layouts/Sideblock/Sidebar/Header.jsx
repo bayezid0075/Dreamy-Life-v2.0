@@ -1,5 +1,5 @@
 // Import Dependencies
-import { Link } from "react-router";
+import { Link } from "components/shared/Link";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 
 // Local Imports

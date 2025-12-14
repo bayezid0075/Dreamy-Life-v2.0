@@ -1,6 +1,6 @@
 // Import Dependencies
 import { useMemo, useState } from "react";
-import { useLocation } from "react-router";
+import { usePathname } from "next/navigation";
 
 // Local Imports
 import { useBreakpointsContext } from "app/contexts/breakpoint/context";
@@ -14,7 +14,7 @@ import { PrimePanel } from "./PrimePanel";
 // ----------------------------------------------------------------------
 
 export function Sidebar() {
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const { name, lgAndDown } = useBreakpointsContext();
   const { isExpanded, close } = useSidebarContext();
 

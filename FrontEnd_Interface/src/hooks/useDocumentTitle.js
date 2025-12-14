@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { isServer } from 'utils/isServer'
 
 import { useIsomorphicEffect, useUnmount } from 'hooks'
 
@@ -10,16 +11,20 @@ export function useDocumentTitle(
     const defaultTitle = useRef(null)
 
     useIsomorphicEffect(() => {
-        defaultTitle.current = window.document.title
+        if (!isServer) {
+            defaultTitle.current = document.title
+        }
     }, [])
 
     useIsomorphicEffect(() => {
-        window.document.title = title
+        if (!isServer && title) {
+            document.title = title
+        }
     }, [title])
 
     useUnmount(() => {
-        if (!preserveTitleOnUnmount && defaultTitle.current) {
-            window.document.title = defaultTitle.current
+        if (!isServer && !preserveTitleOnUnmount && defaultTitle.current) {
+            document.title = defaultTitle.current
         }
     })
 }

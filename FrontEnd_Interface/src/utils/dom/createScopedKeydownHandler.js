@@ -72,7 +72,7 @@ export function createScopedKeydownHandler({
     onKeyDown,
     loop = true,
     activateOnFocus = false,
-    dir = document.documentElement.dir,
+    dir = typeof document !== "undefined" ? document.documentElement.dir : "ltr",
     orientation,
 }) {
     return (event) => {

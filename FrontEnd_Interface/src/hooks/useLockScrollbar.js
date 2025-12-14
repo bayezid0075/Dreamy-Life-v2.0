@@ -9,6 +9,7 @@ import {
     makeStyleTag,
     removeStylesFromHead,
 } from "utils/dom/injectStylesToHead";
+import { isServer } from "utils/isServer";
 
 // ----------------------------------------------------------------------
 
@@ -25,11 +26,14 @@ export function useLockScrollbar(
     const stylesheet = useRef(null);
 
     const lockScroll = useCallback(() => {
+        if (isServer) return;
+        
         scrollTop.current = window.scrollY;
 
         const styles = getLockStyles({ disableBodyPadding });
 
         const sheet = makeStyleTag();
+        if (!sheet) return;
 
         injectStyles(sheet, styles);
         insertStylesToHead(sheet);

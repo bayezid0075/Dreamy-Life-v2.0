@@ -1,5 +1,8 @@
+"use client";
+
 // Import Dependencies
-import { Link } from "react-router";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
@@ -8,13 +11,16 @@ import { useForm } from "react-hook-form";
 import Logo from "assets/appLogo.svg?react";
 import { Button, Card, Checkbox, Input, InputErrorMsg } from "components/ui";
 import { useAuthContext } from "app/contexts/auth/context";
-import { schema } from "./schema";
+import { schema } from "app/pages/Auth/schema";
 import { Page } from "components/shared/Page";
+import { HOME_PATH } from "constants/app.constant";
 
 // ----------------------------------------------------------------------
 
 export default function SignIn() {
-  const { login, errorMessage } = useAuthContext();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { login, errorMessage, isAuthenticated } = useAuthContext();
   const {
     register,
     handleSubmit,
@@ -26,6 +32,13 @@ export default function SignIn() {
       password: "password",
     },
   });
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const redirectUrl = searchParams.get("redirect") || HOME_PATH;
+      router.replace(redirectUrl);
+    }
+  }, [isAuthenticated, router, searchParams]);
 
   const onSubmit = (data) => {
     login({
@@ -104,12 +117,12 @@ export default function SignIn() {
             <div className="mt-4 text-center text-xs-plus">
               <p className="line-clamp-1">
                 <span>Dont have Account?</span>{" "}
-                <Link
+                <a
                   className="text-primary-600 transition-colors hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-600"
-                  to="/pages/sign-up-v1"
+                  href="/pages/sign-up-v1"
                 >
                   Create account
-                </Link>
+                </a>
               </p>
             </div>
             <div className="my-7 flex items-center space-x-3 text-xs ">
@@ -146,3 +159,4 @@ export default function SignIn() {
     </Page>
   );
 }
+

@@ -1,14 +1,27 @@
+"use client";
+
 // Import Dependencies
+import { useEffect, useState } from "react";
 import { Toaster as SonnerToaster } from "sonner";
 
 // Local Imports
 import { defaultTheme } from "configs/theme.config";
 import { useThemeContext } from "app/contexts/theme/context";
+import { isServer } from "utils/isServer";
 
 // ----------------------------------------------------------------------
 
 export default function Toaster() {
   const { isDark, notification } = useThemeContext();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (isServer || !isMounted) {
+    return null;
+  }
 
   return (
     <SonnerToaster

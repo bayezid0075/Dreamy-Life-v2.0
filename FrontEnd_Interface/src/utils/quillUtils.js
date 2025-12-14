@@ -1,4 +1,5 @@
 import Quill from "quill";
+import { isServer } from "utils/isServer";
 
 /**
  * Converts an HTML string to a Quill Delta object.
@@ -7,6 +8,11 @@ import Quill from "quill";
  * @returns {Delta} - The Quill Delta representation of the HTML.
  */
 export function htmlToDelta(html) {
+    if (isServer) {
+        // Return empty delta on server
+        return { ops: [] };
+    }
+
     if (typeof html !== 'string') {
         throw new TypeError("The input HTML must be a string.");
     }

@@ -25,7 +25,11 @@ const initialState = {
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
-const _html = document?.documentElement;
+// Lazy getter for documentElement to avoid SSR issues
+const getHtmlElement = () => {
+  if (typeof document === "undefined") return null;
+  return document.documentElement;
+};
 
 export function ThemeProvider({ children }) {
   const isDarkOS = useMediaQuery(COLOR_SCHEME_QUERY);
@@ -150,33 +154,52 @@ export function ThemeProvider({ children }) {
   };
 
   useIsomorphicEffect(() => {
-    isDark ? _html.classList.add("dark") : _html.classList.remove("dark");
+    const html = getHtmlElement();
+    if (html) {
+      isDark ? html.classList.add("dark") : html.classList.remove("dark");
+    }
   }, [isDark]);
 
   useIsomorphicEffect(() => {
-    settings.isMonochrome
-      ? document.body.classList.add("is-monochrome")
-      : document.body.classList.remove("is-monochrome");
+    if (typeof document !== "undefined" && document.body) {
+      settings.isMonochrome
+        ? document.body.classList.add("is-monochrome")
+        : document.body.classList.remove("is-monochrome");
+    }
   }, [settings.isMonochrome]);
 
   useIsomorphicEffect(() => {
-    _html.dataset.themeLight = settings.lightColorScheme.name;
+    const html = getHtmlElement();
+    if (html) {
+      html.dataset.themeLight = settings.lightColorScheme.name;
+    }
   }, [settings.lightColorScheme]);
 
   useIsomorphicEffect(() => {
-    _html.dataset.themeDark = settings.darkColorScheme.name;
+    const html = getHtmlElement();
+    if (html) {
+      html.dataset.themeDark = settings.darkColorScheme.name;
+    }
   }, [settings.darkColorScheme]);
 
   useIsomorphicEffect(() => {
-    _html.dataset.themePrimary = settings.primaryColorScheme.name;
+    const html = getHtmlElement();
+    if (html) {
+      html.dataset.themePrimary = settings.primaryColorScheme.name;
+    }
   }, [settings.primaryColorScheme]);
 
   useIsomorphicEffect(() => {
-    _html.dataset.cardSkin = settings.cardSkin;
+    const html = getHtmlElement();
+    if (html) {
+      html.dataset.cardSkin = settings.cardSkin;
+    }
   }, [settings.cardSkin]);
 
   useIsomorphicEffect(() => {
-    if (document) document.body.dataset.layout = settings.themeLayout;
+    if (typeof document !== "undefined" && document.body) {
+      document.body.dataset.layout = settings.themeLayout;
+    }
   }, [settings.themeLayout]);
 
   if (!children) {

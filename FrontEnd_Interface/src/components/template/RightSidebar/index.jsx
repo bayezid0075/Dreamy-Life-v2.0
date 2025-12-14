@@ -34,9 +34,11 @@ export function RightSidebar() {
 }
 
 function RightSidebarContent({ isOpen, close }) {
+  if (!isOpen) return null;
+  
   return (
     <Transition show={isOpen}>
-      <Dialog open={true} onClose={close} static autoFocus>
+      <Dialog open={isOpen} onClose={close} static autoFocus>
         <TransitionChild
           as="div"
           enter="ease-out duration-300"

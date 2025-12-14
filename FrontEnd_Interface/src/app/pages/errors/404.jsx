@@ -1,5 +1,5 @@
 // Import Dependencies
-import { Link } from "react-router";
+import { Link } from "components/shared/Link";
 
 // Local Imports
 import Error404Magnify from "assets/illustrations/error-404-magnify.svg?react";

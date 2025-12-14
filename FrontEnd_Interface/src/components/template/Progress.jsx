@@ -1,5 +1,6 @@
 // Import Dependencies
-import { useNavigation } from "react-router";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 // Local Imports
 import { NProgress } from "components/shared/NProgress";
@@ -7,12 +8,14 @@ import { NProgress } from "components/shared/NProgress";
 // ----------------------------------------------------------------------
 
 export function Progress() {
-  const navigation = useNavigation();  
+  const pathname = usePathname();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isLoading =
-    navigation.state === "loading" &&
-    navigation.formData == null &&
-    !!navigation.location.pathname;
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, [pathname]);
 
   return <NProgress isAnimating={isLoading} />;
 }

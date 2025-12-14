@@ -1,6 +1,7 @@
 // Import Dependencies
 import PropTypes from "prop-types";
-import { NavLink, useRouteLoaderData } from "react-router";
+import { NavLink } from "components/shared/NavLink";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 
@@ -16,43 +17,43 @@ export function MenuItem({ data }) {
   const { t } = useTranslation();
   const { lgAndDown } = useBreakpointsContext();
   const { close } = useSidebarContext();
+  const pathname = usePathname();
   const title = t(transKey) || data.title;
 
-  const info = useRouteLoaderData("root")?.[id]?.info;
+  // useRouteLoaderData is not available in Next.js, so we'll skip info for now
+  const info = null;
 
   const handleMenuItemClick = () => lgAndDown && close();
+  const isActive = pathname === path || pathname.startsWith(path + "/");
 
   return (
     <NavLink
       to={path}
       onClick={handleMenuItemClick}
-      className={({ isActive }) =>
-        clsx(
-          "outline-hidden transition-colors duration-300 ease-in-out",
-          isActive
-            ? "font-medium text-primary-600 dark:text-primary-400"
-            : "text-gray-600 hover:text-gray-900 dark:text-dark-200 dark:hover:text-dark-50",
-        )
-      }
-    >
-      {({ isActive }) => (
-        <div
-          data-menu-active={isActive}
-          style={{ height: "34px" }}
-          className="flex items-center justify-between text-xs-plus tracking-wide"
-        >
-          <span className="mr-1 truncate"> {title}</span>
-          {info && info.val && (
-            <Badge
-              color={info.color}
-              variant="soft"
-              className="h-4.5 min-w-[1rem] shrink-0 p-[5px] text-tiny-plus"
-            >
-              {info.val}
-            </Badge>
-          )}
-        </div>
+      activeClassName="font-medium text-primary-600 dark:text-primary-400"
+      className={clsx(
+        "outline-hidden transition-colors duration-300 ease-in-out",
+        isActive
+          ? "font-medium text-primary-600 dark:text-primary-400"
+          : "text-gray-600 hover:text-gray-900 dark:text-dark-200 dark:hover:text-dark-50",
       )}
+    >
+      <div
+        data-menu-active={isActive}
+        style={{ height: "34px" }}
+        className="flex items-center justify-between text-xs-plus tracking-wide"
+      >
+        <span className="mr-1 truncate"> {title}</span>
+        {info && info.val && (
+          <Badge
+            color={info.color}
+            variant="soft"
+            className="h-4.5 min-w-[1rem] shrink-0 p-[5px] text-tiny-plus"
+          >
+            {info.val}
+          </Badge>
+        )}
+      </div>
     </NavLink>
   );
 }

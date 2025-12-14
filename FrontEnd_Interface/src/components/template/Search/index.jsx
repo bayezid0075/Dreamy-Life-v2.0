@@ -12,7 +12,7 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import invariant from "tiny-invariant";
-import { Link } from "react-router";
+import { Link } from "components/shared/Link";
 import { useHotkeys } from "react-hotkeys-hook";
 
 // Local Imports
@@ -37,6 +37,8 @@ export function Search({ renderButton }) {
     preventDefault: true,
   })
 
+  if (!isOpen) return renderButton ? renderButton(open) : null;
+
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
@@ -44,6 +46,7 @@ export function Search({ renderButton }) {
           as="div"
           className="fixed inset-0 z-100 flex flex-col items-center justify-center overflow-hidden sm:px-5 sm:py-6"
           onClose={close}
+          open={isOpen}
         >
           <TransitionChild
             as={Fragment}

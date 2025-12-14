@@ -1,5 +1,6 @@
 // Import Dependencies
 import { Tooltip } from "react-tooltip";
+import { isServer } from "utils/isServer";
 
 // Local Import
 import {
@@ -28,9 +29,13 @@ const css = `
   --rt-color-dark: var(--color-dark-500) !important;
 }`;
 
-const sheet = makeStyleTag();
-
-injectStyles(sheet, css);
-insertStylesToHead(sheet);
+// Only inject styles on client side
+if (!isServer) {
+  const sheet = makeStyleTag();
+  if (sheet) {
+    injectStyles(sheet, css);
+    insertStylesToHead(sheet);
+  }
+}
 
 export { Tooltip };

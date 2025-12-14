@@ -1,7 +1,8 @@
 // Import Dependencies
 import PropTypes from "prop-types";
 import clsx from "clsx";
-import { NavLink, useRouteLoaderData } from "react-router";
+import { NavLink } from "components/shared/NavLink";
+import { usePathname } from "next/navigation";
 
 // Local Imports
 import { Badge } from "components/ui";
@@ -18,27 +19,27 @@ export function MenuItem({ data }) {
   const { t } = useTranslation();
 
   const title = t(transKey) || data.title;
-  const info = useRouteLoaderData("root")?.[id]?.info;
+  const pathname = usePathname();
+  const info = null; // useRouteLoaderData not available in Next.js
 
   const handleMenuItemClick = () => lgAndDown && close();
+  const isActive = pathname === path || pathname.startsWith(path + "/");
 
   return (
     <NavLink
       to={path}
       onClick={handleMenuItemClick}
       id={id}
-      className={({ isActive }) =>
-        clsx(
-          "text-xs-plus flex cursor-pointer items-center justify-between px-2 tracking-wide outline-hidden transition-[color,padding-left,padding-right] duration-300 ease-in-out hover:ltr:pl-4 hover:rtl:pr-4",
-          isActive
-            ? "text-primary-600 dark:text-primary-400 font-medium"
-            : "dark:text-dark-200 dark:hover:text-dark-50 dark:focus:text-dark-50 text-gray-600 hover:text-gray-900 focus:text-gray-900",
-        )
-      }
+      activeClassName="text-primary-600 dark:text-primary-400 font-medium"
+      className={clsx(
+        "text-xs-plus flex cursor-pointer items-center justify-between px-2 tracking-wide outline-hidden transition-[color,padding-left,padding-right] duration-300 ease-in-out hover:ltr:pl-4 hover:rtl:pr-4",
+        isActive
+          ? "text-primary-600 dark:text-primary-400 font-medium"
+          : "dark:text-dark-200 dark:hover:text-dark-50 dark:focus:text-dark-50 text-gray-600 hover:text-gray-900 focus:text-gray-900",
+      )}
     >
-      {({ isActive }) => (
-        <div
-          data-menu-active={isActive}
+      <div
+        data-menu-active={isActive}
           className="flex min-w-0 items-center justify-between"
           style={{ height: "34px" }}
         >
@@ -62,7 +63,6 @@ export function MenuItem({ data }) {
             </Badge>
           )}
         </div>
-      )}
     </NavLink>
   );
 }

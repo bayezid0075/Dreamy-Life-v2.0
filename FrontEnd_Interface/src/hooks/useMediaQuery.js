@@ -34,6 +34,8 @@ export function useMediaQuery(
     }
 
     useIsomorphicEffect(() => {
+        if (isServer) return;
+        
         const matchMedia = window.matchMedia(query)
 
         // Triggered at the first client-side load and if query changes

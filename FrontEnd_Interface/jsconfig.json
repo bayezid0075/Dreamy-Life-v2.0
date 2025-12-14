@@ -1,6 +1,20 @@
 {
   "compilerOptions": {
-    "baseUrl": "src"
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "components/*": ["./src/components/*"],
+      "app/*": ["./src/app/*"],
+      "hooks": ["./src/hooks/index.js"],
+      "hooks/*": ["./src/hooks/*"],
+      "utils/*": ["./src/utils/*"],
+      "configs/*": ["./src/configs/*"],
+      "constants/*": ["./src/constants/*"],
+      "styles/*": ["./src/styles/*"],
+      "i18n/*": ["./src/i18n/*"],
+      "middleware/*": ["./src/middleware/*"],
+      "assets/*": ["./src/assets/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "app", "next-env.d.ts"]
 }

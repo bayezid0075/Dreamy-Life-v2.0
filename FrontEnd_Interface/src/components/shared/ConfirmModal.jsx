@@ -61,6 +61,8 @@ export function ConfirmModal(props) {
         onClose,
       };
 
+  if (!show) return null;
+
   return (
     <Transition
       appear
@@ -68,6 +70,7 @@ export function ConfirmModal(props) {
       as={Dialog}
       initialFocus={focusRef}
       className="fixed inset-0 z-100 flex flex-col items-center justify-center overflow-hidden px-4 py-6 sm:px-5"
+      open={show}
       {...dialogProps}
     >
       <TransitionChild

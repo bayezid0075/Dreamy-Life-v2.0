@@ -42,7 +42,7 @@ export function Sidebar() {
         <Menu />
       </div>
 
-      {lgAndDown && isSidebarExpanded && (
+      {lgAndDown && isSidebarExpanded && typeof window !== "undefined" && (
         <Portal>
           <div
             onClick={closeSidebar}

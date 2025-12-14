@@ -1,5 +1,6 @@
 import { jwtDecode } from "jwt-decode";
 import axios from "./axios";
+import { isServer } from "./isServer";
 
 /**
  * Checks if the provided JWT token is valid (not expired).
@@ -30,6 +31,16 @@ const isTokenValid = (authToken) => {
  * @param {string} [authToken] - The JWT token to set. If `undefined` or `null`, the session will be cleared.
  */
 const setSession = (authToken) => {
+  if (isServer) {
+    // On server, only set axios headers
+    if (typeof authToken === "string" && authToken.trim() !== "") {
+      axios.defaults.headers.common.Authorization = `Bearer ${authToken}`;
+    } else {
+      delete axios.defaults.headers.common.Authorization;
+    }
+    return;
+  }
+
   if (typeof authToken === "string" && authToken.trim() !== "") {
     // Store token in local storage and set authorization header for axios
     localStorage.setItem("authToken", authToken);

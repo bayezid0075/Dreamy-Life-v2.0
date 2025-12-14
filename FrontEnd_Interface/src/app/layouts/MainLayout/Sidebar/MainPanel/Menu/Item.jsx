@@ -1,7 +1,6 @@
 // Import Dependencies
 import PropTypes from "prop-types";
 import clsx from "clsx";
-import { useRouteLoaderData } from "react-router";
 
 // Local Imports
 import { useBreakpointsContext } from "app/contexts/breakpoint/context";
@@ -21,7 +20,7 @@ export function Item({
 }) {
   const Element = component || "button";
   const { lgAndUp } = useBreakpointsContext();
-  const info = useRouteLoaderData("root")?.[id]?.info;
+  const info = null; // useRouteLoaderData not available in Next.js
 
   return (
     <Element

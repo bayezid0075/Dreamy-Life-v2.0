@@ -1,5 +1,5 @@
 // Import Dependencies
-import { useLocation } from "react-router";
+import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import {
   useDidUpdate,
@@ -16,7 +16,7 @@ import { isRouteActive } from "utils/isRouteActive";
 // ----------------------------------------------------------------------
 
 export function Menu() {
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const { ref } = useRef();
 
   const activeGroup = navigation.find((item) => {

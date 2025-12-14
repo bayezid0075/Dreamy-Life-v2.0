@@ -9,13 +9,17 @@ import { defaultTheme } from "configs/theme.config";
 import i18n from "i18n/config";
 import { LocaleContext } from "./context";
 import { locales } from "i18n/langs";
+import { isServer } from "utils/isServer";
 
 // ----------------------------------------------------------------------
 
 // Set the initial language from i18n or fallback to the default theme language
-const initialLang =
-  localStorage.getItem("i18nextLng") || defaultTheme.defaultLang;
+const getInitialLang = () => {
+  if (isServer) return defaultTheme.defaultLang;
+  return localStorage.getItem("i18nextLng") || defaultTheme.defaultLang;
+};
 
+const initialLang = getInitialLang();
 const initialDir = i18n.dir(initialLang);
 
 export function LocaleProvider({ children }) {
@@ -59,7 +63,9 @@ export function LocaleProvider({ children }) {
   }, [locale]);
 
   useIsomorphicEffect(() => {
-    document.documentElement.dir = direction;
+    if (!isServer && document?.documentElement) {
+      document.documentElement.dir = direction;
+    }
   }, [direction]);
 
   return (

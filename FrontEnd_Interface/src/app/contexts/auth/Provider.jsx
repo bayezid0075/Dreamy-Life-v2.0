@@ -8,6 +8,7 @@ import isString from "lodash/isString";
 import axios from "utils/axios";
 import { isTokenValid, setSession } from "utils/jwt";
 import { AuthContext } from "./context";
+import { isServer } from "utils/isServer";
 
 // ----------------------------------------------------------------------
 
@@ -78,6 +79,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const init = async () => {
       try {
+        if (isServer) {
+          dispatch({
+            type: "INITIALIZE",
+            payload: {
+              isAuthenticated: false,
+              user: null,
+            },
+          });
+          return;
+        }
+
         const authToken = window.localStorage.getItem("authToken");
 
         if (authToken && isTokenValid(authToken)) {
