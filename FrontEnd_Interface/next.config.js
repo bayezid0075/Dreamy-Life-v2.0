@@ -16,20 +16,29 @@ const nextConfig = {
   webpack: (config) => {
     const srcPath = path.resolve(__dirname, "./src");
     
+    // Normalize paths to prevent casing issues on Windows
+    const normalizePath = (p) => path.normalize(p).replace(/\\/g, '/');
+    
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@": srcPath,
-      "components": path.resolve(srcPath, "components"),
-      "app": path.resolve(srcPath, "app"),
-      "hooks": path.resolve(srcPath, "hooks", "index.js"),
-      "utils": path.resolve(srcPath, "utils"),
-      "configs": path.resolve(srcPath, "configs"),
-      "constants": path.resolve(srcPath, "constants"),
-      "styles": path.resolve(srcPath, "styles"),
-      "i18n": path.resolve(srcPath, "i18n"),
-      "middleware": path.resolve(srcPath, "middleware"),
-      "assets": path.resolve(srcPath, "assets"),
+      "@": normalizePath(srcPath),
+      "components": normalizePath(path.resolve(srcPath, "components")),
+      "app": normalizePath(path.resolve(srcPath, "app")),
+      "hooks": normalizePath(path.resolve(srcPath, "hooks", "index.js")),
+      "utils": normalizePath(path.resolve(srcPath, "utils")),
+      "configs": normalizePath(path.resolve(srcPath, "configs")),
+      "constants": normalizePath(path.resolve(srcPath, "constants")),
+      "styles": normalizePath(path.resolve(srcPath, "styles")),
+      "i18n": normalizePath(path.resolve(srcPath, "i18n")),
+      "middleware": normalizePath(path.resolve(srcPath, "middleware")),
+      "assets": normalizePath(path.resolve(srcPath, "assets")),
     };
+    
+    // Fix casing issues in module resolution
+    config.resolve.modules = [
+      path.resolve(__dirname, 'node_modules'),
+      'node_modules',
+    ];
     
     // Handle SVG imports with ?react query
     // Find the existing rule for SVG files and exclude them from default handling

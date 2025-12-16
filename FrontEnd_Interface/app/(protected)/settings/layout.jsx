@@ -2,7 +2,6 @@
 
 // Import Dependencies
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 // Local Imports
 import { Page } from "components/shared/Page";
@@ -16,10 +15,10 @@ import { useIsomorphicEffect } from "hooks";
 
 // ----------------------------------------------------------------------
 
-const dataset = typeof document !== "undefined" ? document?.body?.dataset : null;
+const dataset =
+  typeof document !== "undefined" ? document?.body?.dataset : null;
 
 export default function SettingsLayout({ children }) {
-  const router = useRouter();
   const { themeLayout } = useThemeContext();
   const { close, open } = useSidebarContext();
   const { lgAndDown, xlAndUp } = useBreakpointsContext();
@@ -57,10 +56,13 @@ export default function SettingsLayout({ children }) {
 
   useEffect(() => {
     // Redirect to general if on settings root
-    if (typeof window !== "undefined" && window.location.pathname === "/settings") {
-      router.replace("/settings/general");
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname === "/settings"
+    ) {
+      window.location.href = "/settings/general";
     }
-  }, [router]);
+  }, []);
 
   if (!isMounted) return null;
 
@@ -76,4 +78,3 @@ export default function SettingsLayout({ children }) {
     </Page>
   );
 }
-

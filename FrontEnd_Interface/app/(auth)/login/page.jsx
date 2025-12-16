@@ -2,7 +2,7 @@
 
 // Import Dependencies
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
@@ -11,34 +11,43 @@ import { useForm } from "react-hook-form";
 import { Logo } from "components/shared/Logo";
 import { Button, Card, Checkbox, Input, InputErrorMsg } from "components/ui";
 import { useAuthContext } from "app/contexts/auth/context";
-import { schema } from "app/pages/Auth/schema";
+import { loginSchema } from "app/pages/Auth/schema";
 import { Page } from "components/shared/Page";
+import { SplashScreen } from "components/template/SplashScreen";
 import { HOME_PATH } from "constants/app.constant";
 
 // ----------------------------------------------------------------------
 
-export default function SignIn() {
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, errorMessage, isAuthenticated } = useAuthContext();
+  const [isMounted, setIsMounted] = useState(false);
+  
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(loginSchema),
     defaultValues: {
-      username: "username",
-      password: "password",
+      username: "",
+      password: "",
     },
   });
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
     if (isAuthenticated) {
       const redirectUrl = searchParams.get("redirect") || HOME_PATH;
       router.replace(redirectUrl);
     }
-  }, [isAuthenticated, router, searchParams]);
+  }, [isAuthenticated, isMounted, router, searchParams]);
 
   const onSubmit = (data) => {
     login({
@@ -58,7 +67,7 @@ export default function SignIn() {
                 Welcome Back
               </h2>
               <p className="dark:text-dark-300 text-gray-400">
-                Please sign in to continue
+                Sign in with your email or phone number
               </p>
             </div>
           </div>
@@ -66,8 +75,8 @@ export default function SignIn() {
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
               <div className="space-y-4">
                 <Input
-                  label="Username"
-                  placeholder="Enter Username"
+                  label="Email or Phone Number"
+                  placeholder="Enter email or phone number"
                   prefix={
                     <EnvelopeIcon
                       className="size-5 transition-colors duration-200"
@@ -116,12 +125,12 @@ export default function SignIn() {
             </form>
             <div className="text-xs-plus mt-4 text-center">
               <p className="line-clamp-1">
-                <span>Dont have Account?</span>{" "}
+                <span>Don't have an account?</span>{" "}
                 <a
                   className="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-600 transition-colors"
-                  href="/pages/sign-up-v1"
+                  href="/signup"
                 >
-                  Create account
+                  Sign up
                 </a>
               </p>
             </div>
@@ -157,5 +166,17 @@ export default function SignIn() {
         </div>
       </main>
     </Page>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <Page title="Login">
+        <SplashScreen />
+      </Page>
+    }>
+      <SignInForm />
+    </Suspense>
   );
 }
