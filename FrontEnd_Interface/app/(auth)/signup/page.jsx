@@ -12,10 +12,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 // Local Imports
 import { Logo } from "components/shared/Logo";
-import { Button, Card, Checkbox, Input, InputErrorMsg } from "components/ui";
+import { Button, Card, Checkbox, Input } from "components/ui";
 import { useAuthContext } from "app/contexts/auth/context";
 import { signupSchema } from "app/pages/Auth/schema";
 import { Page } from "components/shared/Page";
@@ -55,12 +56,30 @@ function SignUpForm() {
 
   useEffect(() => {
     if (!isMounted) return;
-    
+
     if (isAuthenticated) {
-      const redirectUrl = searchParams.get("redirect") || HOME_PATH;
-      router.replace(redirectUrl);
+      toast.success("Account created successfully!", {
+        description: "Redirecting to your dashboard...",
+        duration: 3000,
+      });
+      // Redirect after showing success message
+      setTimeout(() => {
+        const redirectUrl = searchParams.get("redirect") || HOME_PATH;
+        router.replace(redirectUrl);
+      }, 2000);
     }
   }, [isAuthenticated, isMounted, router, searchParams]);
+
+  // Show error toast when error occurs
+  useEffect(() => {
+    if (errorMessage && errorMessage?.message) {
+      toast.error("Registration Failed", {
+        description:
+          errorMessage?.message || errorMessage?.detail || "An error occurred",
+        duration: 5000,
+      });
+    }
+  }, [errorMessage]);
 
   const onSubmit = (data) => {
     const { confirmPassword, acceptTerms, ...signupData } = data;
@@ -151,7 +170,7 @@ function SignUpForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-[2.25rem] text-gray-400 hover:text-gray-600 dark:text-dark-400 dark:hover:text-dark-200"
+                    className="dark:text-dark-400 dark:hover:text-dark-200 absolute top-[2.25rem] right-3 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? (
                       <svg
@@ -209,7 +228,7 @@ function SignUpForm() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-[2.25rem] text-gray-400 hover:text-gray-600 dark:text-dark-400 dark:hover:text-dark-200"
+                    className="dark:text-dark-400 dark:hover:text-dark-200 absolute top-[2.25rem] right-3 text-gray-400 hover:text-gray-600"
                   >
                     {showConfirmPassword ? (
                       <svg
@@ -271,7 +290,7 @@ function SignUpForm() {
                         I accept the{" "}
                         <a
                           href="#"
-                          className="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-600 transition-colors underline"
+                          className="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-600 underline transition-colors"
                           onClick={(e) => e.preventDefault()}
                         >
                           Terms and Conditions
@@ -282,20 +301,11 @@ function SignUpForm() {
                     error={errors?.acceptTerms?.message}
                   />
                   {errors?.acceptTerms && (
-                    <div className="mt-1 text-xs text-error dark:text-error-light">
+                    <div className="text-error dark:text-error-light mt-1 text-xs">
                       {errors.acceptTerms.message}
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Error Message */}
-              <div className="mt-4">
-                <InputErrorMsg
-                  when={errorMessage && errorMessage?.message !== ""}
-                >
-                  {errorMessage?.message || errorMessage?.detail || "An error occurred"}
-                </InputErrorMsg>
               </div>
 
               {/* Submit Button */}
@@ -330,13 +340,14 @@ function SignUpForm() {
 
 export default function SignUp() {
   return (
-    <Suspense fallback={
-      <Page title="Sign Up">
-        <SplashScreen />
-      </Page>
-    }>
+    <Suspense
+      fallback={
+        <Page title="Sign Up">
+          <SplashScreen />
+        </Page>
+      }
+    >
       <SignUpForm />
     </Suspense>
   );
 }
-

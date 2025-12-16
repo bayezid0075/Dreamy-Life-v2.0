@@ -6,10 +6,11 @@ import { useEffect, useState, Suspense } from "react";
 import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 // Local Imports
 import { Logo } from "components/shared/Logo";
-import { Button, Card, Checkbox, Input, InputErrorMsg } from "components/ui";
+import { Button, Card, Checkbox, Input } from "components/ui";
 import { useAuthContext } from "app/contexts/auth/context";
 import { loginSchema } from "app/pages/Auth/schema";
 import { Page } from "components/shared/Page";
@@ -21,9 +22,9 @@ import { HOME_PATH } from "constants/app.constant";
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, errorMessage, isAuthenticated } = useAuthContext();
+  const { login, errorMessage, isAuthenticated, isLoading } = useAuthContext();
   const [isMounted, setIsMounted] = useState(false);
-  
+
   const {
     register,
     handleSubmit,
@@ -42,12 +43,30 @@ function SignInForm() {
 
   useEffect(() => {
     if (!isMounted) return;
-    
+
     if (isAuthenticated) {
-      const redirectUrl = searchParams.get("redirect") || HOME_PATH;
-      router.replace(redirectUrl);
+      toast.success("Login successful!", {
+        description: "Welcome back! Redirecting to your dashboard...",
+        duration: 3000,
+      });
+      // Redirect after showing success message
+      setTimeout(() => {
+        const redirectUrl = searchParams.get("redirect") || HOME_PATH;
+        router.replace(redirectUrl);
+      }, 2000);
     }
   }, [isAuthenticated, isMounted, router, searchParams]);
+
+  // Show error toast when error occurs
+  useEffect(() => {
+    if (errorMessage && errorMessage?.message) {
+      toast.error("Login Failed", {
+        description:
+          errorMessage?.message || errorMessage?.detail || "An error occurred",
+        duration: 5000,
+      });
+    }
+  }, [errorMessage]);
 
   const onSubmit = (data) => {
     login({
@@ -101,14 +120,6 @@ function SignInForm() {
                 />
               </div>
 
-              <div className="mt-2">
-                <InputErrorMsg
-                  when={errorMessage && errorMessage?.message !== ""}
-                >
-                  {errorMessage?.message}
-                </InputErrorMsg>
-              </div>
-
               <div className="mt-4 flex items-center justify-between space-x-2">
                 <Checkbox label="Remember me" />
                 <a
@@ -119,8 +130,13 @@ function SignInForm() {
                 </a>
               </div>
 
-              <Button type="submit" className="mt-5 w-full" color="primary">
-                Sign In
+              <Button
+                type="submit"
+                className="mt-5 w-full"
+                color="primary"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
             <div className="text-xs-plus mt-4 text-center">
@@ -171,11 +187,13 @@ function SignInForm() {
 
 export default function SignIn() {
   return (
-    <Suspense fallback={
-      <Page title="Login">
-        <SplashScreen />
-      </Page>
-    }>
+    <Suspense
+      fallback={
+        <Page title="Login">
+          <SplashScreen />
+        </Page>
+      }
+    >
       <SignInForm />
     </Suspense>
   );

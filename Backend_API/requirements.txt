@@ -6,5 +6,6 @@ celery[redis]
 redis
 django-environ
 python-dotenv
+django-cors-headers
 
 
