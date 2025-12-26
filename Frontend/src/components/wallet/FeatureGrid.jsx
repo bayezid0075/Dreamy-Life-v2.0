@@ -255,41 +255,79 @@ const features = [
 
 export function FeatureGrid({ onFeatureClick, onSeeMore }) {
   return (
-    <div className="dark:bg-dark-900 bg-white px-4 py-6">
-      <div className="grid grid-cols-4 gap-4">
-        {features.map((feature) => {
-          const Icon = feature.icon;
-          return (
-            <button
-              key={feature.id}
-              onClick={() => onFeatureClick?.(feature.id)}
-              className="flex flex-col items-center gap-2 transition-transform active:scale-95"
-            >
-              <div
-                className={clsx(
-                  "flex size-16 items-center justify-center rounded-2xl shadow-sm transition-all hover:shadow-md",
-                  feature.color,
-                )}
-              >
-                <Icon className="size-8" />
-              </div>
-              <span className="dark:text-dark-200 text-center text-xs leading-tight font-semibold text-gray-700">
-                {feature.label}
-              </span>
-            </button>
-          );
-        })}
+    <div
+      className="hover:shadow-3xl dark:bg-dark-800 relative mx-4 mt-[25px] mb-[25px] overflow-hidden rounded-[25px] bg-white transition-all duration-300"
+      style={{
+        boxShadow: "0px 0px 12px 0px rgba(131, 68, 255, 0.5)",
+        borderColor: "rgba(0, 0, 0, 1)",
+      }}
+    >
+      {/* Decorative gradient top border */}
+      <div className="from-primary-500 absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r via-purple-500 to-pink-500 shadow-lg"></div>
+
+      {/* Subtle background gradient */}
+      <div className="dark:from-dark-800 dark:via-dark-800 dark:to-dark-900/50 pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-white to-gray-50/50"></div>
+
+      {/* Abstract Landscape Background - Centered behind content */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-10">
+        <svg
+          className="h-full w-full"
+          viewBox="0 0 400 180"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Hills */}
+          <path
+            d="M0 140 Q80 100 160 120 T320 110 L400 100 L400 180 L0 180 Z"
+            fill="white"
+          />
+          <path
+            d="M0 160 Q60 130 120 145 T240 135 L400 125 L400 180 L0 180 Z"
+            fill="white"
+            opacity="0.7"
+          />
+          {/* House */}
+          <rect x="320" y="100" width="35" height="25" rx="2" fill="white" />
+          <path d="M320 100 L337.5 85 L355 100 Z" fill="white" />
+        </svg>
       </div>
 
-      {/* See More Link */}
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={onSeeMore}
-          className="dark:bg-dark-800 flex items-center gap-2 rounded-full border-2 border-purple-200 bg-white px-6 py-2.5 text-sm font-semibold text-purple-600 shadow-sm transition-all hover:border-purple-300 hover:bg-purple-50 hover:shadow-md active:scale-95 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-900/20"
-        >
-          <span>আরো দেখুন</span>
-          <ChevronDownIcon className="size-4" />
-        </button>
+      <div className="relative mt-[10px] mb-[10px] px-4 pt-6 pb-6">
+        <div className="grid grid-cols-4 gap-4">
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <button
+                key={feature.id}
+                onClick={() => onFeatureClick?.(feature.id)}
+                className="flex flex-col items-center gap-2 transition-transform active:scale-95"
+              >
+                <div
+                  className={clsx(
+                    "flex size-16 items-center justify-center rounded-2xl shadow-sm transition-all hover:shadow-md",
+                    feature.color,
+                  )}
+                >
+                  <Icon className="size-8" />
+                </div>
+                <span className="dark:text-dark-200 text-center text-xs leading-tight font-semibold text-gray-700">
+                  {feature.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* See More Link */}
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={onSeeMore}
+            className="dark:bg-dark-700 flex items-center gap-2 rounded-full border-2 border-purple-200 bg-white px-6 py-2.5 text-sm font-semibold text-purple-600 shadow-sm transition-all hover:border-purple-300 hover:bg-purple-50 hover:shadow-md active:scale-95 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-900/20"
+          >
+            <span>আরো দেখুন</span>
+            <ChevronDownIcon className="size-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

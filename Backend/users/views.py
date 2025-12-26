@@ -91,10 +91,11 @@ class UserInfoUpdateView(APIView):
         user_info, created = UserInfo.objects.get_or_create(user=user)
         
         # Filter out read-only fields from request data
+        # Note: is_verified and member_status are read-only - they can only be updated via membership purchase signal
         allowed_fields = [
             'profile_picture', 'address', 'nid_or_brid', 'profession',
             'blood_group', 'gender', 'marital_status', 'father_name',
-            'mother_name', 'working_place', 'is_verified'
+            'mother_name', 'working_place'
         ]
         data = {k: v for k, v in request.data.items() if k in allowed_fields}
         

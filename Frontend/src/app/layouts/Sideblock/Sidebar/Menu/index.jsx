@@ -63,7 +63,7 @@ export function Menu() {
   return (
     <SimpleBar
       scrollableNodeProps={{ ref }}
-      className="h-full overflow-x-hidden pt-10 pb-6"
+      className="h-full overflow-x-hidden pt-3 pb-6"
     >
       <div className="relative space-y-1 break-words print:border">
         {/* User Profile Card */}
@@ -80,6 +80,12 @@ export function Menu() {
           referralCode={userData?.own_refercode || "N/A"}
           showStatus={true}
           statusColor={userData?.is_verified ? "success" : "warning"}
+          isVerified={userData?.is_verified || false}
+          membershipStatus={
+            userData?.active_membership?.name || 
+            userData?.member_status || 
+            "user"
+          }
         />
 
         <Accordion

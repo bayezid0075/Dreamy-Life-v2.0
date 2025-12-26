@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User, UserInfo
+from memberships.models import MembershipPurchase
 
 class RegisterSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -49,7 +50,13 @@ class RegisterSerializer(serializers.Serializer):
             referred_by=referred_by_user
         )
 
-        UserInfo.objects.create(user=user, level=level)
+        # Create UserInfo with default values: member_status="user" and is_verified=False
+        UserInfo.objects.create(
+            user=user, 
+            level=level,
+            member_status="user",  # Default membership status
+            is_verified=False  # Not verified by default
+        )
 
         return user
 
@@ -103,8 +110,25 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserInfoSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    active_membership = serializers.SerializerMethodField()
     
     class Meta:
         model = UserInfo
         fields = "__all__"
-        read_only_fields = ['id', 'user', 'own_refercode', 'level', 'member_status', 'created_at', 'updated_at']
+        # is_verified and member_status are read-only - they can only be updated via membership purchase signal
+        read_only_fields = ['id', 'user', 'own_refercode', 'level', 'member_status', 'is_verified', 'created_at', 'updated_at']
+    
+    def get_active_membership(self, obj):
+        """Get the active membership purchase for the user"""
+        active_purchase = MembershipPurchase.objects.filter(
+            user=obj.user,
+            is_active=True
+        ).order_by('-purchased_at').first()
+        
+        if active_purchase:
+            return {
+                'name': active_purchase.membership.name,
+                'purchased_at': active_purchase.purchased_at,
+                'is_active': active_purchase.is_active
+            }
+        return None

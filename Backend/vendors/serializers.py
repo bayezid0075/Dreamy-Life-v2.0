@@ -47,3 +47,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             ProductImage.objects.create(product=product, image=img)
 
         return product
+
+
+class VendorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vendor
+        fields = "__all__"
+        read_only_fields = ['user', 'created_at']
