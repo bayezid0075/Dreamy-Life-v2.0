@@ -10,6 +10,7 @@ import {
   PhotoIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
+import { useAuthContext } from "app/contexts/auth/context";
 
 import { Page } from "components/shared/Page";
 import { ConfirmModal } from "components/shared/ConfirmModal";
@@ -19,8 +20,13 @@ import axios from "utils/axios";
 
 export default function VendorsPage() {
   const router = useRouter();
+  const { user } = useAuthContext();
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Check if user is admin
+  const userObj = user?.user || user;
+  const isAdmin = userObj?.is_staff || userObj?.is_superuser;
   const [deleteModal, setDeleteModal] = useState({
     show: false,
     vendorId: null,
@@ -29,8 +35,39 @@ export default function VendorsPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
+    // Only admins can see all vendors list
+    // Regular users should be redirected based on vendor existence
+    if (!isAdmin) {
+      checkVendorAndRedirect();
+      return;
+    }
     fetchVendors();
-  }, []);
+  }, [isAdmin, router]);
+
+  const checkVendorAndRedirect = async () => {
+    try {
+      const response = await axios.get("/api/vendors/vendors/");
+      const vendorData = Array.isArray(response.data) && response.data.length > 0
+        ? response.data[0]
+        : response.data;
+      
+      if (vendorData) {
+        // User has vendor, redirect to dashboard
+        router.push("/vendors/dashboard");
+      } else {
+        // User has no vendor, redirect to create page
+        router.push("/vendors/new");
+      }
+    } catch (error) {
+      // If 404 or 403, user has no vendor
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        router.push("/vendors/new");
+      } else {
+        // Other errors, try dashboard
+        router.push("/vendors/dashboard");
+      }
+    }
+  };
 
   const fetchVendors = async () => {
     try {
@@ -157,54 +194,57 @@ export default function VendorsPage() {
           ) : (
             <>
               {/* Mobile Card View */}
-              <div className="block space-y-4 p-4 sm:hidden">
+              <div className="block space-y-3 p-3 sm:hidden">
                 {vendors.map((vendor) => {
                   const bannerUrl = getBannerUrl(vendor.banner_image);
                   return (
-                    <Card key={vendor.id} className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <Card key={vendor.id} className="p-3">
+                      <div className="space-y-2.5">
+                        <div className="flex items-start gap-2.5">
+                          <div className="flex items-center space-x-2.5 flex-1 min-w-0">
                             {bannerUrl ? (
                               <img
                                 src={bannerUrl}
                                 alt={vendor.shop_name}
-                                className="size-16 shrink-0 rounded-lg object-cover"
+                                className="size-14 shrink-0 rounded-lg object-cover"
                               />
                             ) : (
-                              <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-600">
-                                <PhotoIcon className="size-8 text-gray-400" />
+                              <div className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-600">
+                                <PhotoIcon className="size-7 text-gray-400" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm text-gray-900 dark:text-dark-50 truncate">
+                              <div className="font-semibold text-sm text-gray-900 dark:text-dark-50 truncate">
                                 {vendor.shop_name}
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-dark-400 mt-0.5 truncate">
+                              <div className="text-xs text-gray-500 dark:text-dark-400 mt-0.5 line-clamp-2">
                                 {vendor.address}
                               </div>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-dark-600">
-                          <div className="flex flex-wrap gap-2">
-                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                        <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 dark:border-dark-600">
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                               vendor.payment_status 
                                 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                                 : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
                               {vendor.payment_status ? 'Paid' : 'Unpaid'}
                             </span>
-                            <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-dark-600 dark:text-dark-200">
+                            <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800 dark:bg-dark-600 dark:text-dark-200">
                               {vendor.member_status || 'Normal'}
                             </span>
+                            <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-dark-400">
+                              {new Date(vendor.created_at).toLocaleDateString()}
+                            </span>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center justify-end gap-2">
                             <Button
                               onClick={() => router.push(`/vendors/${vendor.id}`)}
                               variant="flat"
                               isIcon
-                              className="size-9"
+                              className="size-10"
                             >
                               <PencilIcon className="size-4" />
                             </Button>
@@ -219,7 +259,7 @@ export default function VendorsPage() {
                               variant="flat"
                               color="error"
                               isIcon
-                              className="size-9"
+                              className="size-10"
                             >
                               <TrashIcon className="size-4" />
                             </Button>
@@ -232,26 +272,26 @@ export default function VendorsPage() {
               </div>
 
               {/* Desktop Table View */}
-              <div className="hidden overflow-x-auto sm:block">
-                <Table hoverable className="w-full">
+              <div className="hidden overflow-x-auto md:block">
+                <Table hoverable className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-dark-600">
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300">
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300 md:px-4">
                         Vendor
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300">
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300 md:px-4">
                         Address
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300">
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300 md:px-4">
                         Member Status
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300">
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300 md:px-4">
                         Payment Status
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300">
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300 md:px-4">
                         Created At
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300">
+                      <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-dark-300 md:px-4">
                         Actions
                       </th>
                     </tr>
@@ -264,35 +304,37 @@ export default function VendorsPage() {
                           key={vendor.id}
                           className="transition-colors hover:bg-gray-50 dark:hover:bg-dark-800"
                         >
-                          <td className="px-4 py-4">
-                            <div className="flex items-center space-x-3">
+                          <td className="px-3 py-4 md:px-4">
+                            <div className="flex items-center space-x-2 md:space-x-3">
                               {bannerUrl ? (
                                 <img
                                   src={bannerUrl}
                                   alt={vendor.shop_name}
-                                  className="size-12 rounded-lg object-cover"
+                                  className="size-10 rounded-lg object-cover md:size-12"
                                 />
                               ) : (
-                                <div className="flex size-12 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-600">
-                                  <PhotoIcon className="size-6 text-gray-400" />
+                                <div className="flex size-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-600 md:size-12">
+                                  <PhotoIcon className="size-5 text-gray-400 md:size-6" />
                                 </div>
                               )}
-                              <div>
-                                <div className="font-medium text-gray-900 dark:text-dark-50">
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-sm text-gray-900 dark:text-dark-50 truncate md:text-base">
                                   {vendor.shop_name}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-900 dark:text-dark-200">
-                            {vendor.address}
+                          <td className="px-3 py-4 text-xs text-gray-900 dark:text-dark-200 md:px-4 md:text-sm">
+                            <div className="max-w-[200px] truncate" title={vendor.address}>
+                              {vendor.address}
+                            </div>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-3 py-4 md:px-4">
                             <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-dark-600 dark:text-dark-200">
                               {vendor.member_status || "Normal"}
                             </span>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-3 py-4 md:px-4">
                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                               vendor.payment_status 
                                 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
@@ -301,10 +343,10 @@ export default function VendorsPage() {
                               {vendor.payment_status ? "Paid" : "Unpaid"}
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-900 dark:text-dark-200">
+                          <td className="px-3 py-4 text-xs text-gray-900 dark:text-dark-200 md:px-4 md:text-sm">
                             {new Date(vendor.created_at).toLocaleDateString()}
                           </td>
-                          <td className="px-4 py-4 text-right">
+                          <td className="px-3 py-4 text-right md:px-4">
                             <div className="flex items-center justify-end space-x-2">
                               <Button
                                 onClick={() => router.push(`/vendors/${vendor.id}`)}

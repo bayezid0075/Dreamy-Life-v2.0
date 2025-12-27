@@ -106,7 +106,7 @@ class UserSerializer(serializers.ModelSerializer):
     """Basic user serializer for nested use"""
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone_number']
+        fields = ['id', 'username', 'email', 'phone_number', 'is_staff', 'is_superuser']
 
 class UserInfoSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ArrowLeftIcon, PhotoIcon } from "@heroicons/react/24/outline";
+import { useAuthContext } from "app/contexts/auth/context";
 
 import { Page } from "components/shared/Page";
 import { Card, Button, Input, Select, Upload, Spinner, Checkbox } from "components/ui";
@@ -14,8 +15,14 @@ export default function EditVendorPage() {
   const router = useRouter();
   const params = useParams();
   const vendorId = params.id;
+  const { user } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [vendor, setVendor] = useState(null);
+  
+  // Check if user is admin
+  const userObj = user?.user || user;
+  const isAdmin = userObj?.is_staff || userObj?.is_superuser;
   const [bannerImage, setBannerImage] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
 
@@ -46,36 +53,45 @@ export default function EditVendorPage() {
   const fetchVendor = async () => {
     try {
       setLoading(true);
-      // Try /api/vendors/vendors/ first, fallback to /api/vendors/ if 404
-      let response;
-      try {
-        response = await axios.get(`/api/vendors/vendors/${vendorId}/`);
-      } catch (error) {
-        if (error.response?.status === 404) {
-          response = await axios.get(`/api/vendors/${vendorId}/`);
-        } else {
-          throw error;
-        }
+      // Fetch vendor - backend will return only user's own vendor for regular users
+      const response = await axios.get(`/api/vendors/vendors/${vendorId}/`);
+      const vendorData = response.data;
+      setVendor(vendorData);
+      
+      // Check if user owns this vendor (for regular users)
+      // Backend already filters, but double-check on frontend
+      if (!isAdmin && vendorData.user_id && vendorData.user_id !== userObj?.id) {
+        toast.error("Access Denied", {
+          description: "You can only edit your own vendor profile",
+        });
+        router.push("/vendors/dashboard");
+        return;
       }
-      const vendor = response.data;
 
-      setValue("shop_name", vendor.shop_name || "");
-      setValue("address", vendor.address || "");
-      setValue("member_status", vendor.member_status || "Normal");
-      setValue("payment_status", vendor.payment_status || false);
+      setValue("shop_name", vendorData.shop_name || "");
+      setValue("address", vendorData.address || "");
+      setValue("member_status", vendorData.member_status || "Normal");
+      setValue("payment_status", vendorData.payment_status || false);
 
-      if (vendor.banner_image) {
-        const bannerUrl = vendor.banner_image.startsWith('http')
-          ? vendor.banner_image
-          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${vendor.banner_image}`;
+      if (vendorData.banner_image) {
+        const bannerUrl = vendorData.banner_image.startsWith('http')
+          ? vendorData.banner_image
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${vendorData.banner_image}`;
         setBannerPreview(bannerUrl);
       }
     } catch (error) {
       console.error("Error fetching vendor:", error);
-      toast.error("Failed to load vendor", {
-        description: error.response?.data?.detail || "Please try again",
-      });
-      router.push("/vendors");
+      if (error.response?.status === 403 || error.response?.status === 404) {
+        toast.error("Access Denied", {
+          description: "You can only edit your own vendor profile",
+        });
+        router.push("/vendors/dashboard");
+      } else {
+        toast.error("Failed to load vendor", {
+          description: error.response?.data?.detail || "Please try again",
+        });
+        router.push("/vendors/dashboard");
+      }
     } finally {
       setLoading(false);
     }
@@ -123,7 +139,12 @@ export default function EditVendorPage() {
       }
 
       toast.success("Vendor updated successfully!");
-      router.push("/vendors");
+      // Redirect based on user role
+      if (isAdmin) {
+        router.push("/admin/vendors");
+      } else {
+        router.push("/vendors/dashboard");
+      }
     } catch (error) {
       console.error("Error updating vendor:", error);
       toast.error("Failed to update vendor", {
@@ -171,9 +192,9 @@ export default function EditVendorPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 xl:grid-cols-3">
             {/* Main Form */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="xl:col-span-2 space-y-4 sm:space-y-6">
               {/* Shop Information */}
               <Card className="p-4 sm:p-6">
                 <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-dark-50 sm:mb-4 sm:text-lg">
@@ -287,12 +308,12 @@ export default function EditVendorPage() {
 
             {/* Sidebar - Actions */}
             <div className="space-y-4 sm:space-y-6">
-              <Card className="p-4 sm:p-6">
+              <Card className="p-4 sm:p-6 sticky top-4">
                 <div className="space-y-2 sm:space-y-3">
                   <Button
                     type="submit"
                     color="primary"
-                    className="w-full text-sm sm:text-base"
+                    className="w-full text-sm sm:text-base h-10 sm:h-11"
                     disabled={saving}
                   >
                     {saving ? "Saving..." : "Save Changes"}
@@ -301,7 +322,7 @@ export default function EditVendorPage() {
                     type="button"
                     onClick={() => router.back()}
                     variant="outlined"
-                    className="w-full text-sm sm:text-base"
+                    className="w-full text-sm sm:text-base h-10 sm:h-11"
                     disabled={saving}
                   >
                     Cancel

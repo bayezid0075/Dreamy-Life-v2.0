@@ -77,7 +77,7 @@ export default function NewVendorPage() {
       }
 
       toast.success("Vendor created successfully!");
-      router.push("/vendors");
+      router.push("/vendors/dashboard");
     } catch (error) {
       console.error("Error creating vendor:", error);
       toast.error("Failed to create vendor", {
@@ -115,9 +115,9 @@ export default function NewVendorPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 xl:grid-cols-3">
             {/* Main Form */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="xl:col-span-2 space-y-4 sm:space-y-6">
               {/* Shop Information */}
               <Card className="p-4 sm:p-6">
                 <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-dark-50 sm:mb-4 sm:text-lg">
@@ -231,12 +231,12 @@ export default function NewVendorPage() {
 
             {/* Sidebar - Actions */}
             <div className="space-y-4 sm:space-y-6">
-              <Card className="p-4 sm:p-6">
+              <Card className="p-4 sm:p-6 sticky top-4">
                 <div className="space-y-2 sm:space-y-3">
                   <Button
                     type="submit"
                     color="primary"
-                    className="w-full text-sm sm:text-base"
+                    className="w-full text-sm sm:text-base h-10 sm:h-11"
                     disabled={loading}
                   >
                     {loading ? "Creating..." : "Create Vendor"}
@@ -245,7 +245,7 @@ export default function NewVendorPage() {
                     type="button"
                     onClick={() => router.back()}
                     variant="outlined"
-                    className="w-full text-sm sm:text-base"
+                    className="w-full text-sm sm:text-base h-10 sm:h-11"
                     disabled={loading}
                   >
                     Cancel

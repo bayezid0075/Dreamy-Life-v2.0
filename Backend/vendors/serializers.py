@@ -50,7 +50,17 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
 
 class VendorSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    products_count = serializers.SerializerMethodField()
+    
     class Meta:
         model = Vendor
-        fields = "__all__"
+        fields = ["id", "user", "user_id", "user_username", "shop_name", "address", 
+                  "banner_image", "member_status", "payment_status", "created_at", 
+                  "products_count"]
         read_only_fields = ['user', 'created_at']
+    
+    def get_products_count(self, obj):
+        """Get count of products for this vendor"""
+        return obj.products.count()

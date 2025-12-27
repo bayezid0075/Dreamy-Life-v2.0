@@ -28,16 +28,41 @@ export default function ProductsPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    fetchProducts();
+    checkVendorAndFetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const checkVendorAndFetchProducts = async () => {
     try {
       setLoading(true);
+      // First check if user has a vendor
+      try {
+        const vendorResponse = await axios.get("/api/vendors/vendors/");
+        const vendorData = Array.isArray(vendorResponse.data) && vendorResponse.data.length > 0
+          ? vendorResponse.data[0]
+          : vendorResponse.data;
+        
+        if (!vendorData) {
+          // No vendor exists, redirect to create page
+          router.push("/vendors/new");
+          return;
+        }
+      } catch (vendorError) {
+        // If 404 or 403, user has no vendor
+        if (vendorError.response?.status === 404 || vendorError.response?.status === 403) {
+          router.push("/vendors/new");
+          return;
+        }
+      }
+      
+      // User has vendor, fetch products
       const response = await axios.get("/api/vendors/products/");
       setProducts(response.data);
     } catch (error) {
       console.error("Error fetching products:", error);
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        router.push("/vendors/new");
+        return;
+      }
       toast.error("Failed to load products", {
         description: error.response?.data?.detail || "Please try again later",
       });

@@ -1,26 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuthContext } from "app/contexts/auth/context";
 import { SplashScreen } from "components/template/SplashScreen";
-import { HOME_PATH, GHOST_ENTRY_PATH } from "constants/app.constant";
+import { HOME_PATH } from "constants/app.constant";
 
 // ----------------------------------------------------------------------
 
 function HomeContent() {
   const { isAuthenticated, isInitialized } = useAuthContext();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isInitialized) return;
 
-    if (typeof window !== "undefined") {
-      if (isAuthenticated) {
-        window.location.href = HOME_PATH;
-      } else {
-        window.location.href = GHOST_ENTRY_PATH;
-      }
+    if (isAuthenticated) {
+      router.replace(HOME_PATH);
+    } else {
+      // Redirect to login page for unauthenticated users
+      router.replace("/login");
     }
-  }, [isAuthenticated, isInitialized]);
+  }, [isAuthenticated, isInitialized, router]);
 
   return <SplashScreen />;
 }

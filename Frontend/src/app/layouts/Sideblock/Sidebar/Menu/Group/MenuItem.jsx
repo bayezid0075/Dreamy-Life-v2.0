@@ -18,7 +18,18 @@ export function MenuItem({ data }) {
   const { close } = useSidebarContext();
   const { t } = useTranslation();
 
-  const title = (transKey && t(transKey) && t(transKey) !== transKey) ? t(transKey) : (data.title || transKey || "");
+  // Prioritize title, then try translation, fallback to transKey
+  let title = data.title || "";
+  if (transKey) {
+    const translated = t(transKey);
+    // Only use translation if it's different from the key (meaning translation exists)
+    if (translated && translated !== transKey) {
+      title = translated;
+    } else if (!title) {
+      // If no title and no valid translation, use transKey as last resort
+      title = transKey;
+    }
+  }
   const pathname = usePathname();
   const info = null; // useRouteLoaderData not available in Next.js
 
