@@ -150,29 +150,6 @@ function SignInForm() {
                 </a>
               </p>
             </div>
-            <div className="my-7 flex items-center space-x-3 text-xs">
-              <div className="dark:bg-dark-500 h-px flex-1 bg-gray-200"></div>
-              <p>OR</p>
-              <div className="dark:bg-dark-500 h-px flex-1 bg-gray-200"></div>
-            </div>
-            <div className="flex gap-4">
-              <Button className="h-10 flex-1 gap-3" variant="outlined">
-                <img
-                  className="size-5.5"
-                  src="/images/logos/google.svg"
-                  alt="logo"
-                />
-                <span>Google</span>
-              </Button>
-              <Button className="h-10 flex-1 gap-3" variant="outlined">
-                <img
-                  className="size-5.5"
-                  src="/images/logos/github.svg"
-                  alt="logo"
-                />
-                <span>Github</span>
-              </Button>
-            </div>
           </Card>
           <div className="dark:text-dark-300 mt-8 flex justify-center text-xs text-gray-400">
             <a href="##">Privacy Notice</a>

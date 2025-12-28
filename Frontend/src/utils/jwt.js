@@ -3,22 +3,23 @@ import axios from "./axios";
 import { isServer } from "./isServer";
 
 /**
- * Checks if the provided JWT token is valid (not expired).
+ * Checks if the provided JWT token is valid.
+ * For extended sessions, we check if token exists and is decodable.
+ * Expiration check is lenient - we'll rely on refresh tokens for renewal.
  *
  * @param {string} authToken - The JWT token to validate.
- * @returns {boolean} - Returns `true` if the token is valid, otherwise `false`.
+ * @returns {boolean} - Returns `true` if the token exists and is decodable, otherwise `false`.
  */
 const isTokenValid = (authToken) => {
-  if (typeof authToken !== "string") {
-    console.error("Invalid token format.");
+  if (typeof authToken !== "string" || authToken.trim() === "") {
     return false;
   }
 
   try {
     const decoded = jwtDecode(authToken);
-    const currentTime = Date.now() / 1000; // Current time in seconds since epoch
-
-    return decoded.exp > currentTime;
+    // Just check if token is decodable - expiration will be handled by refresh mechanism
+    // This allows users to stay logged in longer
+    return decoded && typeof decoded === "object";
   } catch (err) {
     console.error("Failed to decode token:", err);
     return false;

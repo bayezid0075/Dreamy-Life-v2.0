@@ -125,6 +125,7 @@ export function AuthProvider({ children }) {
         }
 
         const authToken = window.localStorage.getItem("authToken");
+        const refreshToken = window.localStorage.getItem("refreshToken");
 
         if (authToken && isTokenValid(authToken)) {
           setSession(authToken);
@@ -141,8 +142,79 @@ export function AuthProvider({ children }) {
               },
             });
           } catch (err) {
+            // If access token fails but refresh token exists, try to refresh
+            if (refreshToken && err.response?.status === 401) {
+              try {
+                const { JWT_HOST_API } = await import("configs/auth.config");
+                const refreshResponse = await axios.post(
+                  `${JWT_HOST_API}/api/token/refresh/`,
+                  { refresh: refreshToken },
+                );
+                const { access } = refreshResponse.data;
+                if (access) {
+                  setSession(access);
+                  window.localStorage.setItem("authToken", access);
+                  const userResponse = await axios.get("/api/users/userinfo/");
+                  dispatch({
+                    type: "INITIALIZE",
+                    payload: {
+                      isAuthenticated: true,
+                      user: userResponse.data,
+                    },
+                  });
+                  return;
+                }
+              } catch (refreshErr) {
+                // Refresh failed, clear tokens
+                setSession(null);
+                window.localStorage.removeItem("authToken");
+                window.localStorage.removeItem("refreshToken");
+              }
+            }
             // Token might be invalid, clear it
             setSession(null);
+            dispatch({
+              type: "INITIALIZE",
+              payload: {
+                isAuthenticated: false,
+                user: null,
+              },
+            });
+          }
+        } else if (refreshToken) {
+          // No access token but refresh token exists, try to refresh
+          try {
+            const { JWT_HOST_API } = await import("configs/auth.config");
+            const refreshResponse = await axios.post(
+              `${JWT_HOST_API}/api/token/refresh/`,
+              { refresh: refreshToken },
+            );
+            const { access } = refreshResponse.data;
+            if (access) {
+              setSession(access);
+              window.localStorage.setItem("authToken", access);
+              const userResponse = await axios.get("/api/users/userinfo/");
+              dispatch({
+                type: "INITIALIZE",
+                payload: {
+                  isAuthenticated: true,
+                  user: userResponse.data,
+                },
+              });
+            } else {
+              dispatch({
+                type: "INITIALIZE",
+                payload: {
+                  isAuthenticated: false,
+                  user: null,
+                },
+              });
+            }
+          } catch (refreshErr) {
+            // Refresh failed, clear tokens
+            setSession(null);
+            window.localStorage.removeItem("authToken");
+            window.localStorage.removeItem("refreshToken");
             dispatch({
               type: "INITIALIZE",
               payload: {

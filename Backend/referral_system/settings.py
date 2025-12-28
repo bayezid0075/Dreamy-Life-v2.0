@@ -78,6 +78,17 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {"anon": "20/minute","user": "2000/day"}
 }
 
+# JWT Token Settings - Extended lifetime to prevent automatic logout
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365),  # 1 year access token
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=3650),  # 10 years refresh token
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": True,
+}
+
 # Celery - Make optional for development
 try:
     CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")

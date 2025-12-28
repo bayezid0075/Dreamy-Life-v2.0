@@ -32,26 +32,103 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response interceptor
+// Response interceptor with token refresh
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Handle 401 unauthorized - token expired
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle 401 unauthorized - try to refresh token
     if (
       error.response?.status === 401 &&
       !isServer &&
-      typeof window !== "undefined"
+      typeof window !== "undefined" &&
+      !originalRequest._retry
     ) {
-      // Only clear tokens if not on auth pages to avoid redirect loops
+      // Skip refresh on auth pages to avoid redirect loops
       if (
-        window.location.pathname !== "/signup" &&
-        window.location.pathname !== "/login"
+        window.location.pathname === "/signup" ||
+        window.location.pathname === "/login"
       ) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return axiosInstance(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = window.localStorage.getItem("refreshToken");
+
+      if (refreshToken) {
+        try {
+          // Try to refresh the access token
+          // Use a new axios instance without auth header for refresh endpoint
+          const response = await axios.post(
+            `${JWT_HOST_API}/api/token/refresh/`,
+            {
+              refresh: refreshToken,
+            },
+          );
+
+          const { access } = response.data;
+
+          if (access) {
+            // Update tokens
+            window.localStorage.setItem("authToken", access);
+            axiosInstance.defaults.headers.common.Authorization = `Bearer ${access}`;
+            originalRequest.headers.Authorization = `Bearer ${access}`;
+
+            // Process queued requests
+            processQueue(null, access);
+
+            isRefreshing = false;
+            return axiosInstance(originalRequest);
+          }
+        } catch (refreshError) {
+          // Refresh failed - clear tokens and redirect to login
+          processQueue(refreshError, null);
+          isRefreshing = false;
+          window.localStorage.removeItem("authToken");
+          window.localStorage.removeItem("refreshToken");
+          window.location.href = "/login";
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // No refresh token - clear and redirect
+        isRefreshing = false;
         window.localStorage.removeItem("authToken");
         window.localStorage.removeItem("refreshToken");
         window.location.href = "/login";
       }
     }
+
     // Return the full error object so we can access response.data, response.status, etc.
     return Promise.reject(error);
   },
