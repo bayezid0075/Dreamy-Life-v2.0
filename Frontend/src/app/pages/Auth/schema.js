@@ -38,5 +38,23 @@ export const signupSchema = Yup.object().shape({
         .required('You must accept the terms and conditions'),
 })
 
+export const forgotPasswordSchema = Yup.object().shape({
+    email: Yup.string()
+        .trim()
+        .email('Please enter a valid email address')
+        .required('Email is required'),
+})
+
+export const resetPasswordSchema = Yup.object().shape({
+    new_password: Yup.string()
+        .trim()
+        .min(8, 'Password must be at least 8 characters')
+        .required('Password is required'),
+    confirm_password: Yup.string()
+        .trim()
+        .oneOf([Yup.ref('new_password')], 'Passwords must match')
+        .required('Please confirm your password'),
+})
+
 // Export default as loginSchema for backward compatibility
 export const schema = loginSchema

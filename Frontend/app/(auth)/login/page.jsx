@@ -7,6 +7,7 @@ import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import Link from "next/link";
 
 // Local Imports
 import { Logo } from "components/shared/Logo";
@@ -122,12 +123,12 @@ function SignInForm() {
 
               <div className="mt-4 flex items-center justify-between space-x-2">
                 <Checkbox label="Remember me" />
-                <a
-                  href="##"
+                <Link
+                  href="/forgot-password"
                   className="dark:text-dark-300 dark:hover:text-dark-100 dark:focus:text-dark-100 text-xs text-gray-400 transition-colors hover:text-gray-800 focus:text-gray-800"
                 >
                   Forgot Password?
-                </a>
+                </Link>
               </div>
 
               <Button

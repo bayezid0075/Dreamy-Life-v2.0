@@ -3,7 +3,7 @@ export const APP_KEY = "tailux";
 
 // Redirect Paths
 export const REDIRECT_URL_KEY = "redirect";
-export const HOME_PATH = "/dashboards/home"
+export const HOME_PATH = "/user_dashboard"
 export const GHOST_ENTRY_PATH = "/login"
 
 // Navigation Types

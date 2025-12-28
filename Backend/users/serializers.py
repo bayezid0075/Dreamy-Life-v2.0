@@ -132,3 +132,39 @@ class UserInfoSerializer(serializers.ModelSerializer):
                 'is_active': active_purchase.is_active
             }
         return None
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer for requesting password reset"""
+    email = serializers.EmailField(required=True)
+    
+    def validate_email(self, value):
+        """Validate that email exists in the system"""
+        from .models import User
+        if not User.objects.filter(email=value).exists():
+            # Don't reveal if email exists for security
+            pass
+        return value
+
+class PasswordResetVerifySerializer(serializers.Serializer):
+    """Serializer for verifying reset token"""
+    token = serializers.CharField(required=True, max_length=100)
+
+class PasswordResetSerializer(serializers.Serializer):
+    """Serializer for resetting password with token"""
+    token = serializers.CharField(required=True, max_length=100)
+    new_password = serializers.CharField(required=True, write_only=True, min_length=8)
+    confirm_password = serializers.CharField(required=True, write_only=True)
+    
+    def validate(self, attrs):
+        """Validate that passwords match"""
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({
+                'confirm_password': 'Passwords do not match'
+            })
+        return attrs
+    
+    def validate_new_password(self, value):
+        """Validate password strength"""
+        if len(value) < 8:
+            raise serializers.ValidationError('Password must be at least 8 characters long')
+        return value
