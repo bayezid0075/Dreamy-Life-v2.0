@@ -84,7 +84,8 @@ export default function VendorSalesPage() {
 
   return (
     <Page title="Sales & Income">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-2 sm:space-x-4">
           <Button
@@ -245,6 +246,7 @@ export default function VendorSalesPage() {
             </div>
           )}
         </Card>
+        </div>
       </div>
     </Page>
   );

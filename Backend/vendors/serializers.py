@@ -1,11 +1,25 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import Product, ProductImage, SubCategory, Vendor, Category, Brand, Order, OrderItem
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    
     class Meta:
         model = ProductImage
         fields = ["id", "image"]
+    
+    def get_image(self, obj):
+        """Return absolute URL for the image"""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: use environment variable or default
+            backend_url = getattr(settings, 'BACKEND_URL', 'http://localhost:8000')
+            return f"{backend_url}{obj.image.url}"
+        return None
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -68,9 +82,22 @@ class VendorSerializer(serializers.ModelSerializer):
 
 # --------------------- PUBLIC SHOP SERIALIZERS ------------------------
 class PublicProductImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    
     class Meta:
         model = ProductImage
         fields = ["id", "image"]
+    
+    def get_image(self, obj):
+        """Return absolute URL for the image"""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: use environment variable or default
+            backend_url = getattr(settings, 'BACKEND_URL', 'http://localhost:8000')
+            return f"{backend_url}{obj.image.url}"
+        return None
 
 
 class PublicProductSerializer(serializers.ModelSerializer):
@@ -139,10 +166,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
         ]
     
     def get_product_image(self, obj):
-        """Get first product image"""
+        """Get first product image with absolute URL"""
         first_image = obj.product.images.first()
         if first_image:
-            return first_image.image.url
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(first_image.image.url)
+            # Fallback: use environment variable or default
+            backend_url = getattr(settings, 'BACKEND_URL', 'http://localhost:8000')
+            return f"{backend_url}{first_image.image.url}"
         return None
 
 

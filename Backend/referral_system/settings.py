@@ -155,3 +155,6 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER or "norep
 
 # Frontend URL for password reset links
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
+
+# Backend URL for absolute image URLs
+BACKEND_URL = env("BACKEND_URL", default="http://localhost:8000")

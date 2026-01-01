@@ -112,7 +112,8 @@ export default function CheckoutPage() {
   if (orderPlaced) {
     return (
       <Page title="Order Placed">
-        <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <div className="relative">
             <div className="absolute inset-0 animate-ping rounded-full bg-green-400 opacity-20"></div>
             <div className="relative rounded-full bg-gradient-to-br from-green-100 to-emerald-100 p-8 dark:from-green-900/30 dark:to-emerald-900/30">
@@ -149,6 +150,7 @@ export default function CheckoutPage() {
               Continue Shopping
             </Button>
           </div>
+          </div>
         </div>
       </Page>
     );
@@ -157,7 +159,8 @@ export default function CheckoutPage() {
   if (cart.length === 0) {
     return (
       <Page title="Checkout">
-        <div className="flex min-h-[60vh] flex-col items-center justify-center">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <p className="text-gray-600 dark:text-dark-300">
             Your cart is empty
           </p>
@@ -168,6 +171,7 @@ export default function CheckoutPage() {
           >
             Continue Shopping
           </Button>
+          </div>
         </div>
       </Page>
     );
@@ -175,7 +179,8 @@ export default function CheckoutPage() {
 
   return (
     <Page title="Checkout">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         <Button
           onClick={() => router.back()}
           variant="outlined"
@@ -378,6 +383,7 @@ export default function CheckoutPage() {
             </Card>
           </div>
         </form>
+        </div>
       </div>
     </Page>
   );

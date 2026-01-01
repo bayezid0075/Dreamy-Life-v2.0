@@ -162,7 +162,8 @@ export default function ShopPage() {
 
   return (
     <Page title="Reselling Shop">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         {/* Header with Gradient Background */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-600 via-primary-500 to-purple-600 p-6 text-white shadow-lg sm:p-8">
           <div className="relative z-10">
@@ -522,6 +523,7 @@ export default function ShopPage() {
             )}
           </>
         )}
+        </div>
       </div>
     </Page>
   );

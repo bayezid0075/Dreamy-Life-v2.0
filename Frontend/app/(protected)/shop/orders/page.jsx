@@ -44,12 +44,14 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <Page title="My Orders">
-        <div className="space-y-4">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="animate-pulse p-6">
               <div className="h-6 w-1/4 rounded bg-gray-200 dark:bg-dark-600" />
             </Card>
           ))}
+          </div>
         </div>
       </Page>
     );
@@ -57,7 +59,8 @@ export default function OrdersPage() {
 
   return (
     <Page title="My Orders">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         {/* Header with gradient */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-600 via-primary-500 to-purple-600 p-6 text-white shadow-lg sm:p-8">
           <div className="relative z-10">
@@ -141,6 +144,7 @@ export default function OrdersPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </Page>
   );

@@ -151,7 +151,8 @@ export default function VendorProfilePage() {
   if (!vendor) {
     return (
       <Page title="Vendor Profile">
-        <div className="space-y-4 sm:space-y-6">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="space-y-4 sm:space-y-6">
           {/* Hero Section */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 p-6 shadow-xl sm:p-8 lg:p-10">
             <div className="relative z-10">
@@ -227,6 +228,7 @@ export default function VendorProfilePage() {
               </Button>
             </div>
           </Card>
+          </div>
         </div>
       </Page>
     );
@@ -234,7 +236,8 @@ export default function VendorProfilePage() {
 
   return (
     <Page title="Vendor Profile">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-dark-50 sm:text-2xl">
@@ -406,6 +409,7 @@ export default function VendorProfilePage() {
             </div>
           </div>
         </form>
+        </div>
       </div>
     </Page>
   );

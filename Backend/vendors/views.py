@@ -200,7 +200,7 @@ class PublicShopProductsView(APIView):
         end = start + page_size
         products = queryset[start:end]
         
-        serializer = PublicProductSerializer(products, many=True)
+        serializer = PublicProductSerializer(products, many=True, context={'request': request})
         
         return Response({
             'results': serializer.data,
@@ -223,7 +223,7 @@ class PublicShopProductDetailView(APIView):
                 'images', 'sub_categories'
             ).get(pk=pk)
             
-            serializer = PublicProductSerializer(product)
+            serializer = PublicProductSerializer(product, context={'request': request})
             return Response(serializer.data)
         except Product.DoesNotExist:
             return Response(
@@ -385,7 +385,7 @@ class OrderCreateView(APIView):
             )
         
         # Return created order
-        order_serializer = OrderSerializer(order)
+        order_serializer = OrderSerializer(order, context={'request': request})
         return Response(order_serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -395,7 +395,7 @@ class OrderListView(APIView):
     
     def get(self, request):
         orders = Order.objects.filter(user=request.user).prefetch_related('items', 'items__product').order_by('-created_at')
-        serializer = OrderSerializer(orders, many=True)
+        serializer = OrderSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -408,7 +408,7 @@ class OrderDetailView(APIView):
             order = Order.objects.prefetch_related('items', 'items__product').get(
                 pk=pk, user=request.user
             )
-            serializer = OrderSerializer(order)
+            serializer = OrderSerializer(order, context={'request': request})
             return Response(serializer.data)
         except Order.DoesNotExist:
             return Response(

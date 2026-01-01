@@ -169,7 +169,8 @@ export default function VendorDashboard() {
 
   return (
     <Page title="Vendor Dashboard">
-      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Hero Header */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 p-6 shadow-xl sm:p-8 lg:p-10">
           <div className="relative z-10">
@@ -468,6 +469,7 @@ export default function VendorDashboard() {
             </Button>
           </div>
         </Card>
+        </div>
       </div>
     </Page>
   );

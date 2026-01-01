@@ -117,7 +117,8 @@ export default function ProductDetailPage() {
 
   return (
     <Page title={product.title}>
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         {/* Back Button */}
         <Button
           onClick={() => router.back()}
@@ -340,6 +341,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </Page>

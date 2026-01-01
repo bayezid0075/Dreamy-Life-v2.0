@@ -110,7 +110,8 @@ export default function ProductsPage() {
 
   return (
     <Page title="Products">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -357,6 +358,7 @@ export default function ProductsPage() {
           },
         }}
       />
+      </div>
     </Page>
   );
 }

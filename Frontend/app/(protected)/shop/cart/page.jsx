@@ -73,7 +73,8 @@ export default function CartPage() {
   if (cart.length === 0) {
     return (
       <Page title="Shopping Cart">
-        <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <div className="relative">
             <div className="absolute inset-0 animate-ping rounded-full bg-primary-200 opacity-20"></div>
             <ShoppingBagIcon className="relative size-24 text-gray-300 dark:text-dark-600 sm:size-32" />
@@ -92,6 +93,7 @@ export default function CartPage() {
           >
             Continue Shopping
           </Button>
+          </div>
         </div>
       </Page>
     );
@@ -99,7 +101,8 @@ export default function CartPage() {
 
   return (
     <Page title="Shopping Cart">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6">
         {/* Modern Header Design */}
         <div className="relative overflow-hidden rounded-3xl border-2 border-primary-200 bg-white p-6 shadow-2xl dark:border-primary-800 dark:bg-dark-800 sm:p-8">
           {/* Background Pattern */}
@@ -313,6 +316,7 @@ export default function CartPage() {
               </Button>
             </Card>
           </div>
+        </div>
         </div>
       </div>
     </Page>
