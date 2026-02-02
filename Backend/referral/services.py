@@ -25,18 +25,44 @@ def get_uplines(user_id, max_level=10):
     return uplines
 
 def get_downlines(user_id, max_depth=10):
-    # BFS up to depth
+    # BFS up to depth - returns detailed downline info
     from collections import deque
+    from django.conf import settings
+
     q = deque()
     res = []
     q.append((user_id, 0))
+    backend_url = getattr(settings, 'BACKEND_URL', 'http://localhost:8000')
+
     while q:
         uid, depth = q.popleft()
-        if depth >= max_depth: continue
-        children = UserInfo.objects.filter(user__referred_by__id=uid)
+        if depth >= max_depth:
+            continue
+        children = UserInfo.objects.filter(user__referred_by__id=uid).select_related('user')
         for c in children:
-            res.append({"user_id": c.user.id, "username": c.user.username, "level": depth+1})
-            q.append((c.user.id, depth+1))
+            # Build profile picture URL
+            profile_pic = None
+            if c.profile_picture:
+                if c.profile_picture.startswith('data:'):
+                    profile_pic = c.profile_picture
+                elif c.profile_picture.startswith('/'):
+                    profile_pic = f"{backend_url}{c.profile_picture}"
+                else:
+                    profile_pic = c.profile_picture
+
+            res.append({
+                "user_id": c.user.id,
+                "username": c.user.username,
+                "phone_number": c.user.phone_number,
+                "email": c.user.email,
+                "level": depth + 1,
+                "own_refercode": c.own_refercode,
+                "is_verified": c.is_verified,
+                "member_status": c.member_status,
+                "profile_picture": profile_pic,
+                "joined_at": c.user.created_at.isoformat() if c.user.created_at else None,
+            })
+            q.append((c.user.id, depth + 1))
     return res
 
 def distribute_commission(buyer_id, membership):
