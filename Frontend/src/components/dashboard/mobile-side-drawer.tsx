@@ -41,11 +41,6 @@ const mainNavItems = [
     icon: LayoutDashboard,
   },
   {
-    title: 'Profile',
-    href: '/profile',
-    icon: User,
-  },
-  {
     title: 'Wallet',
     href: '/wallet',
     icon: Wallet,

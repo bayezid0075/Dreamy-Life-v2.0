@@ -70,13 +70,6 @@ const primaryNavItems: NavItem[] = [
     iconColor: 'text-cyan-600',
   },
   {
-    title: 'Profile',
-    href: '/profile',
-    icon: User,
-    gradient: 'from-fuchsia-500 to-pink-500',
-    iconColor: 'text-fuchsia-600',
-  },
-  {
     title: 'Rewards',
     href: '/rewards',
     icon: Gift,
