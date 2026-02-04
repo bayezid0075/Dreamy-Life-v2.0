@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Menu, Bell, Search } from 'lucide-react';
+import Link from "next/link";
+import { Menu, Bell, Search } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/store';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store";
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -44,11 +44,16 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
               >
                 <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
-              <Link href="/dashboard" className="flex items-center gap-1.5 sm:gap-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 sm:gap-2"
+              >
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg sm:rounded-xl bg-white/20 text-white text-sm sm:text-base font-bold backdrop-blur-sm shadow-lg">
                   DL
                 </div>
-                <span className="font-bold text-base sm:text-xl text-white">Dreamy Life</span>
+                <span className="font-bold text-base sm:text-xl text-white">
+                  Dreamy Life
+                </span>
               </Link>
             </div>
 
@@ -74,7 +79,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
                 <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-white/30">
                   <AvatarImage src={user?.profile_picture || undefined} />
                   <AvatarFallback className="bg-white/20 text-white text-xs sm:text-sm font-bold">
-                    {user?.user.username?.charAt(0).toUpperCase() || 'U'}
+                    {user?.user.username?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
               </Link>
@@ -85,7 +90,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           <div className="mt-4 sm:mt-6 mb-1 sm:mb-2">
             <p className="text-white/80 text-xs sm:text-sm">Welcome back,</p>
             <h1 className="text-white text-xl sm:text-2xl font-bold truncate max-w-[200px] sm:max-w-none">
-              {user?.user.username || 'User'}
+              {user?.user.username || "User"}
             </h1>
           </div>
         </div>

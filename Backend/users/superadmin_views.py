@@ -1,0 +1,228 @@
+"""
+Superadmin panel: access by allowlist email only.
+Provides overview stats, user control, and SSE live stream.
+"""
+import json
+import time
+from django.conf import settings
+from django.http import StreamingHttpResponse
+from rest_framework import permissions, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import InvalidToken
+
+from .models import User, UserInfo
+from .admin_serializers import AdminUserSerializer, AdminUserCreateSerializer, AdminUserInfoSerializer
+from .admin_views import AdminUserDetailView
+
+
+def get_superadmin_emails():
+    return getattr(settings, "SUPERADMIN_ALLOWED_EMAILS", []) or []
+
+
+class IsSuperadmin(permissions.BasePermission):
+    """Only allow access if request.user.email is in SUPERADMIN_ALLOWED_EMAILS."""
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        allowed = get_superadmin_emails()
+        if not allowed:
+            return False
+        return request.user.email.lower() in allowed
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def superadmin_access(request):
+    """
+    Check if the current user is allowed to access the superadmin panel.
+    Returns { "allowed": true/false, "email": "..." }.
+    """
+    allowed_emails = get_superadmin_emails()
+    if not allowed_emails:
+        return Response({"allowed": False, "email": request.user.email, "reason": "No superadmin emails configured"})
+    allowed = request.user.email.lower() in allowed_emails
+    return Response({
+        "allowed": allowed,
+        "email": request.user.email,
+        "reason": None if allowed else "Your email is not authorized to access the superadmin panel.",
+    })
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated, IsSuperadmin])
+def superadmin_overview(request):
+    """Overview stats for superadmin dashboard."""
+    from django.db.models import Sum, Count
+    from memberships.models import MembershipPurchase
+    from vendors.models import Vendor, Product
+    from wallets.models import Wallet
+
+    total_wallet_balance = Wallet.objects.aggregate(total=Sum("balance"))["total"] or 0
+    recent_users = list(
+        User.objects.order_by("-created_at")
+        .values("id", "username", "email", "created_at", "is_active")[:10]
+    )
+
+    stats = {
+        "total_users": User.objects.count(),
+        "active_users": User.objects.filter(is_active=True).count(),
+        "staff_users": User.objects.filter(is_staff=True).count(),
+        "total_vendors": Vendor.objects.count(),
+        "total_products": Product.objects.count(),
+        "total_memberships": MembershipPurchase.objects.filter(is_active=True).count(),
+        "total_wallet_balance": str(total_wallet_balance),
+        "recent_users": recent_users,
+    }
+    return Response(stats)
+
+
+class SuperadminUserPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class SuperadminUserListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperadmin]
+
+    def get(self, request):
+        from django.db.models import Q
+        from .admin_views import AdminUserListCreateView
+
+        queryset = User.objects.all().select_related("info", "referred_by")
+        search = request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search)
+                | Q(email__icontains=search)
+                | Q(phone_number__icontains=search)
+            )
+        is_active = request.query_params.get("is_active")
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == "true")
+        is_staff = request.query_params.get("is_staff")
+        if is_staff is not None:
+            queryset = queryset.filter(is_staff=is_staff.lower() == "true")
+        member_status = request.query_params.get("member_status")
+        if member_status:
+            queryset = queryset.filter(info__member_status=member_status)
+        ordering = request.query_params.get("ordering", "-created_at")
+        queryset = queryset.order_by(ordering)
+
+        paginator = SuperadminUserPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = AdminUserSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request):
+        serializer = AdminUserCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        ser = AdminUserSerializer(user)
+        return Response(ser.data, status=status.HTTP_201_CREATED)
+
+
+class SuperadminUserDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperadmin]
+
+    def get_object(self, pk):
+        from rest_framework.generics import get_object_or_404
+        return get_object_or_404(User.objects.select_related("info", "referred_by"), pk=pk)
+
+    def get(self, request, pk):
+        user = self.get_object(pk)
+        serializer = AdminUserSerializer(user)
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        user = self.get_object(pk)
+        data = request.data.copy()
+        info_data = data.pop("info", None)
+        serializer = AdminUserSerializer(user, data=data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        if info_data:
+            user_info, _ = UserInfo.objects.get_or_create(user=user)
+            info_serializer = AdminUserInfoSerializer(user_info, data=info_data, partial=True)
+            if info_serializer.is_valid():
+                info_serializer.save()
+        return Response(AdminUserSerializer(self.get_object(pk)).data)
+
+    def delete(self, request, pk):
+        user = self.get_object(pk)
+        if user.id == request.user.id:
+            return Response(
+                {"detail": "You cannot delete your own account"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def _get_user_from_token(token_raw):
+    """Validate JWT and return User or None."""
+    try:
+        token = AccessToken(token_raw)
+        user_id = token.get("user_id")
+        return User.objects.filter(pk=user_id).first()
+    except (InvalidToken, Exception):
+        return None
+
+
+def _sse_event(event_type, data):
+    payload = json.dumps(data) if not isinstance(data, str) else data
+    return f"event: {event_type}\ndata: {payload}\n\n"
+
+
+def superadmin_stream(request):
+    """
+    SSE stream for live superadmin updates.
+    Auth: ?token=ACCESS_TOKEN (JWT). Must be superadmin email.
+    """
+    token_raw = request.GET.get("token")
+    if not token_raw:
+        return Response({"detail": "Missing token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user = _get_user_from_token(token_raw)
+    if not user:
+        return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    allowed = get_superadmin_emails()
+    if not allowed or user.email.lower() not in allowed:
+        return Response({"detail": "Not authorized for superadmin"}, status=status.HTTP_403_FORBIDDEN)
+
+    def stream():
+        from django.db.models import Sum
+        from memberships.models import MembershipPurchase
+        from vendors.models import Vendor, Product
+        from wallets.models import Wallet
+
+        while True:
+            try:
+                total_wallet = Wallet.objects.aggregate(total=Sum("balance"))["total"] or 0
+                overview = {
+                    "total_users": User.objects.count(),
+                    "active_users": User.objects.filter(is_active=True).count(),
+                    "staff_users": User.objects.filter(is_staff=True).count(),
+                    "total_vendors": Vendor.objects.count(),
+                    "total_products": Product.objects.count(),
+                    "total_memberships": MembershipPurchase.objects.filter(is_active=True).count(),
+                    "total_wallet_balance": str(total_wallet),
+                }
+                yield _sse_event("overview", overview)
+            except Exception:
+                pass
+            time.sleep(3)
+
+    response = StreamingHttpResponse(
+        stream(),
+        content_type="text/event-stream",
+    )
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response

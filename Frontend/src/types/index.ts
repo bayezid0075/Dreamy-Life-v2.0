@@ -9,6 +9,7 @@ export interface User {
   is_active?: boolean;
   referred_by?: number | null;
   referred_by_username?: string | null;
+  referred_by_refercode?: string | null;
   created_at?: string;
   updated_at?: string;
   last_login?: string | null;
@@ -19,7 +20,7 @@ export interface UserInfo {
   user: User;
   own_refercode: string;
   level: number;
-  member_status: 'user' | 'Basic' | 'Standard' | 'Smart' | 'VVIP';
+  member_status: "user" | "Basic" | "Standard" | "Smart" | "VVIP";
   profile_picture: string | null;
   is_verified: boolean;
   address: string | null;
@@ -106,7 +107,7 @@ export interface PaymentCreateResponse {
 }
 
 export interface PaymentVerifyResponse {
-  status: 'success' | 'pending';
+  status: "success" | "pending";
   message: string;
   membership?: string;
   transaction_id?: string;
@@ -116,7 +117,7 @@ export interface PaymentVerifyResponse {
 export interface Transaction {
   id: number;
   amount: string;
-  transaction_type: 'credit' | 'debit';
+  transaction_type: "credit" | "debit";
   description: string;
   created_at: string;
 }
@@ -154,7 +155,7 @@ export interface Downline {
   level: number;
   own_refercode: string;
   is_verified: boolean;
-  member_status: 'user' | 'Basic' | 'Standard' | 'Smart' | 'VVIP';
+  member_status: "user" | "Basic" | "Standard" | "Smart" | "VVIP";
   profile_picture: string | null;
   joined_at: string | null;
 }
@@ -278,15 +279,21 @@ export interface Order {
   customer_email: string;
   customer_phone: string;
   delivery_address: string;
-  delivery_area: 'inside_dhaka' | 'outside_dhaka';
+  delivery_area: "inside_dhaka" | "outside_dhaka";
   subtotal: string;
   delivery_charge: string;
   vat_amount: string;
   total_amount: string;
   reseller_price_applied: boolean;
   reseller_price_total: string | null;
-  order_status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  order_status:
+    | "pending"
+    | "confirmed"
+    | "processing"
+    | "shipped"
+    | "delivered"
+    | "cancelled";
+  payment_status: "pending" | "paid" | "failed" | "refunded";
   created_at: string;
   updated_at: string;
   items: OrderItem[];
@@ -304,7 +311,7 @@ export interface OrderCreatePayload {
   customer_email: string;
   customer_phone: string;
   delivery_address: string;
-  delivery_area: 'inside_dhaka' | 'outside_dhaka';
+  delivery_area: "inside_dhaka" | "outside_dhaka";
   apply_reseller_price?: boolean;
 }
 
@@ -324,7 +331,7 @@ export interface ShopFilters {
   vendor?: number;
   min_price?: number;
   max_price?: number;
-  sort_by?: 'created_at' | 'price_asc' | 'price_desc' | 'name';
+  sort_by?: "created_at" | "price_asc" | "price_desc" | "name";
   page?: number;
   page_size?: number;
 }
@@ -342,6 +349,30 @@ export interface AdminDashboardStats {
     username: string;
     email: string;
     created_at: string;
+  }[];
+}
+
+// Superadmin Types
+export interface SuperadminAccessResponse {
+  allowed: boolean;
+  email: string;
+  reason: string | null;
+}
+
+export interface SuperadminOverviewStats {
+  total_users: number;
+  active_users: number;
+  staff_users: number;
+  total_vendors: number;
+  total_products: number;
+  total_memberships: number;
+  total_wallet_balance: string;
+  recent_users: {
+    id: number;
+    username: string;
+    email: string;
+    created_at: string;
+    is_active: boolean;
   }[];
 }
 

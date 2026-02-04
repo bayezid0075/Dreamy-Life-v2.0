@@ -18,14 +18,16 @@ class AdminUserSerializer(serializers.ModelSerializer):
     downlines_count = serializers.SerializerMethodField()
     active_membership = serializers.SerializerMethodField()
     referred_by_username = serializers.SerializerMethodField()
-    
+    referred_by_refercode = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'phone_number', 'password',
             'is_active', 'is_staff', 'is_superuser', 'referred_by',
             'created_at', 'updated_at', 'last_login',
-            'info', 'downlines_count', 'active_membership', 'referred_by_username'
+            'info', 'downlines_count', 'active_membership',
+            'referred_by_username', 'referred_by_refercode'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'last_login']
     
@@ -56,6 +58,15 @@ class AdminUserSerializer(serializers.ModelSerializer):
         """Get username of the user who referred this user"""
         if obj.referred_by:
             return obj.referred_by.username
+        return None
+
+    def get_referred_by_refercode(self, obj):
+        """Get refer code of the user who referred this user (upline)"""
+        if obj.referred_by:
+            try:
+                return obj.referred_by.info.own_refercode
+            except UserInfo.DoesNotExist:
+                return None
         return None
     
     def create(self, validated_data):

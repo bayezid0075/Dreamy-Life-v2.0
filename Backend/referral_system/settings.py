@@ -3,9 +3,8 @@ from pathlib import Path
 import environ
 
 env = environ.Env(DEBUG=(bool, False))
-environ.Env.read_env()  # reads .env
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = env("SECRET_KEY", default="unsafe-secret")
 DEBUG = env("DEBUG", default="True") == "True"
 ALLOWED_HOSTS = ["*"]
@@ -162,3 +161,6 @@ FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
 
 # Backend URL for absolute image URLs
 BACKEND_URL = env("BACKEND_URL", default="http://localhost:8000")
+
+# Superadmin: comma-separated list of emails allowed to access the superadmin panel
+SUPERADMIN_ALLOWED_EMAILS = [e.strip().lower() for e in env("SUPERADMIN_ALLOWED_EMAILS", default="").split(",") if e.strip()]

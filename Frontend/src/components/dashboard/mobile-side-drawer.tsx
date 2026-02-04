@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { toast } from 'sonner';
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import {
   LayoutDashboard,
   User,
@@ -25,65 +25,70 @@ import {
   Settings,
   HelpCircle,
   ShieldCheck,
-} from 'lucide-react';
-import { useTheme } from 'next-themes';
+} from "lucide-react";
+import { useTheme } from "next-themes";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
-import { useAuthStore } from '@/store';
+import { useAuthStore } from "@/store";
 
 const mainNavItems = [
   {
-    title: 'Dashboard',
-    href: '/dashboard',
+    title: "Dashboard",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    title: 'Wallet',
-    href: '/wallet',
+    title: "Wallet",
+    href: "/wallet",
     icon: Wallet,
   },
   {
-    title: 'Referrals',
-    href: '/referrals',
+    title: "Referrals",
+    href: "/referrals",
     icon: Users,
   },
   {
-    title: 'Memberships',
-    href: '/memberships',
+    title: "Memberships",
+    href: "/memberships",
     icon: Crown,
   },
 ];
 
 const shopNavItems = [
   {
-    title: 'My Orders',
-    href: '/orders',
+    title: "My Orders",
+    href: "/orders",
     icon: ShoppingBag,
   },
   {
-    title: 'My Products',
-    href: '/vendor/products',
+    title: "My Products",
+    href: "/vendor/products",
     icon: Package,
   },
   {
-    title: 'My Shop',
-    href: '/vendor',
+    title: "My Shop",
+    href: "/vendor",
     icon: Store,
   },
 ];
 
 const otherNavItems = [
   {
-    title: 'Settings',
-    href: '/settings',
+    title: "Settings",
+    href: "/settings",
     icon: Settings,
   },
   {
-    title: 'Help & Support',
-    href: '/help',
+    title: "Help & Support",
+    href: "/help",
     icon: HelpCircle,
   },
 ];
@@ -93,7 +98,10 @@ interface MobileSideDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) {
+export function MobileSideDrawer({
+  open,
+  onOpenChange,
+}: MobileSideDrawerProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
@@ -101,14 +109,14 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   const copyReferralCode = async () => {
     if (user?.own_refercode) {
       await navigator.clipboard.writeText(user.own_refercode);
       setCopied(true);
-      toast.success('Referral code copied!');
+      toast.success("Referral code copied!");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -119,11 +127,19 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[280px] max-w-[85vw] p-0 bg-white dark:bg-slate-900 border-r-violet-200/50 dark:border-r-violet-800/30 overflow-hidden">
+      <SheetContent
+        side="left"
+        showCloseButton={false}
+        className="w-[280px] max-w-[85vw] p-0 bg-white dark:bg-slate-900 border-r-violet-200/50 dark:border-r-violet-800/30 overflow-hidden"
+      >
         {/* Header */}
         <SheetHeader className="p-3 border-b border-violet-200/50 dark:border-violet-800/30">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-2" onClick={handleNavClick}>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2"
+              onClick={handleNavClick}
+            >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white text-sm font-bold shadow-lg shadow-fuchsia-500/25">
                 DL
               </div>
@@ -162,7 +178,7 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
                   <Avatar className="h-11 w-11 ring-2 ring-white/30 shadow-lg">
                     <AvatarImage src={user?.profile_picture || undefined} />
                     <AvatarFallback className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold">
-                      {user?.user.username?.charAt(0).toUpperCase() || 'U'}
+                      {user?.user.username?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   {user?.is_verified && (
@@ -172,13 +188,17 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm truncate">{user?.user.username}</h3>
+                  <h3 className="font-bold text-sm truncate">
+                    {user?.user.username}
+                  </h3>
                   <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                    <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                      user?.member_status === 'user'
-                        ? 'bg-white/20'
-                        : 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg'
-                    }`}>
+                    <div
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                        user?.member_status === "user"
+                          ? "bg-white/20"
+                          : "bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg"
+                      }`}
+                    >
                       <Crown className="h-2.5 w-2.5 inline mr-0.5" />
                       {user?.member_status}
                     </div>
@@ -214,7 +234,9 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
                 {/* Phone */}
                 <div className="flex items-center gap-2 bg-white/10 rounded-lg px-2.5 py-1.5 backdrop-blur-sm">
                   <Phone className="h-3.5 w-3.5 text-white/70 flex-shrink-0" />
-                  <span className="text-xs font-medium truncate">{user?.user.phone_number || 'No phone'}</span>
+                  <span className="text-xs font-medium truncate">
+                    {user?.user.phone_number || "No phone"}
+                  </span>
                 </div>
 
                 {/* Referral Code */}
@@ -224,7 +246,9 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-[10px] text-white/70">Refer:</span>
-                    <span className="font-mono font-bold text-xs text-yellow-300 truncate">{user?.own_refercode}</span>
+                    <span className="font-mono font-bold text-xs text-yellow-300 truncate">
+                      {user?.own_refercode}
+                    </span>
                   </div>
                   <button className="p-0.5 hover:bg-white/10 rounded transition-colors flex-shrink-0">
                     {copied ? (
@@ -256,11 +280,15 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
                     onClick={handleNavClick}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
                       isActive
-                        ? 'bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium'
-                        : 'text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 ${isActive ? 'text-violet-600 dark:text-violet-400' : ''}`} />
+                    <item.icon
+                      className={`h-4 w-4 ${
+                        isActive ? "text-violet-600 dark:text-violet-400" : ""
+                      }`}
+                    />
                     <span>{item.title}</span>
                   </Link>
                 );
@@ -283,11 +311,15 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
                     onClick={handleNavClick}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
                       isActive
-                        ? 'bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium'
-                        : 'text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 ${isActive ? 'text-violet-600 dark:text-violet-400' : ''}`} />
+                    <item.icon
+                      className={`h-4 w-4 ${
+                        isActive ? "text-violet-600 dark:text-violet-400" : ""
+                      }`}
+                    />
                     <span>{item.title}</span>
                   </Link>
                 );
@@ -310,26 +342,30 @@ export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) 
                     onClick={handleNavClick}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
                       isActive
-                        ? 'bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium'
-                        : 'text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 ${isActive ? 'text-violet-600 dark:text-violet-400' : ''}`} />
+                    <item.icon
+                      className={`h-4 w-4 ${
+                        isActive ? "text-violet-600 dark:text-violet-400" : ""
+                      }`}
+                    />
                     <span>{item.title}</span>
                   </Link>
                 );
               })}
               {/* Theme Toggle */}
               <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
               >
-                {theme === 'dark' ? (
+                {theme === "dark" ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />
                 )}
-                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
               </button>
             </nav>
           </div>
