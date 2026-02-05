@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from django.conf import settings
 from .models import Product, ProductImage, SubCategory, Vendor, Category, Brand, Order, OrderItem
@@ -26,13 +27,26 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     sub_categories = serializers.PrimaryKeyRelatedField(
         queryset=SubCategory.objects.all(),
-        many=True
+        many=True,
+        required=False
     )
 
     class Meta:
         model = Product
         fields = "__all__"
         read_only_fields = ['vendor']
+
+    def validate_tags(self, value):
+        """Handle tags sent as JSON string from multipart form data"""
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+            except (json.JSONDecodeError, TypeError):
+                pass
+            return [t.strip() for t in value.split(',') if t.strip()]
+        return value
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
@@ -41,13 +55,26 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     )
     sub_categories = serializers.PrimaryKeyRelatedField(
         queryset=SubCategory.objects.all(),
-        many=True
+        many=True,
+        required=False
     )
 
     class Meta:
         model = Product
         fields = "__all__"
         read_only_fields = ['vendor']
+
+    def validate_tags(self, value):
+        """Handle tags sent as JSON string from multipart form data"""
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+            except (json.JSONDecodeError, TypeError):
+                pass
+            return [t.strip() for t in value.split(',') if t.strip()]
+        return value
 
     def create(self, validated_data):
         images = validated_data.pop("images", [])

@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import (
     Wallet, WalletTransaction,
     Funds, FundsTransaction,
-    Points, PointsTransaction
+    Points, PointsTransaction,
+    WithdrawalRequest,
 )
 
 # Wallet Serializers
@@ -49,3 +50,41 @@ class PointsSerializer(serializers.ModelSerializer):
         model = Points
         fields = ['id', 'balance', 'transactions']
         read_only_fields = ['id', 'balance', 'transactions']
+
+
+class WithdrawalRequestSerializer(serializers.ModelSerializer):
+    user_username = serializers.CharField(source="user.username", read_only=True)
+    user_email = serializers.CharField(source="user.email", read_only=True)
+    decided_by_email = serializers.CharField(source="decided_by.email", read_only=True)
+    finished_by_email = serializers.CharField(source="finished_by.email", read_only=True)
+
+    class Meta:
+        model = WithdrawalRequest
+        fields = [
+            "id",
+            "user",
+            "user_username",
+            "user_email",
+            "amount",
+            "fee",
+            "total_debit",
+            "method",
+            "receiver_phone",
+            "status",
+            "created_at",
+            "updated_at",
+            "decided_by",
+            "decided_by_email",
+            "decided_at",
+            "finished_by",
+            "finished_by_email",
+            "finished_at",
+            "admin_note",
+        ]
+        read_only_fields = fields
+
+
+class WithdrawalCreateSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    method = serializers.ChoiceField(choices=WithdrawalRequest.METHOD_CHOICES)
+    receiver_phone = serializers.CharField(max_length=30)

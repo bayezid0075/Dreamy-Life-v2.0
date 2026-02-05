@@ -14,7 +14,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 
-from .models import User, UserInfo
+from .models import User, UserInfo, AccountRestrictionConfig, RESTRICTABLE_AREAS
 from .admin_serializers import AdminUserSerializer, AdminUserCreateSerializer, AdminUserInfoSerializer
 from .admin_views import AdminUserDetailView
 
@@ -164,6 +164,38 @@ class SuperadminUserDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(["GET", "PUT"])
+@permission_classes([permissions.IsAuthenticated, IsSuperadmin])
+def superadmin_restriction_config(request):
+    """
+    Get or update which areas are restricted per account status (hold, ban, inactive).
+    GET: { config: { hold: [], ban: [], inactive: [] }, restrictable_areas: [] }
+    PUT: body { config: { hold: [], ban: [], inactive: [] } }
+    """
+    if request.method == "GET":
+        config = AccountRestrictionConfig.get_config()
+        return Response({
+            "config": config,
+            "restrictable_areas": RESTRICTABLE_AREAS,
+        })
+    # PUT
+    new_config = request.data.get("config")
+    if not isinstance(new_config, dict):
+        return Response(
+            {"detail": "Expected body.config object with keys hold, ban, inactive"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    obj, _ = AccountRestrictionConfig.objects.get_or_create(
+        pk=1,
+        defaults={"config": {"hold": [], "ban": [], "inactive": []}},
+    )
+    for key in ("hold", "ban", "inactive"):
+        if key in new_config and isinstance(new_config[key], list):
+            obj.config[key] = [a for a in new_config[key] if a in RESTRICTABLE_AREAS or a == "all"]
+    obj.save()
+    return Response({"config": AccountRestrictionConfig.get_config()})
+
+
 def _get_user_from_token(token_raw):
     """Validate JWT and return User or None."""
     try:
@@ -205,6 +237,17 @@ def superadmin_stream(request):
         while True:
             try:
                 total_wallet = Wallet.objects.aggregate(total=Sum("balance"))["total"] or 0
+                recent_users_qs = (
+                    User.objects.order_by("-created_at")
+                    .values("id", "username", "email", "created_at", "is_active")[:10]
+                )
+                recent_users = [
+                    {
+                        **row,
+                        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    }
+                    for row in recent_users_qs
+                ]
                 overview = {
                     "total_users": User.objects.count(),
                     "active_users": User.objects.filter(is_active=True).count(),
@@ -213,6 +256,7 @@ def superadmin_stream(request):
                     "total_products": Product.objects.count(),
                     "total_memberships": MembershipPurchase.objects.filter(is_active=True).count(),
                     "total_wallet_balance": str(total_wallet),
+                    "recent_users": recent_users,
                 }
                 yield _sse_event("overview", overview)
             except Exception:

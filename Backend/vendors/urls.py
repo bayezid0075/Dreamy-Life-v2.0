@@ -7,7 +7,8 @@ urlpatterns = [
     path('products/<int:pk>/', views.ProductDetailView.as_view(), name='product-detail'),
     path('vendors/', views.VendorListCreateView.as_view(), name='vendor-list-create'),
     path('vendors/<int:pk>/', views.VendorDetailView.as_view(), name='vendor-detail'),
-    
+    path('vendors/orders/', views.VendorOrdersView.as_view(), name='vendor-orders'),
+
     # Public Shop APIs (AllowAny)
     path('shop/products/', views.PublicShopProductsView.as_view(), name='public-shop-products'),
     path('shop/products/<int:pk>/', views.PublicShopProductDetailView.as_view(), name='public-shop-product-detail'),

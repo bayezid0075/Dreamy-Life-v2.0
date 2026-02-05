@@ -1,5 +1,5 @@
 import { apiClient, apiClientMultipart } from './client';
-import type { Vendor, Product, ProductCreatePayload } from '@/types';
+import type { Vendor, Product, ProductCreatePayload, Order } from '@/types';
 
 export const vendorsApi = {
   // Vendor Management
@@ -25,6 +25,12 @@ export const vendorsApi = {
 
   deleteVendor: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/vendors/vendors/${id}/`);
+  },
+
+  // Vendor Orders (orders containing vendor's products)
+  getVendorOrders: async (): Promise<Order[]> => {
+    const response = await apiClient.get<Order[]>('/api/vendors/vendors/orders/');
+    return response.data;
   },
 
   // Product Management

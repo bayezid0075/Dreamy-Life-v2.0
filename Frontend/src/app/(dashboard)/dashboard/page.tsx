@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import {
   Wallet,
   Users,
@@ -9,6 +10,8 @@ import {
   TrendingUp,
   Copy,
   CheckCircle,
+  Store,
+  ArrowRight,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -311,6 +314,33 @@ export default function DashboardPage() {
             </Card>
           ))}
         </div>
+
+        {/* Reseller Shop CTA */}
+        <Card className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all group">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 opacity-90"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <CardContent className="relative flex items-center justify-between p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                <Store className="h-6 w-6 text-white" />
+              </div>
+              <div className="text-white">
+                <h3 className="text-lg font-bold">Reseller Shop</h3>
+                <p className="text-sm text-white/70">Browse products and earn with custom pricing</p>
+              </div>
+            </div>
+            <Link href="/reseller">
+              <Button
+                variant="secondary"
+                className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+              >
+                Browse
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
         {/* Quick Actions & Recent Activity */}
         <div className="grid gap-6 md:grid-cols-2">

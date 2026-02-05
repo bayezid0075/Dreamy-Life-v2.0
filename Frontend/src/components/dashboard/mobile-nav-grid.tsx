@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  User,
   Wallet,
   Users,
   Crown,
   ShoppingBag,
-  Package,
   Store,
   Settings,
   HelpCircle,
@@ -16,7 +14,10 @@ import {
   ChevronUp,
   Gift,
   CreditCard,
+  Sparkles,
 } from "lucide-react";
+
+import { useVendor } from "@/hooks/use-vendor";
 
 interface NavItem {
   title: string;
@@ -26,13 +27,20 @@ interface NavItem {
   iconColor: string;
 }
 
-const primaryNavItems: NavItem[] = [
+const staticNavItems: NavItem[] = [
   {
     title: "Wallet",
     href: "/wallet",
     icon: Wallet,
     gradient: "from-emerald-500 to-teal-500",
     iconColor: "text-emerald-600",
+  },
+  {
+    title: "Shop",
+    href: "/reseller",
+    icon: Store,
+    gradient: "from-cyan-500 to-blue-500",
+    iconColor: "text-cyan-600",
   },
   {
     title: "Referrals",
@@ -42,32 +50,21 @@ const primaryNavItems: NavItem[] = [
     iconColor: "text-blue-600",
   },
   {
-    title: "Memberships",
-    href: "/memberships",
-    icon: Crown,
-    gradient: "from-amber-500 to-orange-500",
-    iconColor: "text-amber-600",
-  },
-  {
     title: "Orders",
     href: "/orders",
     icon: ShoppingBag,
     gradient: "from-pink-500 to-rose-500",
     iconColor: "text-pink-600",
   },
+];
+
+const secondaryNavItems: NavItem[] = [
   {
-    title: "Products",
-    href: "/vendor/products",
-    icon: Package,
-    gradient: "from-violet-500 to-purple-500",
-    iconColor: "text-violet-600",
-  },
-  {
-    title: "My Shop",
-    href: "/vendor",
-    icon: Store,
-    gradient: "from-cyan-500 to-blue-500",
-    iconColor: "text-cyan-600",
+    title: "Memberships",
+    href: "/memberships",
+    icon: Crown,
+    gradient: "from-amber-500 to-orange-500",
+    iconColor: "text-amber-600",
   },
   {
     title: "Rewards",
@@ -76,9 +73,6 @@ const primaryNavItems: NavItem[] = [
     gradient: "from-red-500 to-orange-500",
     iconColor: "text-red-600",
   },
-];
-
-const secondaryNavItems: NavItem[] = [
   {
     title: "Payment",
     href: "/payment",
@@ -104,12 +98,34 @@ const secondaryNavItems: NavItem[] = [
 
 export function MobileNavGrid() {
   const [expanded, setExpanded] = useState(false);
+  const { hasVendor } = useVendor();
+
+  const vendorNavItem: NavItem = hasVendor
+    ? {
+        title: "My Shop",
+        href: "/vendor",
+        icon: Store,
+        gradient: "from-cyan-500 to-blue-500",
+        iconColor: "text-cyan-600",
+      }
+    : {
+        title: "Vendor",
+        href: "/vendor",
+        icon: Sparkles,
+        gradient: "from-fuchsia-500 to-pink-500",
+        iconColor: "text-fuchsia-600",
+      };
+
+  const primaryNavItems: NavItem[] = [
+    ...staticNavItems,
+    vendorNavItem,
+  ];
 
   return (
     <div className="md:hidden relative z-10 -mt-2 sm:-mt-4">
       {/* Primary Grid - Floating card over the gradient */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl shadow-violet-500/20 p-3 sm:p-4 mx-3 sm:mx-4">
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-5 gap-2 sm:gap-3">
           {primaryNavItems.map((item) => (
             <Link
               key={item.href}

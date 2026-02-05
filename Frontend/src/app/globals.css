@@ -260,3 +260,8 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* Next.js dev overlay portal position (persists browser preview adjustment) */
+nextjs-portal {
+  top: -1px !important;
+}

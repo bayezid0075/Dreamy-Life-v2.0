@@ -271,6 +271,27 @@ class PublicShopVendorsView(APIView):
         return Response(serializer.data)
 
 
+# --------------------- VENDOR ORDER VIEWS ------------------------
+class VendorOrdersView(APIView):
+    """Get orders containing the vendor's products"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            vendor = request.user.vendor
+        except Vendor.DoesNotExist:
+            return Response([], status=status.HTTP_200_OK)
+
+        orders = Order.objects.filter(
+            items__product__vendor=vendor
+        ).distinct().prefetch_related(
+            'items', 'items__product'
+        ).order_by('-created_at')
+
+        serializer = OrderSerializer(orders, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
 # --------------------- ORDER VIEWS ------------------------
 class OrderCreateView(APIView):
     """Create a new order with reseller pricing"""
@@ -284,6 +305,10 @@ class OrderCreateView(APIView):
                 return order_num
     
     def post(self, request):
+        from users.account_restriction import check_area_allowed
+        forbidden, is_forbidden = check_area_allowed(request.user, "shop")
+        if is_forbidden:
+            return forbidden
         serializer = OrderCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -392,8 +417,12 @@ class OrderCreateView(APIView):
 class OrderListView(APIView):
     """Get user's orders"""
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get(self, request):
+        from users.account_restriction import check_area_allowed
+        forbidden, is_forbidden = check_area_allowed(request.user, "shop")
+        if is_forbidden:
+            return forbidden
         orders = Order.objects.filter(user=request.user).prefetch_related('items', 'items__product').order_by('-created_at')
         serializer = OrderSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
@@ -402,8 +431,12 @@ class OrderListView(APIView):
 class OrderDetailView(APIView):
     """Get single order details"""
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get(self, request, pk):
+        from users.account_restriction import check_area_allowed
+        forbidden, is_forbidden = check_area_allowed(request.user, "shop")
+        if is_forbidden:
+            return forbidden
         try:
             order = Order.objects.prefetch_related('items', 'items__product').get(
                 pk=pk, user=request.user

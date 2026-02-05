@@ -1,7 +1,8 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Wallet,
   TrendingUp,
@@ -14,7 +15,11 @@ import {
   ArrowUp,
   ArrowDown,
   ChevronLeft,
+  Send,
+  Phone,
+  Percent,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import {
   Card,
@@ -26,9 +31,26 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-import { walletsApi } from '@/lib/api';
-import type { Transaction } from '@/types';
+import { walletsApi, withdrawalsApi } from '@/lib/api';
+import type { Transaction, WithdrawalRequest } from '@/types';
 
 function TransactionList({
   transactions,
@@ -133,6 +155,12 @@ function TransactionList({
 
 export default function WalletPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('');
+  const [withdrawMethod, setWithdrawMethod] = useState<'bkash'>('bkash');
+  const [withdrawPhone, setWithdrawPhone] = useState<string>('');
 
   const { data: wallet, isLoading: walletLoading } = useQuery({
     queryKey: ['wallet'],
@@ -147,6 +175,47 @@ export default function WalletPage() {
   const { data: points, isLoading: pointsLoading } = useQuery({
     queryKey: ['points'],
     queryFn: walletsApi.getPoints,
+  });
+
+  const { data: withdrawals, isLoading: withdrawalsLoading } = useQuery({
+    queryKey: ['withdrawals-history'],
+    queryFn: withdrawalsApi.getMyWithdrawals,
+  });
+
+  const amountNumber = useMemo(() => {
+    const n = Number(withdrawAmount);
+    return Number.isFinite(n) ? n : 0;
+  }, [withdrawAmount]);
+
+  const fee = useMemo(() => amountNumber * 0.05, [amountNumber]);
+  const totalDebit = useMemo(() => amountNumber + fee, [amountNumber, fee]);
+
+  const createWithdrawal = useMutation({
+    mutationFn: async () => {
+      if (!withdrawPhone.trim()) {
+        throw new Error('Phone number is required');
+      }
+      if (amountNumber < 300) {
+        throw new Error('Minimum withdrawal amount is ৳300');
+      }
+      return withdrawalsApi.createWithdrawal({
+        amount: amountNumber,
+        method: withdrawMethod,
+        receiver_phone: withdrawPhone.trim(),
+      });
+    },
+    onSuccess: () => {
+      toast.success('Withdrawal request submitted');
+      setWithdrawOpen(false);
+      setWithdrawAmount('');
+      // refresh wallet + history
+      queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      queryClient.invalidateQueries({ queryKey: ['withdrawals-history'] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { message?: string; response?: { data?: { detail?: string } } };
+      toast.error(e.response?.data?.detail || e.message || 'Failed to request withdrawal');
+    },
   });
 
   // Combine all transactions for "All" tab
@@ -321,6 +390,181 @@ export default function WalletPage() {
           </Card>
         ))}
       </div>
+
+      {/* Withdraw (Wallet Balance) */}
+      <Card className="relative overflow-hidden border-0 bg-white dark:bg-slate-900 shadow-md sm:shadow-lg md:shadow-xl">
+        <div className="absolute top-0 left-0 right-0 h-0.5 sm:h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"></div>
+        <CardHeader className="px-3 py-3 sm:p-4 md:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-sm sm:text-base md:text-lg bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                Withdraw from Wallet
+              </CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs md:text-sm mt-1">
+                Minimum ৳300 + 5% charge. Status: pending → accepted/rejected → finished.
+              </CardDescription>
+            </div>
+            <Button
+              onClick={() => setWithdrawOpen(true)}
+              className="h-9 sm:h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Withdraw
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+              <p className="text-xs text-muted-foreground">Available wallet balance</p>
+              <p className="text-lg font-bold mt-1">
+                ৳{parseFloat(wallet?.balance || '0').toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Percent className="h-3.5 w-3.5" /> Charge
+              </p>
+              <p className="text-lg font-bold mt-1">5%</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+              <p className="text-xs text-muted-foreground">Minimum withdrawal</p>
+              <p className="text-lg font-bold mt-1">৳300</p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <h3 className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              Withdrawal history
+            </h3>
+            {withdrawalsLoading ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 p-3"
+                  >
+                    <Skeleton className="h-4 w-40 mb-2" />
+                    <Skeleton className="h-3 w-64" />
+                  </div>
+                ))}
+              </div>
+            ) : withdrawals && withdrawals.length > 0 ? (
+              <div className="space-y-2">
+                {withdrawals.slice(0, 10).map((w: WithdrawalRequest) => (
+                  <div
+                    key={w.id}
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 p-3 flex items-start justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        ৳{parseFloat(w.amount).toLocaleString()} withdraw
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {' '}
+                          (+৳{parseFloat(w.fee).toLocaleString()} fee)
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {w.receiver_phone}
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <span className="uppercase">{w.method}</span>
+                        <span className="text-slate-400">•</span>
+                        <span>
+                          {new Date(w.created_at).toLocaleString()}
+                        </span>
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-lg ${
+                        w.status === 'pending'
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          : w.status === 'accepted'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                          : w.status === 'rejected'
+                          ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      }`}
+                    >
+                      {w.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-muted-foreground">
+                No withdrawal requests yet.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Request withdrawal</DialogTitle>
+            <DialogDescription>
+              Minimum ৳300. A 5% charge will be added and deducted from your wallet immediately. Status will be pending until approved.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Amount (৳)</label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                min={300}
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder="300"
+              />
+              <div className="text-xs text-muted-foreground">
+                Fee (5%): <span className="font-medium">৳{fee.toFixed(2)}</span> • Total debit:{" "}
+                <span className="font-medium">৳{totalDebit.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment method</label>
+                <Select value={withdrawMethod} onValueChange={(v) => setWithdrawMethod(v as 'bkash')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bkash">Bkash</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Receive phone number</label>
+                <Input
+                  value={withdrawPhone}
+                  onChange={(e) => setWithdrawPhone(e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setWithdrawOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createWithdrawal.mutate()}
+              disabled={createWithdrawal.isPending}
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+            >
+              {createWithdrawal.isPending ? 'Submitting...' : 'Withdraw'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Transaction Tabs */}
       <Card className="relative overflow-hidden border-0 bg-white dark:bg-slate-900 shadow-md sm:shadow-lg md:shadow-xl">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -12,9 +13,12 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
+  UserCircle,
+  ShieldAlert,
+  Trash2,
 } from "lucide-react";
 import { superadminApi } from "@/lib/api";
-import type { AdminUserListItem, AdminUserFilters } from "@/types";
+import type { AdminUserListItem, AdminUserFilters, AccountStatus } from "@/types";
 import { useAuthStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +33,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -48,10 +55,18 @@ interface SuperadminUsersTabProps {
   theme?: SuperadminTheme;
 }
 
+const ACCOUNT_STATUS_LABELS: Record<AccountStatus, string> = {
+  active: "Active",
+  hold: "Hold",
+  ban: "Ban",
+  inactive: "Inactive",
+};
+
 export function SuperadminUsersTab({
   theme = "dark",
 }: SuperadminUsersTabProps) {
   const isLight = theme === "light";
+  const router = useRouter();
   const { user: currentUser } = useAuthStore();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -88,6 +103,24 @@ export function SuperadminUsersTab({
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFilters((f) => ({ ...f, page: 1 }));
+  };
+
+  const setAccountStatus = async (user: AdminUserListItem, newStatus: AccountStatus) => {
+    if (user.id === currentUser?.user.id) {
+      toast.error("You cannot change your own account status");
+      return;
+    }
+    setActioningId(user.id);
+    try {
+      await superadminApi.updateUser(user.id, { account_status: newStatus });
+      toast.success(`Account status set to ${ACCOUNT_STATUS_LABELS[newStatus]}`);
+      refetchUsers();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      toast.error(e.response?.data?.detail || "Failed to update");
+    } finally {
+      setActioningId(null);
+    }
   };
 
   const toggleActive = async (user: AdminUserListItem) => {
@@ -320,6 +353,13 @@ export function SuperadminUsersTab({
                       Status
                     </th>
                     <th
+                      className={`text-left py-3 px-4 font-semibold ${
+                        isLight ? "text-slate-600" : "text-slate-400"
+                      }`}
+                    >
+                      Account status
+                    </th>
+                    <th
                       className={`text-left py-3 px-4 font-semibold w-16 ${
                         isLight ? "text-slate-600" : "text-slate-400"
                       }`}
@@ -332,7 +372,7 @@ export function SuperadminUsersTab({
                   {results.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="py-12 text-center text-slate-500"
                       >
                         No users found
@@ -438,6 +478,29 @@ export function SuperadminUsersTab({
                           </span>
                         </td>
                         <td className="py-3 px-4">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                              u.account_status === "hold"
+                                ? isLight
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-amber-500/20 text-amber-400"
+                                : u.account_status === "ban"
+                                ? isLight
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-red-500/20 text-red-400"
+                                : u.account_status === "inactive"
+                                ? isLight
+                                  ? "bg-slate-200 text-slate-600"
+                                  : "bg-slate-600/30 text-slate-400"
+                                : isLight
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-emerald-500/20 text-emerald-400"
+                            }`}
+                          >
+                            {ACCOUNT_STATUS_LABELS[u.account_status ?? "active"]}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
@@ -461,26 +524,54 @@ export function SuperadminUsersTab({
                               }`}
                             >
                               <DropdownMenuItem
-                                onClick={() => toggleActive(u)}
-                                disabled={
-                                  actioningId === u.id ||
-                                  u.id === currentUser?.user.id
-                                }
+                                onClick={() => router.push(`/superadmin/users/${u.id}`)}
                                 className={
                                   isLight
                                     ? "focus:bg-slate-100 focus:text-slate-900"
                                     : "focus:bg-slate-800 focus:text-slate-100"
                                 }
                               >
-                                {actioningId === u.id ? (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : u.is_active ? (
-                                  <UserX className="w-4 h-4 mr-2" />
-                                ) : (
-                                  <UserCheck className="w-4 h-4 mr-2" />
-                                )}
-                                {u.is_active ? "Deactivate" : "Activate"}
+                                <UserCircle className="w-4 h-4 mr-2" />
+                                View details
                               </DropdownMenuItem>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger
+                                  disabled={actioningId === u.id || u.id === currentUser?.user.id}
+                                  className={
+                                    isLight
+                                      ? "focus:bg-slate-100 focus:text-slate-900"
+                                      : "focus:bg-slate-800 focus:text-slate-100"
+                                  }
+                                >
+                                  {actioningId === u.id ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <ShieldAlert className="w-4 h-4 mr-2" />
+                                  )}
+                                  Set account status
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent
+                                  className={
+                                    isLight
+                                      ? "bg-white border-slate-200 text-slate-800"
+                                      : "bg-[#161b22] border-slate-700 text-slate-200"
+                                  }
+                                >
+                                  {(["active", "hold", "ban", "inactive"] as const).map((status) => (
+                                    <DropdownMenuItem
+                                      key={status}
+                                      onClick={() => setAccountStatus(u, status)}
+                                      className={
+                                        isLight
+                                          ? "focus:bg-slate-100 focus:text-slate-900"
+                                          : "focus:bg-slate-800 focus:text-slate-100"
+                                      }
+                                    >
+                                      {ACCOUNT_STATUS_LABELS[status]}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
                               <DropdownMenuItem
                                 onClick={() => setDeleteTarget(u)}
                                 disabled={u.id === currentUser?.user.id}
@@ -490,6 +581,7 @@ export function SuperadminUsersTab({
                                     : "text-red-400 focus:bg-red-500/10 focus:text-red-400"
                                 }
                               >
+                                <Trash2 className="w-4 h-4 mr-2" />
                                 Delete user
                               </DropdownMenuItem>
                             </DropdownMenuContent>

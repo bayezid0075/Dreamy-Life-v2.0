@@ -11,8 +11,11 @@ import {
   Users,
   Crown,
   ShoppingBag,
-  Package,
   Store,
+  Package,
+  BarChart3,
+  ShoppingCart,
+  Sparkles,
   LogOut,
   Moon,
   Sun,
@@ -25,6 +28,7 @@ import {
   Settings,
   HelpCircle,
   ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -38,6 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { useAuthStore } from "@/store";
+import { useVendor } from "@/hooks/use-vendor";
 
 const mainNavItems = [
   {
@@ -64,20 +69,21 @@ const mainNavItems = [
 
 const shopNavItems = [
   {
+    title: "Reseller Shop",
+    href: "/reseller",
+    icon: Store,
+  },
+  {
     title: "My Orders",
     href: "/orders",
     icon: ShoppingBag,
   },
-  {
-    title: "My Products",
-    href: "/vendor/products",
-    icon: Package,
-  },
-  {
-    title: "My Shop",
-    href: "/vendor",
-    icon: Store,
-  },
+];
+
+const vendorSubItems = [
+  { title: "Overview", href: "/vendor", icon: BarChart3 },
+  { title: "Orders", href: "/vendor/orders", icon: ShoppingCart },
+  { title: "Inventory", href: "/vendor/products", icon: Package },
 ];
 
 const otherNavItems = [
@@ -106,6 +112,10 @@ export function MobileSideDrawer({
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const [copied, setCopied] = useState(false);
+  const [vendorExpanded, setVendorExpanded] = useState(
+    pathname.startsWith("/vendor")
+  );
+  const { hasVendor } = useVendor();
 
   const handleLogout = () => {
     logout();
@@ -303,7 +313,7 @@ export function MobileSideDrawer({
             </p>
             <nav className="space-y-0.5">
               {shopNavItems.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.href}
@@ -324,6 +334,76 @@ export function MobileSideDrawer({
                   </Link>
                 );
               })}
+            </nav>
+          </div>
+
+          {/* Vendor Navigation */}
+          <div className="mb-3">
+            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
+              Vendor
+            </p>
+            <nav className="space-y-0.5">
+              {hasVendor ? (
+                <>
+                  <button
+                    onClick={() => setVendorExpanded(!vendorExpanded)}
+                    className={`flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-sm transition-all ${
+                      pathname.startsWith("/vendor")
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Store
+                        className={`h-4 w-4 ${
+                          pathname.startsWith("/vendor")
+                            ? "text-violet-600 dark:text-violet-400"
+                            : ""
+                        }`}
+                      />
+                      <span>My Shop</span>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        vendorExpanded ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {vendorExpanded && (
+                    <div className="ml-4 space-y-0.5 border-l-2 border-violet-200 dark:border-violet-800 pl-2.5 mt-0.5">
+                      {vendorSubItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={handleNavClick}
+                            className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-all ${
+                              isActive
+                                ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                                : "text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-slate-700 dark:hover:text-slate-200"
+                            }`}
+                          >
+                            <item.icon className="h-3.5 w-3.5" />
+                            <span>{item.title}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link
+                  href="/vendor"
+                  onClick={handleNavClick}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5 hover:from-violet-500/10 hover:to-fuchsia-500/10 transition-all"
+                >
+                  <Sparkles className="h-4 w-4 text-fuchsia-500" />
+                  <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent font-medium">
+                    Become a Vendor
+                  </span>
+                </Link>
+              )}
             </nav>
           </div>
 

@@ -18,6 +18,10 @@ class MembershipPurchaseAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        from users.account_restriction import check_area_allowed
+        forbidden, is_forbidden = check_area_allowed(request.user, "membership")
+        if is_forbidden:
+            return forbidden
         membership_id = request.data.get("membership_id")
 
         if not membership_id:
@@ -39,6 +43,10 @@ class CreatePaymentAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        from users.account_restriction import check_area_allowed
+        forbidden, is_forbidden = check_area_allowed(request.user, "membership")
+        if is_forbidden:
+            return forbidden
         membership_id = request.data.get("membership_id")
         
         if not membership_id:

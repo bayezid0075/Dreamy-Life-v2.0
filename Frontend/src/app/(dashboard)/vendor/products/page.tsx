@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Package, Loader2, Upload, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, Loader2, Upload, X, ChevronLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,7 +65,117 @@ import { vendorsApi, shopApi } from '@/lib/api';
 import { productSchema, type ProductFormData } from '@/lib/validations';
 import type { Product } from '@/types';
 
+// ==================== TAG INPUT COMPONENT ====================
+
+function TagInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const tags = value
+    ? value
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
+
+  const addTag = useCallback(
+    (tag: string) => {
+      const trimmed = tag.trim();
+      if (!trimmed) return;
+      if (tags.includes(trimmed)) {
+        setInputValue('');
+        return;
+      }
+      const newTags = [...tags, trimmed];
+      onChange(newTags.join(', '));
+      setInputValue('');
+    },
+    [tags, onChange]
+  );
+
+  const removeTag = useCallback(
+    (index: number) => {
+      const newTags = tags.filter((_, i) => i !== index);
+      onChange(newTags.join(', '));
+    },
+    [tags, onChange]
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag(inputValue);
+    } else if (e.key === 'Backspace' && !inputValue && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.includes(',')) {
+      const parts = val.split(',');
+      parts.forEach((part, i) => {
+        if (i < parts.length - 1) {
+          addTag(part);
+        } else {
+          setInputValue(part);
+        }
+      });
+    } else {
+      setInputValue(val);
+    }
+  };
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5 min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
+      onClick={() => inputRef.current?.focus()}
+    >
+      {tags.map((tag, index) => (
+        <Badge
+          key={index}
+          variant="secondary"
+          className="gap-1 pl-2 pr-1 py-0.5 text-xs"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeTag(index);
+            }}
+            className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+          >
+            <X className="h-2.5 w-2.5" />
+          </button>
+        </Badge>
+      ))}
+      <input
+        ref={inputRef}
+        type="text"
+        value={inputValue}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onBlur={() => {
+          if (inputValue.trim()) addTag(inputValue);
+        }}
+        placeholder={tags.length === 0 ? 'Type and press comma or enter...' : ''}
+        className="flex-1 min-w-[80px] bg-transparent outline-none placeholder:text-muted-foreground text-sm"
+      />
+    </div>
+  );
+}
+
+// ==================== MAIN PAGE ====================
+
 export default function VendorProductsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -169,7 +280,7 @@ export default function VendorProductsPage() {
       delivery_charge_inside_dhaka: product.delivery_charge_inside_dhaka || '',
       delivery_charge_outside_dhaka: product.delivery_charge_outside_dhaka || '',
       vat: product.vat || '0',
-      tags: product.tags?.join(', ') || '',
+      tags: Array.isArray(product.tags) ? product.tags.join(', ') : (product.tags || ''),
     });
     setImagePreviews(product.images?.map((img) => img.image) || []);
     setIsDialogOpen(true);
@@ -226,119 +337,200 @@ export default function VendorProductsPage() {
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Products</h1>
-          <p className="text-muted-foreground">
+    <div className="space-y-4 px-4 py-4 md:px-0 md:py-0">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.back()}
+        className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back
+      </Button>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">My Products</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Manage your product listings
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
+        <Button
+          onClick={() => setIsDialogOpen(true)}
+          size="sm"
+          className="shrink-0"
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          <span className="hidden sm:inline">Add Product</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 
-      {/* Products Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Products ({products?.length || 0})</CardTitle>
+      {/* Products */}
+      <Card className="border-0 shadow-lg overflow-hidden">
+        <CardHeader className="px-4 sm:px-6 py-3">
+          <CardTitle className="text-sm sm:text-base">
+            Products ({products?.length || 0})
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+            <div className="space-y-3 px-4 sm:px-6 pb-4">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full" />
               ))}
             </div>
           ) : products && products.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
-                          {product.images && product.images[0] ? (
-                            <img
-                              src={product.images[0].image}
-                              alt={product.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Package className="h-4 w-4 text-muted-foreground" />
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40">
+                      <TableHead>Product</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {products.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-md overflow-hidden bg-muted shrink-0">
+                              {product.images && product.images[0] ? (
+                                <img
+                                  src={product.images[0].image}
+                                  alt={product.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
                             </div>
-                          )}
+                            <span className="font-medium line-clamp-1">
+                              {product.title}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {product.sku}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              ৳{parseFloat(product.price).toLocaleString()}
+                            </span>
+                            {product.discount_price && (
+                              <span className="text-xs text-green-600">
+                                Sale: ৳{parseFloat(product.discount_price).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {categories?.find((c) => c.id === product.category)?.name ||
+                              'N/A'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(product)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => {
+                              setSelectedProduct(product);
+                              setIsDeleteOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y">
+                {products.map((product) => (
+                  <div key={product.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                      {product.images && product.images[0] ? (
+                        <img
+                          src={product.images[0].image}
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <span className="font-medium line-clamp-1">
-                          {product.title}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {product.sku}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm line-clamp-1">{product.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-sm font-semibold">
                           ৳{parseFloat(product.price).toLocaleString()}
                         </span>
                         {product.discount_price && (
-                          <span className="text-xs text-green-600">
-                            Sale: ৳{parseFloat(product.discount_price).toLocaleString()}
+                          <span className="text-[10px] text-green-600 font-medium">
+                            ৳{parseFloat(product.discount_price).toLocaleString()}
                           </span>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {categories?.find((c) => c.id === product.category)?.name ||
-                          'N/A'}
+                      <Badge variant="secondary" className="text-[10px] mt-1 px-1.5 py-0">
+                        {categories?.find((c) => c.id === product.category)?.name || 'N/A'}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </div>
+                    <div className="flex items-center shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => openEditDialog(product)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive"
+                        className="h-8 w-8 text-destructive"
                         onClick={() => {
                           setSelectedProduct(product);
                           setIsDeleteOpen(true);
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           ) : (
-            <div className="text-center py-12">
-              <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-medium mb-1">No products yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="text-center py-10 px-4">
+              <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <h3 className="font-medium mb-1 text-sm">No products yet</h3>
+              <p className="text-xs text-muted-foreground mb-4">
                 Start by adding your first product
               </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
+              <Button onClick={() => setIsDialogOpen(true)} size="sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Product
               </Button>
@@ -349,7 +541,7 @@ export default function VendorProductsPage() {
 
       {/* Add/Edit Product Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-h-[85vh]">
           <DialogHeader>
             <DialogTitle>
               {selectedProduct ? 'Edit Product' : 'Add New Product'}
@@ -368,7 +560,7 @@ export default function VendorProductsPage() {
                 <label className="text-sm font-medium">Product Images</label>
                 <div className="flex flex-wrap gap-2">
                   {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative w-20 h-20">
+                    <div key={index} className="relative w-16 h-16 sm:w-20 sm:h-20">
                       <img
                         src={preview}
                         alt={`Preview ${index + 1}`}
@@ -377,7 +569,7 @@ export default function VendorProductsPage() {
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
-                        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -386,9 +578,9 @@ export default function VendorProductsPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-20 h-20 border-2 border-dashed rounded-md flex items-center justify-center hover:border-primary transition-colors"
+                    className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-dashed rounded-md flex items-center justify-center hover:border-primary transition-colors"
                   >
-                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <Upload className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </div>
                 <input
@@ -401,7 +593,7 @@ export default function VendorProductsPage() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="title"
@@ -449,7 +641,7 @@ export default function VendorProductsPage() {
                 )}
               />
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="category"
@@ -510,7 +702,7 @@ export default function VendorProductsPage() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="price"
@@ -543,7 +735,7 @@ export default function VendorProductsPage() {
                   control={form.control}
                   name="reseller_mrp_price"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="col-span-2 sm:col-span-1">
                       <FormLabel>Reseller Price</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="Optional" {...field} />
@@ -554,13 +746,13 @@ export default function VendorProductsPage() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="delivery_charge_inside_dhaka"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Delivery (Inside Dhaka)</FormLabel>
+                      <FormLabel>Inside Dhaka</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="0.00" {...field} />
                       </FormControl>
@@ -574,7 +766,7 @@ export default function VendorProductsPage() {
                   name="delivery_charge_outside_dhaka"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Delivery (Outside Dhaka)</FormLabel>
+                      <FormLabel>Outside Dhaka</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="0.00" {...field} />
                       </FormControl>
@@ -587,7 +779,7 @@ export default function VendorProductsPage() {
                   control={form.control}
                   name="vat"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="col-span-2 sm:col-span-1">
                       <FormLabel>VAT (%)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="0" {...field} />
@@ -603,19 +795,16 @@ export default function VendorProductsPage() {
                 name="tags"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tags (comma separated)</FormLabel>
+                    <FormLabel>Tags</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="tag1, tag2, tag3"
-                        {...field}
-                      />
+                      <TagInput value={field.value || ''} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <DialogFooter>
+              <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   type="button"
                   variant="outline"

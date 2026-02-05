@@ -11,16 +11,19 @@ import {
   Users,
   Crown,
   ShoppingBag,
-  Package,
   Store,
+  Package,
+  BarChart3,
+  ShoppingCart,
+  Sparkles,
   LogOut,
   Moon,
   Sun,
-  Settings,
   Phone,
   Copy,
   CheckCircle,
   BadgeCheck,
+  ChevronRight,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
@@ -35,7 +38,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,6 +59,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { useAuthStore } from '@/store';
+import { useVendor } from '@/hooks/use-vendor';
 
 const mainNavItems = [
   {
@@ -78,20 +91,21 @@ const mainNavItems = [
 
 const shopNavItems = [
   {
+    title: 'Reseller Shop',
+    href: '/reseller',
+    icon: Store,
+  },
+  {
     title: 'My Orders',
     href: '/orders',
     icon: ShoppingBag,
   },
-  {
-    title: 'My Products',
-    href: '/vendor/products',
-    icon: Package,
-  },
-  {
-    title: 'My Shop',
-    href: '/vendor',
-    icon: Store,
-  },
+];
+
+const vendorSubItems = [
+  { title: 'Overview', href: '/vendor', icon: BarChart3 },
+  { title: 'Orders', href: '/vendor/orders', icon: ShoppingCart },
+  { title: 'Inventory', href: '/vendor/products', icon: Package },
 ];
 
 export function AppSidebar() {
@@ -99,6 +113,7 @@ export function AppSidebar() {
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const [copied, setCopied] = useState(false);
+  const { hasVendor, isLoading: vendorLoading } = useVendor();
 
   const handleLogout = () => {
     logout();
@@ -229,7 +244,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname.startsWith(item.href)}
+                    isActive={pathname === item.href}
                   >
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
@@ -238,6 +253,64 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Vendor</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {vendorLoading ? (
+                <SidebarMenuItem>
+                  <SidebarMenuSkeleton showIcon />
+                </SidebarMenuItem>
+              ) : hasVendor ? (
+                <Collapsible
+                  defaultOpen={pathname.startsWith('/vendor')}
+                  className="group/collapsible"
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={pathname.startsWith('/vendor')}
+                      >
+                        <Store className="h-4 w-4" />
+                        <span>My Shop</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {vendorSubItems.map((item) => (
+                          <SidebarMenuSubItem key={item.href}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={pathname === item.href}
+                            >
+                              <Link href={item.href}>
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              ) : (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/vendor">
+                      <Sparkles className="h-4 w-4 text-fuchsia-500" />
+                      <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent font-medium">
+                        Become a Vendor
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

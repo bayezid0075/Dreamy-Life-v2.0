@@ -1,4 +1,6 @@
 // User Types
+export type AccountStatus = "active" | "hold" | "ban" | "inactive";
+
 export interface User {
   id: number;
   username: string;
@@ -7,12 +9,35 @@ export interface User {
   is_staff: boolean;
   is_superuser: boolean;
   is_active?: boolean;
+  account_status?: AccountStatus;
   referred_by?: number | null;
   referred_by_username?: string | null;
   referred_by_refercode?: string | null;
   created_at?: string;
   updated_at?: string;
   last_login?: string | null;
+}
+
+export interface AccountStatusResponse {
+  account_status: AccountStatus;
+  restricted_areas: string[];
+  message: string | null;
+}
+
+export const RESTRICTABLE_AREAS = [
+  "wallet",
+  "withdrawals",
+  "shop",
+  "profile_edit",
+  "membership",
+  "referrals",
+] as const;
+
+export type RestrictableArea = (typeof RESTRICTABLE_AREAS)[number];
+
+export interface RestrictionConfigResponse {
+  config: Record<"hold" | "ban" | "inactive", string[]>;
+  restrictable_areas: string[];
 }
 
 export interface UserInfo {
@@ -144,6 +169,32 @@ export interface Points {
   transactions: Transaction[];
   income: string;
   expense: string;
+}
+
+// Withdrawals
+export type WithdrawalMethod = "bkash";
+export type WithdrawalStatus = "pending" | "accepted" | "rejected" | "finished";
+
+export interface WithdrawalRequest {
+  id: number;
+  user: number;
+  user_username: string;
+  user_email: string;
+  amount: string;
+  fee: string;
+  total_debit: string;
+  method: WithdrawalMethod;
+  receiver_phone: string;
+  status: WithdrawalStatus;
+  created_at: string;
+  updated_at: string;
+  decided_by: number | null;
+  decided_by_email: string | null;
+  decided_at: string | null;
+  finished_by: number | null;
+  finished_by_email: string | null;
+  finished_at: string | null;
+  admin_note: string;
 }
 
 // Referral Types
@@ -396,6 +447,7 @@ export interface AdminUserFilters {
   member_status?: string;
   ordering?: string;
   page?: number;
+  page_size?: number;
 }
 
 // Notification Types

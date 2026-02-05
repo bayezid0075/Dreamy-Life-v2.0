@@ -63,6 +63,12 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Show account status message on 403 (hold/ban/inactive)
+    if (error.response?.status === 403 && error.response?.data?.detail && typeof window !== 'undefined') {
+      const msg = typeof error.response.data.detail === 'string' ? error.response.data.detail : 'This action is not allowed.';
+      import('sonner').then(({ toast }) => toast.error(msg)).catch(() => {});
+    }
+
     return Promise.reject(error);
   }
 );

@@ -7,8 +7,10 @@ import { superadminApi, getSuperadminStreamUrl } from "@/lib/api";
 import type { SuperadminOverviewStats } from "@/types";
 import { SuperadminOverviewTab } from "@/components/superadmin/overview-tab";
 import { SuperadminUsersTab } from "@/components/superadmin/users-tab";
+import { SuperadminWithdrawalsTab } from "@/components/superadmin/withdrawals-tab";
+import { SuperadminSettingsTab } from "@/components/superadmin/settings-tab";
 
-type TabId = "overview" | "users";
+type TabId = "overview" | "users" | "withdrawals" | "settings";
 export type SuperadminTheme = "dark" | "light";
 
 const THEME_KEY = "superadmin-theme";
@@ -180,6 +182,36 @@ export default function SuperadminPage() {
           >
             USER CONTROL
           </button>
+            <button
+              type="button"
+              onClick={() => setTab("withdrawals")}
+              className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === "withdrawals"
+                  ? isLight
+                    ? "border-amber-500 text-amber-600 bg-amber-50"
+                    : "border-amber-500 text-amber-400 bg-amber-500/5"
+                : isLight
+                  ? "border-transparent text-slate-500 hover:bg-slate-100"
+                  : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+            }`}
+          >
+            WITHDRAWALS
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("settings")}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              tab === "settings"
+                ? isLight
+                  ? "border-amber-500 text-amber-600 bg-amber-50"
+                  : "border-amber-500 text-amber-400 bg-amber-500/5"
+                : isLight
+                  ? "border-transparent text-slate-500 hover:bg-slate-100"
+                  : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+            }`}
+          >
+            SETTINGS
+          </button>
         </div>
       </header>
 
@@ -188,6 +220,8 @@ export default function SuperadminPage() {
           <SuperadminOverviewTab liveData={liveOverview} theme={theme} />
         )}
         {tab === "users" && <SuperadminUsersTab theme={theme} />}
+        {tab === "withdrawals" && <SuperadminWithdrawalsTab theme={theme} />}
+        {tab === "settings" && <SuperadminSettingsTab theme={theme} />}
       </main>
     </div>
   );

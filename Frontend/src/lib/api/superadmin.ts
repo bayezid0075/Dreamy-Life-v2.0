@@ -5,6 +5,8 @@ import type {
   AdminUserListResponse,
   AdminUserListItem,
   AdminUserFilters,
+  RestrictionConfigResponse,
+  AccountStatus,
 } from "@/types";
 
 export const superadminApi = {
@@ -62,6 +64,7 @@ export const superadminApi = {
       is_active: boolean;
       is_staff: boolean;
       is_superuser: boolean;
+      account_status: AccountStatus;
       referred_by: number;
       info: Record<string, unknown>;
     }>
@@ -75,6 +78,23 @@ export const superadminApi = {
 
   deleteUser: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/superadmin/users/${id}/`);
+  },
+
+  getRestrictionConfig: async (): Promise<RestrictionConfigResponse> => {
+    const response = await apiClient.get<RestrictionConfigResponse>(
+      "/api/superadmin/settings/restrictions/"
+    );
+    return response.data;
+  },
+
+  updateRestrictionConfig: async (
+    config: RestrictionConfigResponse["config"]
+  ): Promise<{ config: RestrictionConfigResponse["config"] }> => {
+    const response = await apiClient.put<{ config: RestrictionConfigResponse["config"] }>(
+      "/api/superadmin/settings/restrictions/",
+      { config }
+    );
+    return response.data;
   },
 };
 

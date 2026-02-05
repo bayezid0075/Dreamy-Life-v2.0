@@ -24,7 +24,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'phone_number', 'password',
-            'is_active', 'is_staff', 'is_superuser', 'referred_by',
+            'is_active', 'is_staff', 'is_superuser', 'account_status', 'referred_by',
             'created_at', 'updated_at', 'last_login',
             'info', 'downlines_count', 'active_membership',
             'referred_by_username', 'referred_by_refercode'

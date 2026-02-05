@@ -18,6 +18,13 @@ class UserManager(BaseUserManager):
         extra.setdefault("is_superuser", True)
         return self.create_user(email, username, phone_number, password, **extra)
 
+ACCOUNT_STATUS_CHOICES = [
+    ("active", "Active"),
+    ("hold", "Hold"),
+    ("ban", "Ban"),
+    ("inactive", "Inactive"),
+]
+
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150)
     phone_number = models.CharField(max_length=20, unique=True)
@@ -25,6 +32,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     referred_by = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="downlines")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    account_status = models.CharField(
+        max_length=20,
+        choices=ACCOUNT_STATUS_CHOICES,
+        default="active",
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -73,6 +85,47 @@ class UserInfo(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.own_refercode}"
+
+# Area slugs that can be restricted per account status (hold, ban, inactive)
+RESTRICTABLE_AREAS = [
+    "wallet",
+    "withdrawals",
+    "shop",
+    "profile_edit",
+    "membership",
+    "referrals",
+]
+
+
+class AccountRestrictionConfig(models.Model):
+    """
+    Singleton config: which areas are blocked for each non-active account status.
+    Superadmin can edit. Keys: hold, ban, inactive; values: list of area slugs.
+    """
+    config = models.JSONField(
+        default=dict,
+        help_text='{"hold": ["wallet", "withdrawals"], "ban": ["wallet", "withdrawals", "shop", "profile_edit", "membership", "referrals"], "inactive": ["wallet", "withdrawals", "shop", "profile_edit", "membership", "referrals"]}',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Account restriction config"
+        verbose_name_plural = "Account restriction configs"
+
+    @classmethod
+    def get_config(cls):
+        obj, _ = cls.objects.get_or_create(
+            pk=1,
+            defaults={
+                "config": {
+                    "hold": ["wallet", "withdrawals"],
+                    "ban": RESTRICTABLE_AREAS.copy(),
+                    "inactive": RESTRICTABLE_AREAS.copy(),
+                },
+            },
+        )
+        return obj.config
+
 
 class PasswordResetToken(models.Model):
     """Model to store password reset tokens"""

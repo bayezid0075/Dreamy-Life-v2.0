@@ -12,6 +12,7 @@ from .serializers import (
     PasswordResetRequestSerializer, PasswordResetVerifySerializer, PasswordResetSerializer
 )
 from .models import UserInfo, User, PasswordResetToken
+from .account_restriction import get_account_status_response
 import threading
 import secrets
 from datetime import timedelta
@@ -75,9 +76,22 @@ class LoginView(APIView):
             "access": str(refresh.access_token)
         })
 
+class AccountStatusView(APIView):
+    """Return current user's account status and restricted areas (for frontend to show messages / disable features)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        data = get_account_status_response(request.user)
+        return Response(data, status=status.HTTP_200_OK)
+
+
 class MyDownlinesView(APIView):
     """Return all downline users (direct & indirect up to 10 levels)"""
     def get(self, request):
+        from .account_restriction import check_area_allowed
+        forbidden, is_forbidden = check_area_allowed(request.user, "referrals")
+        if is_forbidden:
+            return forbidden
         user = request.user
         # We can use precomputed table (in referral.services) or perform query
         from referral.services import get_downlines
@@ -95,6 +109,10 @@ class UserInfoUpdateView(APIView):
     
     def post(self, request):
         """Update user info profile"""
+        from .account_restriction import check_area_allowed
+        forbidden, is_forbidden = check_area_allowed(request.user, "profile_edit")
+        if is_forbidden:
+            return forbidden
         user = request.user
         user_info, created = UserInfo.objects.get_or_create(user=user)
         

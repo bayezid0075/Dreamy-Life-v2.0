@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Separator } from "@/components/ui/separator";
-import { MobileBottomNav } from "@/components/dashboard";
+import { MobileBottomNav, AccountStatusBanner } from "@/components/dashboard";
 
 export default function DashboardLayout({
   children,
@@ -55,14 +55,20 @@ export default function DashboardLayout({
                 className="mr-2 h-4 bg-violet-200 dark:bg-violet-800"
               />
             </header>
-            <main className="flex-1 p-6">{children}</main>
+            <main className="flex-1 p-6">
+              <AccountStatusBanner />
+              {children}
+            </main>
           </SidebarInset>
         </SidebarProvider>
       </div>
 
       {/* Mobile Layout */}
       <div className="md:hidden min-h-dvh bg-slate-50 dark:bg-slate-950 pb-16">
-        <main>{children}</main>
+        <main>
+          <AccountStatusBanner />
+          {children}
+        </main>
         <MobileBottomNav />
       </div>
     </>
