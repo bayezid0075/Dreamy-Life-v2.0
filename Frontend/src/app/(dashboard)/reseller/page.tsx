@@ -85,24 +85,28 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
+    <div className="min-h-full bg-[#f5f0e8] dark:bg-[#1a1714] font-serif px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
       {/* Back + Cart */}
-      <div className="flex items-center justify-between mb-4 md:mb-6">
+      <div className="flex items-center justify-between mb-6">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => router.back()}
-          className="gap-1 text-muted-foreground hover:text-foreground"
+          className="gap-1 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/50 dark:hover:bg-stone-800/50 font-serif"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
         </Button>
         <Link href="/reseller/cart">
-          <Button variant="outline" size="sm" className="gap-1.5 relative">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 relative border-stone-400 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-stone-800/50 font-serif"
+          >
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Cart</span>
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-sm bg-stone-800 dark:bg-amber-800 text-[#f5f0e8] text-[10px] font-bold flex items-center justify-center font-mono">
                 {cartCount}
               </span>
             )}
@@ -111,31 +115,31 @@ export default function ShopPage() {
       </div>
 
       {/* Header */}
-      <div className="mb-4 md:mb-5">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+      <div className="mb-6 border-b border-stone-300 dark:border-stone-700 pb-4">
+        <h1 className="text-2xl sm:text-3xl font-serif font-normal tracking-tight text-stone-800 dark:text-stone-100 uppercase">
           Reseller Shop
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Browse products and resell with your custom pricing
+        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1 font-mono">
+          Browse · Resell · Your price
         </p>
       </div>
 
       {/* Search + Filter */}
       <div className="flex gap-2 mb-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
           <Input
             placeholder="Search products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 bg-white dark:bg-stone-900/80 border-stone-300 dark:border-stone-700 text-stone-800 dark:text-stone-200 font-mono text-sm placeholder:text-stone-400 focus-visible:ring-amber-800/40"
           />
         </div>
         <Button
           variant="outline"
           size="icon"
           onClick={() => setShowFilters(!showFilters)}
-          className={showFilters ? "border-violet-500 text-violet-600" : ""}
+          className={`border-stone-400 dark:border-stone-600 font-serif ${showFilters ? "border-amber-800 text-amber-800 dark:text-amber-600 bg-amber-50/50 dark:bg-amber-900/20" : "text-stone-600 dark:text-stone-400 hover:bg-stone-200/50 dark:hover:bg-stone-800/50"}`}
         >
           <SlidersHorizontal className="h-4 w-4" />
         </Button>
@@ -143,12 +147,12 @@ export default function ShopPage() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="text-sm">
+            <SelectTrigger className="text-sm font-mono border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900/80">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="font-mono border-stone-200 dark:border-stone-800 bg-[#f5f0e8] dark:bg-[#1a1714]">
               <SelectItem value="all">All Categories</SelectItem>
               {categories?.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id.toString()}>
@@ -159,10 +163,10 @@ export default function ShopPage() {
           </Select>
 
           <Select value={brand} onValueChange={setBrand}>
-            <SelectTrigger className="text-sm">
+            <SelectTrigger className="text-sm font-mono border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900/80">
               <SelectValue placeholder="Brand" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="font-mono border-stone-200 dark:border-stone-800 bg-[#f5f0e8] dark:bg-[#1a1714]">
               <SelectItem value="all">All Brands</SelectItem>
               {brands?.map((b) => (
                 <SelectItem key={b.id} value={b.id.toString()}>
@@ -173,13 +177,13 @@ export default function ShopPage() {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="text-sm col-span-2 sm:col-span-1">
+            <SelectTrigger className="text-sm font-mono col-span-2 sm:col-span-1 border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900/80">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="font-mono border-stone-200 dark:border-stone-800 bg-[#f5f0e8] dark:bg-[#1a1714]">
               <SelectItem value="created_at">Newest</SelectItem>
-              <SelectItem value="price_asc">Price: Low to High</SelectItem>
-              <SelectItem value="price_desc">Price: High to Low</SelectItem>
+              <SelectItem value="price_asc">Price: Low → High</SelectItem>
+              <SelectItem value="price_desc">Price: High → Low</SelectItem>
               <SelectItem value="name">Name</SelectItem>
             </SelectContent>
           </Select>
@@ -188,8 +192,8 @@ export default function ShopPage() {
 
       {/* Results count */}
       {data && !isLoading && (
-        <p className="text-xs text-muted-foreground mb-3">
-          {data.count} product{data.count !== 1 ? "s" : ""} found
+        <p className="text-xs font-mono text-stone-500 dark:text-stone-400 mb-3">
+          {data.count} product{data.count !== 1 ? "s" : ""}
         </p>
       )}
 
@@ -199,14 +203,14 @@ export default function ShopPage() {
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm"
+              className="bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 overflow-hidden"
             >
-              <Skeleton className="aspect-square w-full" />
-              <div className="p-3 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-                <Skeleton className="h-5 w-20" />
-                <Skeleton className="h-8 w-full" />
+              <Skeleton className="aspect-[1] w-full rounded-none bg-stone-200/50 dark:bg-stone-800/50" />
+              <div className="p-3 space-y-2 border-t border-stone-200 dark:border-stone-800">
+                <Skeleton className="h-4 w-3/4 rounded-none bg-stone-200/50 dark:bg-stone-800/50" />
+                <Skeleton className="h-3 w-1/2 rounded-none bg-stone-200/50 dark:bg-stone-800/50" />
+                <Skeleton className="h-6 w-16 rounded-none bg-stone-200/50 dark:bg-stone-800/50" />
+                <Skeleton className="h-8 w-full rounded-none bg-stone-200/50 dark:bg-stone-800/50" />
               </div>
             </div>
           ))}
@@ -223,46 +227,46 @@ export default function ShopPage() {
             return (
               <div
                 key={product.id}
-                className="group bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className="group bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 overflow-hidden hover:border-stone-400 dark:hover:border-stone-600 transition-colors"
               >
                 <Link href={`/reseller/${product.id}`}>
-                  <div className="relative aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <div className="relative aspect-square bg-stone-100 dark:bg-stone-800/50 overflow-hidden">
                     {product.images && product.images.length > 0 ? (
                       <img
                         src={product.images[0].image}
                         alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover opacity-95 group-hover:opacity-100 transition-opacity"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ImageOff className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                        <ImageOff className="h-8 w-8 text-stone-300 dark:text-stone-600" />
                       </div>
                     )}
                     {hasDiscount && product.discount_percentage && (
-                      <Badge className="absolute top-1.5 left-1.5 bg-rose-500 text-white border-0 text-[10px] px-1.5 py-0.5">
+                      <span className="absolute top-1.5 left-1.5 bg-stone-800 dark:bg-amber-900 text-[#f5f0e8] text-[10px] font-mono px-1.5 py-0.5">
                         -{product.discount_percentage}%
-                      </Badge>
+                      </span>
                     )}
                     {hasResellerPrice && (
-                      <Badge className="absolute top-1.5 right-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border-0 text-[10px] px-1.5 py-0.5">
-                        <Tag className="h-2.5 w-2.5 mr-0.5" />
+                      <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 border border-stone-600 dark:border-amber-700 text-stone-700 dark:text-amber-200 text-[10px] font-mono px-1.5 py-0.5 bg-white/90 dark:bg-stone-900/90">
+                        <Tag className="h-2.5 w-2.5" />
                         Reseller
-                      </Badge>
+                      </span>
                     )}
                   </div>
                 </Link>
 
-                <div className="p-3 space-y-1.5">
+                <div className="p-3 space-y-1.5 border-t border-stone-200 dark:border-stone-800">
                   <Link href={`/reseller/${product.id}`}>
-                    <h3 className="font-medium text-xs sm:text-sm line-clamp-2 leading-snug hover:text-violet-600 transition-colors">
+                    <h3 className="font-serif font-normal text-xs sm:text-sm line-clamp-2 leading-snug text-stone-800 dark:text-stone-200 hover:text-amber-800 dark:hover:text-amber-600 transition-colors">
                       {product.title}
                     </h3>
                   </Link>
 
                   {product.vendor_name && (
                     <div className="flex items-center gap-1">
-                      <Store className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                      <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                      <Store className="h-3 w-3 text-stone-400 flex-shrink-0" />
+                      <span className="text-[10px] sm:text-xs font-mono text-stone-500 dark:text-stone-400 truncate">
                         {product.vendor_name}
                       </span>
                     </div>
@@ -270,17 +274,17 @@ export default function ShopPage() {
 
                   <div>
                     <div className="flex items-baseline gap-1.5 flex-wrap">
-                      <span className="text-sm sm:text-base font-bold text-violet-600 dark:text-violet-400">
+                      <span className="text-sm sm:text-base font-serif font-semibold text-stone-800 dark:text-amber-100">
                         ৳{parseFloat(effectivePrice).toLocaleString()}
                       </span>
                       {hasDiscount && (
-                        <span className="text-[10px] sm:text-xs text-muted-foreground line-through">
+                        <span className="text-[10px] sm:text-xs font-mono text-stone-400 line-through">
                           ৳{parseFloat(product.price).toLocaleString()}
                         </span>
                       )}
                     </div>
                     {hasResellerPrice && (
-                      <p className="text-[10px] sm:text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      <p className="text-[10px] sm:text-xs font-mono text-amber-800/80 dark:text-amber-400/90">
                         Reseller: ৳
                         {parseFloat(
                           product.reseller_mrp_price!,
@@ -292,7 +296,7 @@ export default function ShopPage() {
                   <Button
                     size="sm"
                     onClick={() => handleAddToCart(product)}
-                    className="w-full h-7 sm:h-8 text-xs bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-0"
+                    className="w-full h-7 sm:h-8 text-xs font-mono rounded-none border border-stone-800 dark:border-amber-800 bg-stone-800 dark:bg-amber-900/40 text-[#f5f0e8] hover:bg-stone-700 dark:hover:bg-amber-800/60"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add to Cart
@@ -303,12 +307,12 @@ export default function ShopPage() {
           })}
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm py-16 text-center">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/30 dark:to-fuchsia-900/20 flex items-center justify-center mb-4">
-            <Store className="h-7 w-7 text-violet-500" />
+        <div className="border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/30 py-16 text-center">
+          <div className="w-12 h-12 mx-auto border border-stone-300 dark:border-stone-700 flex items-center justify-center mb-4">
+            <Store className="h-6 w-6 text-stone-400" />
           </div>
-          <h3 className="text-base font-semibold mb-1">No Products Found</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto px-4">
+          <h3 className="font-serif text-lg font-normal text-stone-800 dark:text-stone-200 mb-1">No Products Found</h3>
+          <p className="text-sm font-mono text-stone-500 dark:text-stone-400 max-w-xs mx-auto px-4">
             {search || category || brand
               ? "Try adjusting your search or filters."
               : "No products are available yet."}
@@ -317,8 +321,8 @@ export default function ShopPage() {
       )}
 
       {data && data.total_pages > 1 && (
-        <p className="text-center text-xs text-muted-foreground mt-4">
-          Showing {data.results.length} of {data.count} products
+        <p className="text-center text-xs font-mono text-stone-500 dark:text-stone-400 mt-4">
+          {data.results.length} of {data.count}
         </p>
       )}
     </div>

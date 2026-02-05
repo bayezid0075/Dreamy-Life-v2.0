@@ -40,14 +40,13 @@ export default function CartPage() {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between mb-4 md:mb-6">
+    <div className="min-h-full bg-[#f5f0e8] dark:bg-[#1a1714] font-serif px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
+      <div className="flex items-center justify-between mb-6">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => router.back()}
-          className="gap-1 text-muted-foreground hover:text-foreground"
+          className="gap-1 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-serif"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
@@ -57,34 +56,33 @@ export default function CartPage() {
             variant="ghost"
             size="sm"
             onClick={clearCart}
-            className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+            className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-800/50 font-mono text-sm"
           >
             Clear All
           </Button>
         )}
       </div>
 
-      {/* Header */}
-      <div className="mb-4 md:mb-5">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+      <div className="mb-6 border-b border-stone-300 dark:border-stone-700 pb-4">
+        <h1 className="text-2xl sm:text-3xl font-serif font-normal tracking-tight text-stone-800 dark:text-stone-100 uppercase">
           Shopping Cart
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <p className="text-sm font-mono text-stone-500 dark:text-stone-400 mt-1">
           {totalItems} item{totalItems !== 1 ? 's' : ''} in your cart
         </p>
       </div>
 
       {items.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm py-16 text-center">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/30 dark:to-fuchsia-900/20 flex items-center justify-center mb-4">
-            <ShoppingCart className="h-7 w-7 text-violet-500" />
+        <div className="border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/30 py-16 text-center">
+          <div className="w-12 h-12 mx-auto border border-stone-300 dark:border-stone-700 flex items-center justify-center mb-4">
+            <ShoppingCart className="h-6 w-6 text-stone-400" />
           </div>
-          <h3 className="text-base font-semibold mb-1">Your Cart is Empty</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto px-4 mb-4">
+          <h3 className="font-serif text-lg font-normal text-stone-800 dark:text-stone-200 mb-1">Your Cart is Empty</h3>
+          <p className="text-sm font-mono text-stone-500 dark:text-stone-400 max-w-xs mx-auto px-4 mb-4">
             Browse products and add them to your cart to get started.
           </p>
           <Link href="/reseller">
-            <Button className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-0">
+            <Button className="rounded-none border border-stone-800 dark:border-amber-800 bg-stone-800 dark:bg-amber-900/40 text-[#f5f0e8] hover:bg-stone-700 dark:hover:bg-amber-800/60 font-mono">
               Browse Products
             </Button>
           </Link>
@@ -105,15 +103,14 @@ export default function CartPage() {
               return (
                 <div
                   key={item.product.id}
-                  className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-3 sm:p-4"
+                  className="bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 p-3 sm:p-4"
                 >
                   <div className="flex gap-3 sm:gap-4">
-                    {/* Image */}
                     <Link
                       href={`/reseller/${item.product.id}`}
                       className="flex-shrink-0"
                     >
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
                         {item.product.images &&
                         item.product.images.length > 0 ? (
                           <img
@@ -123,7 +120,7 @@ export default function CartPage() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <ImageOff className="h-6 w-6 text-slate-300" />
+                            <ImageOff className="h-6 w-6 text-stone-300" />
                           </div>
                         )}
                       </div>
@@ -134,14 +131,14 @@ export default function CartPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <Link href={`/reseller/${item.product.id}`}>
-                            <h3 className="font-medium text-sm line-clamp-2 hover:text-violet-600 transition-colors">
+                            <h3 className="font-serif font-normal text-sm line-clamp-2 text-stone-800 dark:text-stone-200 hover:text-amber-800 dark:hover:text-amber-500 transition-colors">
                               {item.product.title}
                             </h3>
                           </Link>
                           {item.product.vendor_name && (
                             <div className="flex items-center gap-1 mt-0.5">
                               <Store className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-[10px] sm:text-xs text-muted-foreground">
+                              <span className="text-[10px] sm:text-xs font-mono text-stone-500 dark:text-stone-400">
                                 {item.product.vendor_name}
                               </span>
                             </div>
@@ -150,7 +147,7 @@ export default function CartPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex-shrink-0"
+                          className="h-7 w-7 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 flex-shrink-0"
                           onClick={() => removeItem(item.product.id)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -158,7 +155,7 @@ export default function CartPage() {
                       </div>
 
                       {/* Cost Price */}
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs font-mono text-stone-500 dark:text-stone-400">
                         Cost: ৳{costPrice.toLocaleString()}
                       </p>
 
@@ -166,7 +163,7 @@ export default function CartPage() {
                       <div className="flex items-end gap-3 flex-wrap">
                         {/* Reseller Price */}
                         <div className="flex-1 min-w-[120px]">
-                          <label className="text-[10px] font-medium text-muted-foreground block mb-1">
+                          <label className="text-[10px] font-mono text-stone-500 dark:text-stone-400 block mb-1">
                             Your price (৳)
                           </label>
                           <Input
@@ -178,7 +175,7 @@ export default function CartPage() {
                                 e.target.value
                               )
                             }
-                            className="h-8 text-sm font-semibold"
+                            className="h-8 text-sm font-mono border-stone-300 dark:border-stone-700 rounded-none"
                             min={0}
                             step="0.01"
                           />
@@ -220,10 +217,10 @@ export default function CartPage() {
 
                       {/* Item Profit */}
                       <div
-                        className={`flex items-center gap-1 text-xs font-medium ${
+                        className={`flex items-center gap-1 text-xs font-mono ${
                           itemProfit >= 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-rose-600 dark:text-rose-400'
+                            ? 'text-amber-800 dark:text-amber-400'
+                            : 'text-red-700 dark:text-red-400'
                         }`}
                       >
                         <TrendingUp
@@ -243,85 +240,57 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 lg:sticky lg:top-6">
-              <h3 className="text-base font-semibold mb-3">Order Summary</h3>
+            <div className="border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/50 p-4 lg:sticky lg:top-6">
+              <h3 className="font-serif font-normal text-stone-800 dark:text-stone-200 mb-3 uppercase text-sm">
+                Order Summary
+              </h3>
 
-              <div className="space-y-2.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Items ({totalItems})
-                  </span>
-                  <span className="font-medium">
-                    ৳{subtotal.toLocaleString()}
-                  </span>
+              <div className="space-y-2.5 font-mono text-sm">
+                <div className="flex justify-between">
+                  <span className="text-stone-500 dark:text-stone-400">Items ({totalItems})</span>
+                  <span className="text-stone-800 dark:text-stone-200">৳{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Product Cost</span>
-                  <span className="font-medium text-muted-foreground">
-                    ৳{totalCost.toLocaleString()}
-                  </span>
+                <div className="flex justify-between">
+                  <span className="text-stone-500 dark:text-stone-400">Product Cost</span>
+                  <span className="text-stone-500 dark:text-stone-400">৳{totalCost.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Delivery</span>
-                  <span className="text-xs text-muted-foreground">
-                    Calculated at checkout
-                  </span>
+                <div className="flex justify-between">
+                  <span className="text-stone-500 dark:text-stone-400">Delivery</span>
+                  <span className="text-xs text-stone-400">At checkout</span>
                 </div>
               </div>
 
-              <Separator className="my-3" />
+              <Separator className="my-3 bg-stone-200 dark:bg-stone-700" />
 
               <div
-                className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                className={`flex items-center justify-between border px-3 py-2 font-mono text-sm ${
                   totalProfit >= 0
-                    ? 'bg-emerald-100 dark:bg-emerald-900/30'
-                    : 'bg-rose-100 dark:bg-rose-900/30'
+                    ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-200'
+                    : 'border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 text-red-800 dark:text-red-200'
                 }`}
               >
                 <div className="flex items-center gap-1.5">
-                  <TrendingUp
-                    className={`h-4 w-4 ${
-                      totalProfit >= 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-rose-600 dark:text-rose-400 rotate-180'
-                    }`}
-                  />
-                  <span
-                    className={`text-sm font-medium ${
-                      totalProfit >= 0
-                        ? 'text-emerald-700 dark:text-emerald-300'
-                        : 'text-rose-700 dark:text-rose-300'
-                    }`}
-                  >
-                    Est. {totalProfit >= 0 ? 'Profit' : 'Loss'}
-                  </span>
+                  <TrendingUp className={`h-4 w-4 ${totalProfit < 0 ? 'rotate-180' : ''}`} />
+                  <span>Est. {totalProfit >= 0 ? 'Profit' : 'Loss'}</span>
                 </div>
-                <span
-                  className={`font-bold ${
-                    totalProfit >= 0
-                      ? 'text-emerald-700 dark:text-emerald-300'
-                      : 'text-rose-700 dark:text-rose-300'
-                  }`}
-                >
-                  ৳{Math.abs(totalProfit).toLocaleString()}
-                </span>
+                <span className="font-semibold">৳{Math.abs(totalProfit).toLocaleString()}</span>
               </div>
 
-              <Separator className="my-3" />
+              <Separator className="my-3 bg-stone-200 dark:bg-stone-700" />
 
-              <div className="flex justify-between font-semibold mb-3">
+              <div className="flex justify-between font-serif font-semibold text-stone-800 dark:text-stone-200 mb-3">
                 <span>Total</span>
                 <span className="text-lg">৳{subtotal.toLocaleString()}</span>
               </div>
 
               <Link href="/reseller/checkout" className="block mb-2">
-                <Button className="w-full h-11 font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-0 shadow-lg shadow-violet-500/25">
+                <Button className="w-full h-11 font-mono rounded-none border border-stone-800 dark:border-amber-800 bg-stone-800 dark:bg-amber-900/40 text-[#f5f0e8] hover:bg-stone-700 dark:hover:bg-amber-800/60">
                   Proceed to Checkout
                 </Button>
               </Link>
 
               <Link href="/reseller" className="block">
-                <Button variant="ghost" className="w-full text-sm">
+                <Button variant="ghost" className="w-full text-sm font-mono text-stone-600 dark:text-stone-400">
                   Continue Shopping
                 </Button>
               </Link>

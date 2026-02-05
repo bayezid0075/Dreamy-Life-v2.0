@@ -131,26 +131,26 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
+      <div className="min-h-full bg-[#f5f0e8] dark:bg-[#1a1714] font-serif px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => router.back()}
-          className="gap-1 text-muted-foreground hover:text-foreground mb-4"
+          className="gap-1 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 mb-4 font-serif"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
         </Button>
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm py-16 text-center">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/30 dark:to-fuchsia-900/20 flex items-center justify-center mb-4">
-            <ShoppingCart className="h-7 w-7 text-violet-500" />
+        <div className="border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/30 py-16 text-center">
+          <div className="w-12 h-12 mx-auto border border-stone-300 dark:border-stone-700 flex items-center justify-center mb-4">
+            <ShoppingCart className="h-6 w-6 text-stone-400" />
           </div>
-          <h3 className="text-base font-semibold mb-1">Cart is Empty</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto px-4 mb-4">
+          <h3 className="font-serif text-lg font-normal text-stone-800 dark:text-stone-200 mb-1">Cart is Empty</h3>
+          <p className="text-sm font-mono text-stone-500 dark:text-stone-400 max-w-xs mx-auto px-4 mb-4">
             Add products to your cart before checking out.
           </p>
           <Link href="/reseller">
-            <Button className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border-0">
+            <Button className="rounded-none border border-stone-800 dark:border-amber-800 bg-stone-800 dark:bg-amber-900/40 text-[#f5f0e8] hover:bg-stone-700 dark:hover:bg-amber-800/60 font-mono">
               Browse Products
             </Button>
           </Link>
@@ -160,35 +160,32 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
-      {/* Back Button */}
+    <div className="min-h-full bg-[#f5f0e8] dark:bg-[#1a1714] font-serif px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
       <Button
         variant="ghost"
         size="sm"
         onClick={() => router.back()}
-        className="gap-1 text-muted-foreground hover:text-foreground mb-4 md:mb-6"
+        className="gap-1 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 mb-6 font-serif"
       >
         <ChevronLeft className="h-4 w-4" />
         Back
       </Button>
 
-      {/* Header */}
-      <div className="mb-4 md:mb-5">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+      <div className="mb-6 border-b border-stone-300 dark:border-stone-700 pb-4">
+        <h1 className="text-2xl sm:text-3xl font-serif font-normal tracking-tight text-stone-800 dark:text-stone-100 uppercase">
           Checkout
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <p className="text-sm font-mono text-stone-500 dark:text-stone-400 mt-1">
           Complete your order details
         </p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-3 sm:gap-4">
-        {/* Customer Info Form */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4">
+          <div className="border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/30 p-4">
             <div className="flex items-center gap-2 mb-3">
-              <MapPin className="h-4 w-4 text-violet-500" />
-              <h3 className="text-base font-semibold">
+              <MapPin className="h-4 w-4 text-stone-600 dark:text-amber-500" />
+              <h3 className="font-serif font-normal text-stone-800 dark:text-stone-200 uppercase text-sm">
                 Customer & Delivery Information
               </h3>
             </div>
@@ -306,9 +303,8 @@ export default function CheckoutPage() {
             </Form>
           </div>
 
-          {/* Order Items Review */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 mt-3">
-            <h3 className="text-base font-semibold mb-3">
+          <div className="border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/30 p-4 mt-3">
+            <h3 className="font-serif font-normal text-stone-800 dark:text-stone-200 mb-3 uppercase text-sm">
               Order Items ({totalItems})
             </h3>
             <div className="space-y-3">
@@ -321,11 +317,10 @@ export default function CheckoutPage() {
                 return (
                   <div
                     key={item.product.id}
-                    className="flex items-center gap-3"
+                    className="flex items-center gap-3 font-mono text-sm"
                   >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                      {item.product.images &&
-                      item.product.images.length > 0 ? (
+                    <div className="w-12 h-12 overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 flex-shrink-0">
+                      {item.product.images && item.product.images.length > 0 ? (
                         <img
                           src={item.product.images[0].image}
                           alt={item.product.title}
@@ -333,19 +328,19 @@ export default function CheckoutPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <ImageOff className="h-4 w-4 text-slate-300" />
+                          <ImageOff className="h-4 w-4 text-stone-300" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
+                      <p className="font-serif text-stone-800 dark:text-stone-200 truncate">
                         {item.product.title}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         ৳{price.toLocaleString()} x {item.quantity}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold flex-shrink-0">
+                    <p className="font-semibold text-stone-800 dark:text-stone-200 flex-shrink-0">
                       ৳{(price * item.quantity).toLocaleString()}
                     </p>
                   </div>
@@ -355,81 +350,57 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 lg:sticky lg:top-6">
-            <h3 className="text-base font-semibold mb-3">Order Summary</h3>
+          <div className="border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/50 p-4 lg:sticky lg:top-6">
+            <h3 className="font-serif font-normal text-stone-800 dark:text-stone-200 mb-3 uppercase text-sm">
+              Order Summary
+            </h3>
 
-            <div className="space-y-2.5">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
+            <div className="space-y-2.5 font-mono text-sm">
+              <div className="flex justify-between">
+                <span className="text-stone-500 dark:text-stone-400">Subtotal</span>
                 <span>৳{subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Delivery</span>
+              <div className="flex justify-between">
+                <span className="text-stone-500 dark:text-stone-400">Delivery</span>
                 <span>
-                  {deliveryArea
-                    ? `৳${deliveryCharge.toLocaleString()}`
-                    : 'Select area'}
+                  {deliveryArea ? `৳${deliveryCharge.toLocaleString()}` : 'Select area'}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">VAT</span>
+              <div className="flex justify-between">
+                <span className="text-stone-500 dark:text-stone-400">VAT</span>
                 <span>৳{vatAmount.toLocaleString()}</span>
               </div>
             </div>
 
-            <Separator className="my-3" />
+            <Separator className="my-3 bg-stone-200 dark:bg-stone-700" />
 
-            <div className="flex justify-between font-semibold text-lg mb-3">
+            <div className="flex justify-between font-serif font-semibold text-lg text-stone-800 dark:text-stone-200 mb-3">
               <span>Total</span>
               <span>৳{totalAmount.toLocaleString()}</span>
             </div>
 
-            {/* Profit Display */}
             <div
-              className={`flex items-center justify-between rounded-lg px-3 py-2 mb-3 ${
+              className={`flex items-center justify-between border px-3 py-2 mb-3 font-mono text-sm ${
                 totalProfit >= 0
-                  ? 'bg-emerald-100 dark:bg-emerald-900/30'
-                  : 'bg-rose-100 dark:bg-rose-900/30'
+                  ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-200'
+                  : 'border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 text-red-800 dark:text-red-200'
               }`}
             >
               <div className="flex items-center gap-1.5">
-                <TrendingUp
-                  className={`h-4 w-4 ${
-                    totalProfit >= 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-rose-600 dark:text-rose-400 rotate-180'
-                  }`}
-                />
-                <span
-                  className={`text-sm font-medium ${
-                    totalProfit >= 0
-                      ? 'text-emerald-700 dark:text-emerald-300'
-                      : 'text-rose-700 dark:text-rose-300'
-                  }`}
-                >
-                  {totalProfit >= 0 ? 'Profit' : 'Loss'}
-                </span>
+                <TrendingUp className={`h-4 w-4 ${totalProfit < 0 ? 'rotate-180' : ''}`} />
+                <span>{totalProfit >= 0 ? 'Profit' : 'Loss'}</span>
               </div>
-              <span
-                className={`font-bold ${
-                  totalProfit >= 0
-                    ? 'text-emerald-700 dark:text-emerald-300'
-                    : 'text-rose-700 dark:text-rose-300'
-                }`}
-              >
-                ৳{Math.abs(totalProfit).toLocaleString()}
-              </span>
+              <span className="font-semibold">৳{Math.abs(totalProfit).toLocaleString()}</span>
             </div>
 
-            <Separator className="mb-3" />
+            <Separator className="mb-3 bg-stone-200 dark:bg-stone-700" />
 
             <Button
               form="checkout-form"
               type="submit"
               disabled={createOrderMutation.isPending}
-              className="w-full h-11 font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-0 shadow-lg shadow-violet-500/25"
+              className="w-full h-11 font-mono rounded-none border border-stone-800 dark:border-amber-800 bg-stone-800 dark:bg-amber-900/40 text-[#f5f0e8] hover:bg-stone-700 dark:hover:bg-amber-800/60"
             >
               {createOrderMutation.isPending ? (
                 <>
