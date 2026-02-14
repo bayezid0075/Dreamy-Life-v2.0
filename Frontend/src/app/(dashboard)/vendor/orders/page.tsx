@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ShoppingCart,
   Package,
@@ -9,10 +9,12 @@ import {
   CheckCircle2,
   Truck,
   XCircle,
-  AlertCircle,
   Loader2,
   ChevronLeft,
+  Download,
+  Box,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 
@@ -25,16 +27,34 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { vendorsApi } from '@/lib/api';
+import { printOrderInvoice } from '@/lib/invoice';
 import type { Order } from '@/types';
+
+const ORDER_STATUSES: Order['order_status'][] = [
+  'placed',
+  'confirmed',
+  'packed',
+  'shipping',
+  'shipped',
+  'received',
+  'cancelled',
+];
 
 const statusConfig: Record<
   string,
   { label: string; color: string; icon: React.ElementType }
 > = {
-  pending: {
-    label: 'Pending',
+  placed: {
+    label: 'Placed',
     color:
       'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     icon: Clock,
@@ -45,20 +65,26 @@ const statusConfig: Record<
       'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
     icon: CheckCircle2,
   },
-  processing: {
-    label: 'Processing',
+  packed: {
+    label: 'Packed',
     color:
       'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
-    icon: Loader2,
+    icon: Box,
   },
-  shipped: {
-    label: 'Shipped',
+  shipping: {
+    label: 'Shipping',
     color:
       'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
     icon: Truck,
   },
-  delivered: {
-    label: 'Delivered',
+  shipped: {
+    label: 'Shipped',
+    color:
+      'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+    icon: Truck,
+  },
+  received: {
+    label: 'Received',
     color:
       'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
     icon: CheckCircle2,
@@ -94,13 +120,25 @@ const paymentStatusConfig: Record<string, { label: string; color: string }> = {
 
 export default function VendorOrdersPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const {
     data: orders,
     isLoading,
-    error,
   } = useQuery({
     queryKey: ['vendor-orders'],
     queryFn: vendorsApi.getVendorOrders,
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ orderId, order_status }: { orderId: number; order_status: Order['order_status'] }) =>
+      vendorsApi.updateVendorOrderStatus(orderId, order_status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
+      toast.success('Order status updated');
+    },
+    onError: (err: { response?: { data?: { detail?: string } } }) => {
+      toast.error(err?.response?.data?.detail ?? 'Failed to update status');
+    },
   });
 
   if (isLoading) {
@@ -121,10 +159,10 @@ export default function VendorOrdersPage() {
   const totalOrders = orders?.length ?? 0;
   const pendingOrders =
     orders?.filter(
-      (o) => o.order_status === 'pending' || o.order_status === 'confirmed'
+      (o) => o.order_status === 'placed' || o.order_status === 'confirmed'
     ).length ?? 0;
-  const deliveredOrders =
-    orders?.filter((o) => o.order_status === 'delivered').length ?? 0;
+  const receivedOrders =
+    orders?.filter((o) => o.order_status === 'received').length ?? 0;
   const totalRevenue =
     orders?.reduce((sum, o) => sum + parseFloat(o.total_amount), 0) ?? 0;
 
@@ -144,8 +182,8 @@ export default function VendorOrdersPage() {
       shadow: 'shadow-amber-500/20',
     },
     {
-      title: 'Delivered',
-      value: deliveredOrders,
+      title: 'Received',
+      value: receivedOrders,
       icon: CheckCircle2,
       gradient: 'from-emerald-500 to-teal-600',
       shadow: 'shadow-emerald-500/20',
@@ -253,16 +291,21 @@ export default function VendorOrdersPage() {
                     <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-3">
                       Date
                     </th>
+                    <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-3">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders?.map((order) => {
                     const status =
                       statusConfig[order.order_status] ??
-                      statusConfig['pending'];
+                      statusConfig['placed'];
                     const payment =
                       paymentStatusConfig[order.payment_status] ??
                       paymentStatusConfig['pending'];
+                    const isUpdating = updateStatusMutation.isPending && updateStatusMutation.variables?.orderId === order.id;
+                    const isCancelled = order.order_status === 'cancelled';
 
                     return (
                       <tr
@@ -294,12 +337,40 @@ export default function VendorOrdersPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <Badge
-                            variant="secondary"
-                            className={`${status.color} border-0 text-xs`}
-                          >
-                            {status.label}
-                          </Badge>
+                          {isCancelled ? (
+                            <Badge
+                              variant="secondary"
+                              className={`${status.color} border-0 text-xs`}
+                            >
+                              {status.label}
+                            </Badge>
+                          ) : (
+                            <Select
+                              value={order.order_status}
+                              onValueChange={(value) =>
+                                updateStatusMutation.mutate({
+                                  orderId: order.id,
+                                  order_status: value as Order['order_status'],
+                                })
+                              }
+                              disabled={isUpdating}
+                            >
+                              <SelectTrigger className="h-8 w-[120px] border-0 bg-muted/50 text-xs font-medium">
+                                {isUpdating ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <SelectValue />
+                                )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ORDER_STATUSES.filter((s) => s !== 'cancelled').map((s) => (
+                                  <SelectItem key={s} value={s} className="text-xs">
+                                    {statusConfig[s]?.label ?? s}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <Badge
@@ -319,6 +390,35 @@ export default function VendorOrdersPage() {
                             }
                           )}
                         </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1">
+                            {!isCancelled && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                                onClick={() =>
+                                  updateStatusMutation.mutate({
+                                    orderId: order.id,
+                                    order_status: 'cancelled',
+                                  })
+                                }
+                                disabled={isUpdating}
+                              >
+                                Cancel
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10"
+                              title="Download invoice"
+                              onClick={() => printOrderInvoice(order)}
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -330,10 +430,12 @@ export default function VendorOrdersPage() {
             <div className="md:hidden divide-y">
               {orders?.map((order) => {
                 const status =
-                  statusConfig[order.order_status] ?? statusConfig['pending'];
+                  statusConfig[order.order_status] ?? statusConfig['placed'];
                 const payment =
                   paymentStatusConfig[order.payment_status] ??
                   paymentStatusConfig['pending'];
+                const isUpdating = updateStatusMutation.isPending && updateStatusMutation.variables?.orderId === order.id;
+                const isCancelled = order.order_status === 'cancelled';
 
                 return (
                   <div key={order.id} className="p-4 space-y-3">
@@ -375,6 +477,60 @@ export default function VendorOrdersPage() {
                         year: 'numeric',
                       })}
                     </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+                      {!isCancelled && (
+                        <>
+                          <Select
+                            value={order.order_status}
+                            onValueChange={(value) =>
+                              updateStatusMutation.mutate({
+                                orderId: order.id,
+                                order_status: value as Order['order_status'],
+                              })
+                            }
+                            disabled={isUpdating}
+                          >
+                            <SelectTrigger className="h-8 flex-1 min-w-[100px] text-xs">
+                              {isUpdating ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <SelectValue placeholder="Status" />
+                              )}
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ORDER_STATUSES.filter((s) => s !== 'cancelled').map((s) => (
+                                <SelectItem key={s} value={s} className="text-xs">
+                                  {statusConfig[s]?.label ?? s}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-500/10"
+                            onClick={() =>
+                              updateStatusMutation.mutate({
+                                orderId: order.id,
+                                order_status: 'cancelled',
+                              })
+                            }
+                            disabled={isUpdating}
+                          >
+                            Cancel order
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs gap-1"
+                        onClick={() => printOrderInvoice(order)}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Invoice
+                      </Button>
+                    </div>
                   </div>
                 );
               })}

@@ -31,7 +31,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    "referral_system.middleware.DisableCSRFForAPI",  # CSRF for non-API; /api/ exempt
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
@@ -117,6 +117,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
 ]
+# Allow Flutter web (and other dev servers) on any localhost port
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
+]
 
 # Allow credentials (cookies, authorization headers, etc.)
 CORS_ALLOW_CREDENTIALS = True
@@ -164,3 +169,10 @@ BACKEND_URL = env("BACKEND_URL", default="http://localhost:8000")
 
 # Superadmin: comma-separated list of emails allowed to access the superadmin panel
 SUPERADMIN_ALLOWED_EMAILS = [e.strip().lower() for e in env("SUPERADMIN_ALLOWED_EMAILS", default="").split(",") if e.strip()]
+
+# UddoktaPay (membership payments) — no spaces; sandbox key with sandbox URL
+UDDOKTAPAY_API_KEY = (env("UDDOKTAPAY_API_KEY", default="") or "").strip()
+UDDOKTAPAY_BASE_URL = (env("UDDOKTAPAY_BASE_URL", default="https://sandbox.uddoktapay.com") or "").strip().rstrip("/") or "https://sandbox.uddoktapay.com"
+# Optional: use a public base URL for redirect/cancel (required for sandbox if frontend is localhost)
+# Example: set to your ngrok URL, e.g. https://abc123.ngrok.io
+UDDOKTAPAY_REDIRECT_BASE_URL = (env("UDDOKTAPAY_REDIRECT_BASE_URL", default="") or "").strip().rstrip("/")

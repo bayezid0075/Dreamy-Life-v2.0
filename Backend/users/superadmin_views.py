@@ -196,6 +196,102 @@ def superadmin_restriction_config(request):
     return Response({"config": AccountRestrictionConfig.get_config()})
 
 
+# --------------------- SUPERADMIN VENDORS & ORDERS ---------------------
+class SuperadminVendorListView(APIView):
+    """Superadmin: list all vendors with overview stats."""
+    permission_classes = [permissions.IsAuthenticated, IsSuperadmin]
+
+    def get(self, request):
+        from vendors.models import Vendor, Order
+        from vendors.serializers import VendorSerializer
+        vendors = Vendor.objects.select_related("user").prefetch_related("products").order_by("-created_at")
+        serializer = VendorSerializer(vendors, many=True)
+        data = list(serializer.data)
+        for i, vendor in enumerate(vendors):
+            data[i]["orders_count"] = Order.objects.filter(items__product__vendor=vendor).distinct().count()
+        return Response(data)
+
+
+class SuperadminVendorDetailView(APIView):
+    """Superadmin: get vendor detail with stats, PATCH vendor_status (active, hold, ban)."""
+    permission_classes = [permissions.IsAuthenticated, IsSuperadmin]
+
+    def get_object(self, pk):
+        from vendors.models import Vendor
+        from rest_framework.generics import get_object_or_404
+        return get_object_or_404(Vendor.objects.select_related("user").prefetch_related("products"), pk=pk)
+
+    def get(self, request, pk):
+        from vendors.serializers import VendorSerializer
+        from vendors.models import Order
+        vendor = self.get_object(pk)
+        serializer = VendorSerializer(vendor)
+        data = dict(serializer.data)
+        data["orders_count"] = Order.objects.filter(items__product__vendor=vendor).distinct().count()
+        return Response(data)
+
+    def patch(self, request, pk):
+        from vendors.serializers import VendorSerializer
+        vendor = self.get_object(pk)
+        new_status = request.data.get("vendor_status")
+        if new_status not in ("active", "hold", "ban"):
+            return Response(
+                {"detail": "Invalid vendor_status. Use active, hold, or ban."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        vendor.vendor_status = new_status
+        vendor.save(update_fields=["vendor_status"])
+        return Response(VendorSerializer(vendor).data)
+
+
+class SuperadminOrderListView(APIView):
+    """Superadmin: list all orders (all vendors)."""
+    permission_classes = [permissions.IsAuthenticated, IsSuperadmin]
+
+    def get(self, request):
+        from vendors.models import Order
+        from vendors.serializers import OrderSerializer
+        orders = Order.objects.select_related("user").prefetch_related(
+            "items", "items__product", "items__product__vendor"
+        ).order_by("-created_at")
+        serializer = OrderSerializer(orders, many=True, context={"request": request})
+        return Response(serializer.data)
+
+
+class SuperadminOrderDetailView(APIView):
+    """Superadmin: get order detail, PATCH order_status (full control)."""
+    permission_classes = [permissions.IsAuthenticated, IsSuperadmin]
+
+    def get_object(self, pk):
+        from vendors.models import Order
+        from rest_framework.generics import get_object_or_404
+        return get_object_or_404(
+            Order.objects.select_related("user").prefetch_related(
+                "items", "items__product", "items__product__vendor"
+            ),
+            pk=pk,
+        )
+
+    def get(self, request, pk):
+        from vendors.serializers import OrderSerializer
+        order = self.get_object(pk)
+        return Response(OrderSerializer(order, context={"request": request}).data)
+
+    def patch(self, request, pk):
+        from vendors.models import Order
+        from vendors.serializers import OrderSerializer
+        order = self.get_object(pk)
+        new_status = request.data.get("order_status")
+        if new_status not in dict(Order.ORDER_STATUS_CHOICES):
+            return Response(
+                {"detail": "Invalid order_status"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        order.order_status = new_status
+        order.save(update_fields=["order_status", "updated_at"])
+        return Response(OrderSerializer(order, context={"request": request}).data)
+
+
 def _get_user_from_token(token_raw):
     """Validate JWT and return User or None."""
     try:
@@ -270,3 +366,35 @@ def superadmin_stream(request):
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
     return response
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated, IsSuperadmin])
+def superadmin_push_notification(request):
+    """
+    Push a notification to all (active) users. Body: title, message, image (optional URL), link (optional URL).
+    """
+    title = request.data.get("title") or ""
+    message = request.data.get("message") or ""
+    image = (request.data.get("image") or "").strip() or None
+    link = (request.data.get("link") or "").strip() or None
+    if not title.strip():
+        return Response(
+            {"detail": "title is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    from notifications.models import Notification
+
+    users = User.objects.filter(is_active=True)
+    created = 0
+    for user in users:
+        Notification.objects.create(
+            user=user,
+            title=title.strip(),
+            message=message.strip(),
+            image=image,
+            link=link,
+            source="admin",
+        )
+        created += 1
+    return Response({"detail": f"Notification sent to {created} users.", "count": created})

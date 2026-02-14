@@ -16,28 +16,44 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { useCartStore } from '@/store';
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, removeItem, updateQuantity, updateResellerPrice, clearCart } =
-    useCartStore();
+  const {
+    items,
+    selectedProductIds,
+    removeItem,
+    updateQuantity,
+    updateResellerPrice,
+    clearCart,
+    toggleItemSelected,
+    selectAll,
+    deselectAll,
+    getSelectedItems,
+  } = useCartStore();
 
-  const subtotal = items.reduce((sum, item) => {
+  const selectedItems = getSelectedItems();
+  const selectedIdsSet = new Set(selectedProductIds ?? []);
+
+  const subtotal = selectedItems.reduce((sum, item) => {
     const price = parseFloat(
       item.resellerPrice || item.product.discount_price || item.product.price
     );
     return sum + price * item.quantity;
   }, 0);
 
-  const totalCost = items.reduce((sum, item) => {
+  const totalCost = selectedItems.reduce((sum, item) => {
     const cost = parseFloat(item.product.discount_price || item.product.price);
     return sum + cost * item.quantity;
   }, 0);
 
   const totalProfit = subtotal - totalCost;
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalItems = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
+  const allSelected = items.length > 0 && selectedIdsSet.size === items.length;
+  const someSelected = selectedIdsSet.size > 0;
 
   return (
     <div className="min-h-full bg-[#f5f0e8] dark:bg-[#1a1714] font-serif px-4 pt-3 pb-6 md:px-0 md:pt-0 md:pb-0">
@@ -68,8 +84,24 @@ export default function CartPage() {
           Shopping Cart
         </h1>
         <p className="text-sm font-mono text-stone-500 dark:text-stone-400 mt-1">
-          {totalItems} item{totalItems !== 1 ? 's' : ''} in your cart
+          {items.length} item{items.length !== 1 ? 's' : ''} in cart
+          {someSelected && (
+            <span className="ml-2">
+              · <span className="text-stone-700 dark:text-stone-300">{selectedIdsSet.size} selected for checkout</span>
+            </span>
+          )}
         </p>
+        {items.length > 0 && (
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              type="button"
+              onClick={allSelected ? deselectAll : selectAll}
+              className="text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 underline"
+            >
+              {allSelected ? 'Deselect all' : 'Select all'}
+            </button>
+          </div>
+        )}
       </div>
 
       {items.length === 0 ? (
@@ -103,9 +135,21 @@ export default function CartPage() {
               return (
                 <div
                   key={item.product.id}
-                  className="bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 p-3 sm:p-4"
+                  className={`bg-white dark:bg-stone-900/50 border p-3 sm:p-4 ${
+                    selectedIdsSet.has(item.product.id)
+                      ? 'border-stone-300 dark:border-stone-600'
+                      : 'border-stone-200 dark:border-stone-800 opacity-80'
+                  }`}
                 >
                   <div className="flex gap-3 sm:gap-4">
+                    <div className="flex flex-col items-center gap-2 flex-shrink-0 pt-1">
+                      <Checkbox
+                        checked={selectedIdsSet.has(item.product.id)}
+                        onCheckedChange={() => toggleItemSelected(item.product.id)}
+                        aria-label={`Select ${item.product.title} for checkout`}
+                        className="border-stone-400 dark:border-stone-500"
+                      />
+                    </div>
                     <Link
                       href={`/reseller/${item.product.id}`}
                       className="flex-shrink-0"
@@ -247,7 +291,9 @@ export default function CartPage() {
 
               <div className="space-y-2.5 font-mono text-sm">
                 <div className="flex justify-between">
-                  <span className="text-stone-500 dark:text-stone-400">Items ({totalItems})</span>
+                  <span className="text-stone-500 dark:text-stone-400">
+                    Selected ({totalItems} item{totalItems !== 1 ? 's' : ''})
+                  </span>
                   <span className="text-stone-800 dark:text-stone-200">৳{subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
@@ -283,11 +329,25 @@ export default function CartPage() {
                 <span className="text-lg">৳{subtotal.toLocaleString()}</span>
               </div>
 
-              <Link href="/reseller/checkout" className="block mb-2">
-                <Button className="w-full h-11 font-mono rounded-none border border-stone-800 dark:border-amber-800 bg-stone-800 dark:bg-amber-900/40 text-[#f5f0e8] hover:bg-stone-700 dark:hover:bg-amber-800/60">
+              {!someSelected && (
+                <p className="text-xs font-mono text-stone-500 dark:text-stone-400 mb-2">
+                  Select at least one product to checkout.
+                </p>
+              )}
+              {someSelected ? (
+                <Link href="/reseller/checkout" className="block mb-2">
+                  <Button className="w-full h-11 font-mono rounded-none border border-stone-800 dark:border-amber-800 bg-stone-800 dark:bg-amber-900/40 text-[#f5f0e8] hover:bg-stone-700 dark:hover:bg-amber-800/60">
+                    Proceed to Checkout — ৳{subtotal.toLocaleString()}
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  disabled
+                  className="w-full h-11 font-mono rounded-none border border-stone-300 dark:border-stone-700 bg-stone-200 dark:bg-stone-800 text-stone-500 dark:text-stone-400 mb-2 cursor-not-allowed"
+                >
                   Proceed to Checkout
                 </Button>
-              </Link>
+              )}
 
               <Link href="/reseller" className="block">
                 <Button variant="ghost" className="w-full text-sm font-mono text-stone-600 dark:text-stone-400">

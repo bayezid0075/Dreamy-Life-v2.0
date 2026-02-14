@@ -19,10 +19,14 @@ export const membershipsApi = {
     return response.data;
   },
 
-  verifyPayment: async (transaction_id: string): Promise<PaymentVerifyResponse> => {
-    const response = await apiClient.post<PaymentVerifyResponse>('/api/memberships/payment/verify/', {
-      transaction_id,
-    });
+  verifyPayment: async (payload: {
+    transaction_id?: string;
+    invoice_id?: string;
+  }): Promise<PaymentVerifyResponse> => {
+    const response = await apiClient.post<PaymentVerifyResponse>(
+      '/api/memberships/payment/verify/',
+      payload
+    );
     return response.data;
   },
 };

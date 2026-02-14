@@ -227,10 +227,10 @@ export function MobileSideDrawer({
                 </div>
               </div>
 
-              {/* Verify Button for unverified users */}
+              {/* Verify Button for unverified users → redirect to membership page */}
               {!user?.is_verified && (
                 <Link
-                  href="/ekyc"
+                  href="/memberships"
                   onClick={handleNavClick}
                   className="flex items-center justify-center gap-1.5 w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-semibold text-xs py-1.5 px-3 rounded-lg shadow-lg transition-all mb-2.5"
                 >

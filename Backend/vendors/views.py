@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
+from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.utils import timezone
 from decimal import Decimal
@@ -292,6 +293,49 @@ class VendorOrdersView(APIView):
         return Response(serializer.data)
 
 
+class VendorOrderDetailView(APIView):
+    """Vendor: get single order (that contains vendor's products) and update order status or cancel"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_order_for_vendor(self, request, order_id):
+        try:
+            vendor = request.user.vendor
+        except Vendor.DoesNotExist:
+            return None
+        order = Order.objects.filter(
+            pk=order_id,
+            items__product__vendor=vendor
+        ).distinct().prefetch_related('items', 'items__product').first()
+        return order
+
+    def get(self, request, order_id):
+        order = self.get_order_for_vendor(request, order_id)
+        if not order:
+            return Response({'detail': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderSerializer(order, context={'request': request})
+        return Response(serializer.data)
+
+    def patch(self, request, order_id):
+        order = self.get_order_for_vendor(request, order_id)
+        if not order:
+            return Response({'detail': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        new_status = request.data.get('order_status')
+        if new_status not in dict(Order.ORDER_STATUS_CHOICES):
+            return Response(
+                {'detail': 'Invalid order_status'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if order.order_status == 'cancelled':
+            return Response(
+                {'detail': 'Cannot update a cancelled order'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        order.order_status = new_status
+        order.save(update_fields=['order_status', 'updated_at'])
+        serializer = OrderSerializer(order, context={'request': request})
+        return Response(serializer.data)
+
+
 # --------------------- ORDER VIEWS ------------------------
 class OrderCreateView(APIView):
     """Create a new order with reseller pricing"""
@@ -380,36 +424,83 @@ class OrderCreateView(APIView):
                 delivery_charge += product.delivery_charge_outside_dhaka
         
         total_amount = subtotal + delivery_charge + vat_amount
-        
-        # Create order
-        order = Order.objects.create(
-            user=request.user,
-            order_number=self.generate_order_number(),
-            customer_name=data['customer_name'],
-            customer_email=data['customer_email'],
-            customer_phone=data['customer_phone'],
-            delivery_address=data['delivery_address'],
-            delivery_area=delivery_area,
-            subtotal=subtotal,
-            delivery_charge=delivery_charge,
-            vat_amount=vat_amount,
-            total_amount=total_amount,
-            reseller_price_applied=apply_reseller_price and reseller_price_total > 0,
-            reseller_price_total=reseller_price_total if apply_reseller_price else None
-        )
-        
-        # Create order items
-        for item_data in order_items_data:
-            OrderItem.objects.create(
-                order=order,
-                product=item_data['product'],
-                quantity=item_data['quantity'],
-                unit_price=item_data['unit_price'],
-                reseller_unit_price=item_data['reseller_unit_price'],
-                subtotal=item_data['subtotal']
+        payment_method = data.get('payment_method', 'wallet')
+        delivery_payment_method = data.get('delivery_payment_method') or 'wallet'
+
+        from wallets.models import Wallet, WalletTransaction
+
+        amount_paid_at_placement = Decimal('0')
+        due_amount = total_amount
+        payment_status = 'pending'
+
+        if payment_method == 'wallet':
+            amount_to_deduct = total_amount
+            amount_paid_at_placement = total_amount
+            due_amount = Decimal('0')
+            payment_status = 'paid'
+        elif payment_method == 'cash_on_delivery':
+            amount_to_deduct = delivery_charge
+            amount_paid_at_placement = delivery_charge
+            due_amount = total_amount - delivery_charge
+            payment_status = 'pending'
+        else:
+            amount_to_deduct = Decimal('0')
+
+        with transaction.atomic():
+            if amount_to_deduct > 0:
+                wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
+                if wallet.balance < amount_to_deduct:
+                    return Response(
+                        {
+                            "detail": "Insufficient wallet balance. "
+                            + ("Need ৳" + str(amount_to_deduct) + " for this order." if payment_method == 'wallet'
+                               else "Need ৳" + str(amount_to_deduct) + " for delivery charge (Cash on Delivery).")
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                wallet.balance = (wallet.balance - amount_to_deduct).quantize(Decimal("0.01"))
+                wallet.save(update_fields=["balance"])
+                desc = (
+                    f"Order payment: ৳{amount_to_deduct} (order total)" if payment_method == 'wallet'
+                    else f"Order delivery charge (COD): ৳{amount_to_deduct}"
+                )
+                WalletTransaction.objects.create(
+                    wallet=wallet,
+                    amount=amount_to_deduct,
+                    transaction_type="debit",
+                    description=desc,
+                )
+
+            order = Order.objects.create(
+                user=request.user,
+                order_number=self.generate_order_number(),
+                customer_name=data['customer_name'],
+                customer_email=data['customer_email'],
+                customer_phone=data['customer_phone'],
+                delivery_address=data['delivery_address'],
+                delivery_area=delivery_area,
+                subtotal=subtotal,
+                delivery_charge=delivery_charge,
+                vat_amount=vat_amount,
+                total_amount=total_amount,
+                reseller_price_applied=apply_reseller_price and reseller_price_total > 0,
+                reseller_price_total=reseller_price_total if apply_reseller_price else None,
+                payment_method=payment_method,
+                amount_paid_at_placement=amount_paid_at_placement,
+                due_amount=due_amount,
+                payment_status=payment_status,
             )
-        
-        # Return created order
+
+            for item_data in order_items_data:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item_data['product'],
+                    quantity=item_data['quantity'],
+                    unit_price=item_data['unit_price'],
+                    reseller_unit_price=item_data['reseller_unit_price'],
+                    subtotal=item_data['subtotal']
+                )
+
         order_serializer = OrderSerializer(order, context={'request': request})
         return Response(order_serializer.data, status=status.HTTP_201_CREATED)
 

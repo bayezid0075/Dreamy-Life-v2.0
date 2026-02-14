@@ -7,10 +7,13 @@ import { superadminApi, getSuperadminStreamUrl } from "@/lib/api";
 import type { SuperadminOverviewStats } from "@/types";
 import { SuperadminOverviewTab } from "@/components/superadmin/overview-tab";
 import { SuperadminUsersTab } from "@/components/superadmin/users-tab";
+import { SuperadminVendorsTab } from "@/components/superadmin/vendors-tab";
+import { SuperadminOrdersTab } from "@/components/superadmin/orders-tab";
 import { SuperadminWithdrawalsTab } from "@/components/superadmin/withdrawals-tab";
+import { SuperadminNotificationsTab } from "@/components/superadmin/notifications-tab";
 import { SuperadminSettingsTab } from "@/components/superadmin/settings-tab";
 
-type TabId = "overview" | "users" | "withdrawals" | "settings";
+type TabId = "overview" | "users" | "vendors" | "orders" | "withdrawals" | "notifications" | "settings";
 export type SuperadminTheme = "dark" | "light";
 
 const THEME_KEY = "superadmin-theme";
@@ -182,20 +185,65 @@ export default function SuperadminPage() {
           >
             USER CONTROL
           </button>
-            <button
-              type="button"
-              onClick={() => setTab("withdrawals")}
-              className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === "withdrawals"
-                  ? isLight
-                    ? "border-amber-500 text-amber-600 bg-amber-50"
-                    : "border-amber-500 text-amber-400 bg-amber-500/5"
+          <button
+            type="button"
+            onClick={() => setTab("vendors")}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              tab === "vendors"
+                ? isLight
+                  ? "border-amber-500 text-amber-600 bg-amber-50"
+                  : "border-amber-500 text-amber-400 bg-amber-500/5"
+                : isLight
+                ? "border-transparent text-slate-500 hover:bg-slate-100"
+                : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+            }`}
+          >
+            VENDORS
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("orders")}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              tab === "orders"
+                ? isLight
+                  ? "border-amber-500 text-amber-600 bg-amber-50"
+                  : "border-amber-500 text-amber-400 bg-amber-500/5"
+                : isLight
+                ? "border-transparent text-slate-500 hover:bg-slate-100"
+                : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+            }`}
+          >
+            ORDERS
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("withdrawals")}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              tab === "withdrawals"
+                ? isLight
+                  ? "border-amber-500 text-amber-600 bg-amber-50"
+                  : "border-amber-500 text-amber-400 bg-amber-500/5"
                 : isLight
                   ? "border-transparent text-slate-500 hover:bg-slate-100"
                   : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
             }`}
           >
             WITHDRAWALS
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("notifications")}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              tab === "notifications"
+                ? isLight
+                  ? "border-amber-500 text-amber-600 bg-amber-50"
+                  : "border-amber-500 text-amber-400 bg-amber-500/5"
+                : isLight
+                  ? "border-transparent text-slate-500 hover:bg-slate-100"
+                  : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+            }`}
+          >
+            NOTIFICATIONS
           </button>
           <button
             type="button"
@@ -220,7 +268,12 @@ export default function SuperadminPage() {
           <SuperadminOverviewTab liveData={liveOverview} theme={theme} />
         )}
         {tab === "users" && <SuperadminUsersTab theme={theme} />}
+        {tab === "vendors" && <SuperadminVendorsTab theme={theme} />}
+        {tab === "orders" && <SuperadminOrdersTab theme={theme} />}
         {tab === "withdrawals" && <SuperadminWithdrawalsTab theme={theme} />}
+        {tab === "notifications" && (
+          <SuperadminNotificationsTab theme={theme} />
+        )}
         {tab === "settings" && <SuperadminSettingsTab theme={theme} />}
       </main>
     </div>

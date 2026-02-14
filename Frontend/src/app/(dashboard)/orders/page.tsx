@@ -1,239 +1,325 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { ShoppingBag, Package, Eye, Truck } from 'lucide-react';
-import { useState } from 'react';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ShoppingBag, Package, Eye, Truck, Download } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
+} from "@/components/ui/dialog";
 
-import { ordersApi } from '@/lib/api';
-import type { Order } from '@/types';
+import { ordersApi } from "@/lib/api";
+import { printOrderInvoice } from "@/lib/invoice";
+import type { Order } from "@/types";
 
-const orderStatusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-  confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-  processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
-  shipped: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400',
-  delivered: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+const orderStatusClasses: Record<string, string> = {
+  placed: "border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:bg-amber-500/10",
+  confirmed: "border-blue-300 text-blue-700 bg-blue-50 dark:border-blue-500/40 dark:text-blue-400 dark:bg-blue-500/10",
+  packed: "border-violet-300 text-violet-700 bg-violet-50 dark:border-violet-500/40 dark:text-violet-400 dark:bg-violet-500/10",
+  shipping: "border-indigo-300 text-indigo-700 bg-indigo-50 dark:border-indigo-500/40 dark:text-indigo-400 dark:bg-indigo-500/10",
+  shipped: "border-cyan-300 text-cyan-700 bg-cyan-50 dark:border-cyan-500/40 dark:text-cyan-400 dark:bg-cyan-500/10",
+  received: "border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-500/40 dark:text-emerald-400 dark:bg-emerald-500/10",
+  cancelled: "border-red-300 text-red-700 bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:bg-red-500/10",
 };
 
-const paymentStatusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-  paid: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-  failed: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-  refunded: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
+const paymentStatusClasses: Record<string, string> = {
+  pending: "border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:bg-amber-500/10",
+  paid: "border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-500/40 dark:text-emerald-400 dark:bg-emerald-500/10",
+  failed: "border-red-300 text-red-700 bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:bg-red-500/10",
+  refunded: "border-slate-300 text-slate-600 bg-slate-50 dark:border-slate-500/40 dark:text-slate-400 dark:bg-slate-500/10",
+};
+
+const defaultStatusClass = "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-500/40 dark:text-slate-400 dark:bg-slate-500/10";
+
+const orderStatusLabels: Record<string, string> = {
+  placed: "Placed",
+  confirmed: "Confirmed",
+  packed: "Packed",
+  shipping: "Shipping",
+  shipped: "Shipped",
+  received: "Received",
+  cancelled: "Cancelled",
 };
 
 export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['orders'],
+    queryKey: ["orders"],
     queryFn: ordersApi.getOrders,
   });
 
+  const orderStatusClass = (status: string) => orderStatusClasses[status] ?? defaultStatusClass;
+  const paymentStatusClass = (status: string) => paymentStatusClasses[status] ?? defaultStatusClass;
+
   const stats = [
     {
-      title: 'Total Orders',
-      value: orders?.length || 0,
+      title: "Total Orders",
+      value: orders?.length ?? 0,
       icon: ShoppingBag,
+      colorClass: "border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:bg-amber-500/10",
     },
     {
-      title: 'Pending',
-      value: orders?.filter((o) => o.order_status === 'pending').length || 0,
+      title: "Pending",
+      value: orders?.filter((o) => o.order_status === "placed" || o.order_status === "confirmed").length ?? 0,
       icon: Package,
+      colorClass: "border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:bg-amber-500/10",
     },
     {
-      title: 'Shipped',
-      value: orders?.filter((o) => o.order_status === 'shipped').length || 0,
+      title: "Shipped",
+      value: orders?.filter((o) => o.order_status === "shipped").length ?? 0,
       icon: Truck,
+      colorClass: "border-cyan-300 text-cyan-700 bg-cyan-50 dark:border-cyan-500/40 dark:text-cyan-400 dark:bg-cyan-500/10",
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Orders</h1>
-        <p className="text-muted-foreground">
-          View and track your orders
-        </p>
+    <div className="min-h-full font-mono text-foreground bg-background">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-border">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            My Orders
+          </h1>
+          <p className="text-sm mt-0.5 text-muted-foreground">
+            Reseller orders · View, track & download invoices
+          </p>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.title}
+              className={`rounded-lg border ${stat.colorClass} p-4 transition-all hover:bg-accent/5 dark:hover:bg-white/5`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground opacity-90">
+                  {stat.title}
+                </span>
+                <Icon className="w-4 h-4 opacity-70" />
+              </div>
               {isLoading ? (
-                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-8 w-12 rounded bg-muted" />
               ) : (
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-2xl font-bold tabular-nums">{stat.value}</p>
               )}
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Orders Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Order History</CardTitle>
-          <CardDescription>All your orders in one place</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : orders && orders.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+      <div className="rounded-lg border border-border overflow-hidden bg-card">
+        <div className="px-4 py-3 border-b border-border">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+            Order history
+          </h2>
+          <p className="text-xs mt-0.5 text-muted-foreground">
+            All reseller orders in one place
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="p-4 space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full rounded bg-muted" />
+            ))}
+          </div>
+        ) : orders && orders.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                    Order #
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                    Customer
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                    Date
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                    Total
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                    Status
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                    Payment
+                  </th>
+                  <th className="text-right py-3 px-4 font-semibold text-muted-foreground">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono font-medium">
+                  <tr
+                    key={order.id}
+                    className="border-b border-border transition-colors hover:bg-muted/30"
+                  >
+                    <td className="py-3 px-4 font-mono font-medium text-amber-600 dark:text-amber-400">
                       {order.order_number}
-                    </TableCell>
-                    <TableCell>{order.customer_name}</TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="py-3 px-4">{order.customer_name}</td>
+                    <td className="py-3 px-4 text-muted-foreground">
                       {new Date(order.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="font-medium">
+                    </td>
+                    <td className="py-3 px-4 font-semibold">
                       ৳{parseFloat(order.total_amount).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={orderStatusColors[order.order_status]}>
-                        {order.order_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={paymentStatusColors[order.payment_status]}>
-                        {order.payment_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedOrder(order)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${orderStatusClass(
+                          order.order_status
+                        )}`}
                       >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                        {orderStatusLabels[order.order_status] ?? order.order_status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${paymentStatusClass(
+                          order.payment_status
+                        )}`}
+                      >
+                        {order.payment_status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedOrder(order)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-500/10"
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => printOrderInvoice(order)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10"
+                          title="Download invoice"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-12">
-              <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-medium mb-1">No orders yet</h3>
-              <p className="text-sm text-muted-foreground">
-                Your orders will appear here
-              </p>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-16 text-center text-muted-foreground">
+            <div className="w-14 h-14 mx-auto rounded-lg border border-border bg-muted/30 flex items-center justify-center mb-4">
+              <ShoppingBag className="h-7 w-7 opacity-60" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <h3 className="font-semibold mb-1 text-foreground">
+              No orders yet
+            </h3>
+            <p className="text-sm">
+              Your reseller orders will appear here
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Order Details Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="font-mono max-w-2xl bg-card border-border text-foreground">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
-            <DialogDescription>
-              Order #{selectedOrder?.order_number}
-            </DialogDescription>
+            <DialogTitle>Order details</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              #{selectedOrder?.order_number}
+            </p>
           </DialogHeader>
 
           {selectedOrder && (
             <div className="space-y-6">
-              {/* Status Badges */}
-              <div className="flex gap-2">
-                <Badge className={orderStatusColors[selectedOrder.order_status]}>
-                  {selectedOrder.order_status}
-                </Badge>
-                <Badge className={paymentStatusColors[selectedOrder.payment_status]}>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${orderStatusClass(
+                    selectedOrder.order_status
+                  )}`}
+                >
+                  {orderStatusLabels[selectedOrder.order_status] ?? selectedOrder.order_status}
+                </span>
+                <span
+                  className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${paymentStatusClass(
+                    selectedOrder.payment_status
+                  )}`}
+                >
                   {selectedOrder.payment_status}
-                </Badge>
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => printOrderInvoice(selectedOrder)}
+                  className="ml-auto font-mono border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/50 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                  variant="outline"
+                >
+                  <Download className="h-3.5 w-3.5 mr-1.5" />
+                  Download invoice
+                </Button>
               </div>
 
-              {/* Customer Info */}
-              <div>
-                <h4 className="font-medium mb-2">Customer Information</h4>
-                <div className="text-sm space-y-1 text-muted-foreground">
+              <div className="rounded-lg border border-border p-4 bg-muted/20">
+                <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">
+                  Customer information
+                </h4>
+                <div className="text-sm space-y-1">
                   <p>Name: {selectedOrder.customer_name}</p>
                   <p>Email: {selectedOrder.customer_email}</p>
                   <p>Phone: {selectedOrder.customer_phone}</p>
                   <p>Address: {selectedOrder.delivery_address}</p>
-                  <p>Area: {selectedOrder.delivery_area === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}</p>
+                  <p>
+                    Area:{" "}
+                    {selectedOrder.delivery_area === "inside_dhaka"
+                      ? "Inside Dhaka"
+                      : "Outside Dhaka"}
+                  </p>
                 </div>
               </div>
 
-              <Separator />
-
-              {/* Order Items */}
-              <div>
-                <h4 className="font-medium mb-2">Items</h4>
-                <div className="space-y-3">
+              <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
+                <h4 className="text-xs font-semibold uppercase tracking-wider px-4 py-2 border-b border-border text-muted-foreground">
+                  Items
+                </h4>
+                <div className="divide-y divide-border">
                   {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4">
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-4 px-4 py-3"
+                    >
                       {item.product_image && (
                         <img
                           src={item.product_image}
                           alt={item.product_title}
-                          className="h-16 w-16 rounded-md object-cover"
+                          className="h-14 w-14 object-cover rounded border border-border"
                         />
                       )}
-                      <div className="flex-1">
-                        <p className="font-medium">{item.product_title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          SKU: {item.product_sku} | Qty: {item.quantity}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">
+                          {item.product_title}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          SKU: {item.product_sku} · Qty: {item.quantity}
                         </p>
                       </div>
-                      <p className="font-medium">
+                      <p className="font-semibold shrink-0">
                         ৳{parseFloat(item.subtotal).toLocaleString()}
                       </p>
                     </div>
@@ -241,10 +327,7 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              <Separator />
-
-              {/* Order Summary */}
-              <div className="space-y-2 text-sm">
+              <div className="rounded-lg border border-border p-4 space-y-2 text-sm bg-muted/20">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>৳{parseFloat(selectedOrder.subtotal).toLocaleString()}</span>
@@ -255,10 +338,11 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Delivery</span>
-                  <span>৳{parseFloat(selectedOrder.delivery_charge).toLocaleString()}</span>
+                  <span>
+                    ৳{parseFloat(selectedOrder.delivery_charge).toLocaleString()}
+                  </span>
                 </div>
-                <Separator />
-                <div className="flex justify-between font-medium text-lg">
+                <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
                   <span>Total</span>
                   <span>৳{parseFloat(selectedOrder.total_amount).toLocaleString()}</span>
                 </div>

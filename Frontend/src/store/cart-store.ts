@@ -10,11 +10,19 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
+  /** Product IDs selected for checkout (reseller cart) */
+  selectedProductIds: number[];
   addItem: (product: Product, quantity?: number, resellerPrice?: string) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   updateResellerPrice: (productId: number, price: string) => void;
   clearCart: () => void;
+  setItemSelected: (productId: number, selected: boolean) => void;
+  toggleItemSelected: (productId: number) => void;
+  selectAll: () => void;
+  deselectAll: () => void;
+  getSelectedItems: () => CartItem[];
+  removeItemsByIds: (productIds: number[]) => void;
   getItemCount: () => number;
   getSubtotal: () => number;
 }
@@ -23,6 +31,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      selectedProductIds: [],
 
       addItem: (product, quantity = 1, resellerPrice?) => {
         const items = get().items;
@@ -38,13 +47,17 @@ export const useCartStore = create<CartState>()(
             ),
           });
         } else {
-          set({ items: [...items, { product, quantity, resellerPrice: defaultPrice }] });
+          const nextItems = [...items, { product, quantity, resellerPrice: defaultPrice }];
+          const selected = get().selectedProductIds ?? [];
+          const nextSelected = selected.includes(product.id) ? selected : [...selected, product.id];
+          set({ items: nextItems, selectedProductIds: nextSelected });
         }
       },
 
       removeItem: (productId) => {
         set({
           items: get().items.filter((item) => item.product.id !== productId),
+          selectedProductIds: (get().selectedProductIds ?? []).filter((id) => id !== productId),
         });
       },
 
@@ -69,7 +82,45 @@ export const useCartStore = create<CartState>()(
         });
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], selectedProductIds: [] }),
+
+      setItemSelected: (productId, selected) => {
+        const current = get().selectedProductIds ?? [];
+        const next = selected
+          ? (current.includes(productId) ? current : [...current, productId])
+          : current.filter((id) => id !== productId);
+        set({ selectedProductIds: next });
+      },
+
+      toggleItemSelected: (productId) => {
+        const current = get().selectedProductIds ?? [];
+        const next = current.includes(productId)
+          ? current.filter((id) => id !== productId)
+          : [...current, productId];
+        set({ selectedProductIds: next });
+      },
+
+      selectAll: () => {
+        const ids = get().items.map((item) => item.product.id);
+        set({ selectedProductIds: ids });
+      },
+
+      deselectAll: () => set({ selectedProductIds: [] }),
+
+      getSelectedItems: () => {
+        const { items } = get();
+        const selectedIds = get().selectedProductIds ?? [];
+        const idSet = new Set(selectedIds);
+        return items.filter((item) => idSet.has(item.product.id));
+      },
+
+      removeItemsByIds: (productIds) => {
+        const ids = new Set(productIds);
+        set({
+          items: get().items.filter((item) => !ids.has(item.product.id)),
+          selectedProductIds: (get().selectedProductIds ?? []).filter((id) => !ids.has(id)),
+        });
+      },
 
       getItemCount: () => {
         return get().items.reduce((count, item) => count + item.quantity, 0);
@@ -94,6 +145,14 @@ export const useCartStore = create<CartState>()(
           removeItem: () => {},
         };
       }),
+      merge: (persisted, current) => {
+        const p = persisted as { items?: CartItem[]; selectedProductIds?: number[] } | undefined;
+        const selected =
+          p?.selectedProductIds != null && Array.isArray(p.selectedProductIds)
+            ? p.selectedProductIds
+            : (p?.items ?? []).map((i) => i.product.id);
+        return { ...current, ...p, selectedProductIds: selected };
+      },
     }
   )
 );

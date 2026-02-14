@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Bell, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { NotificationDropdown } from "@/components/dashboard/notification-dropdown";
 import { useAuthStore } from "@/store";
 
 interface MobileHeaderProps {
@@ -66,15 +67,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
               >
                 <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20 h-9 w-9 sm:h-10 sm:w-10 relative"
-              >
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                {/* Notification badge */}
-                <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-2 h-2 bg-yellow-400 rounded-full" />
-              </Button>
+              <NotificationDropdown />
               <Link href="/profile" className="ml-0.5 sm:ml-1">
                 <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-white/30">
                   <AvatarImage src={user?.profile_picture || undefined} />

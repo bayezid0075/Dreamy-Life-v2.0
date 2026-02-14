@@ -7,6 +7,8 @@ import type {
   AdminUserFilters,
   RestrictionConfigResponse,
   AccountStatus,
+  Vendor,
+  Order,
 } from "@/types";
 
 export const superadminApi = {
@@ -93,6 +95,71 @@ export const superadminApi = {
     const response = await apiClient.put<{ config: RestrictionConfigResponse["config"] }>(
       "/api/superadmin/settings/restrictions/",
       { config }
+    );
+    return response.data;
+  },
+
+  // Vendors (superadmin)
+  getVendors: async (): Promise<Vendor[]> => {
+    const response = await apiClient.get<Vendor[]>(
+      "/api/superadmin/vendors/"
+    );
+    return response.data;
+  },
+
+  getVendor: async (id: number): Promise<Vendor & { orders_count?: number }> => {
+    const response = await apiClient.get<Vendor & { orders_count?: number }>(
+      `/api/superadmin/vendors/${id}/`
+    );
+    return response.data;
+  },
+
+  updateVendorStatus: async (
+    id: number,
+    vendor_status: "active" | "hold" | "ban"
+  ): Promise<Vendor> => {
+    const response = await apiClient.patch<Vendor>(
+      `/api/superadmin/vendors/${id}/`,
+      { vendor_status }
+    );
+    return response.data;
+  },
+
+  // Orders (superadmin)
+  getOrders: async (): Promise<Order[]> => {
+    const response = await apiClient.get<Order[]>(
+      "/api/superadmin/orders/"
+    );
+    return response.data;
+  },
+
+  getOrder: async (id: number): Promise<Order> => {
+    const response = await apiClient.get<Order>(
+      `/api/superadmin/orders/${id}/`
+    );
+    return response.data;
+  },
+
+  updateOrderStatus: async (
+    id: number,
+    order_status: Order["order_status"]
+  ): Promise<Order> => {
+    const response = await apiClient.patch<Order>(
+      `/api/superadmin/orders/${id}/`,
+      { order_status }
+    );
+    return response.data;
+  },
+
+  pushNotification: async (payload: {
+    title: string;
+    message: string;
+    image?: string;
+    link?: string;
+  }): Promise<{ detail: string; count: number }> => {
+    const response = await apiClient.post<{ detail: string; count: number }>(
+      "/api/superadmin/push-notification/",
+      payload
     );
     return response.data;
   },

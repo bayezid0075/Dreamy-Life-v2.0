@@ -93,12 +93,13 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 class VendorSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     user_username = serializers.CharField(source='user.username', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
     products_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Vendor
-        fields = ["id", "user", "user_id", "user_username", "shop_name", "address", 
-                  "banner_image", "member_status", "payment_status", "created_at", 
+        fields = ["id", "user", "user_id", "user_username", "user_email", "shop_name", "address", 
+                  "banner_image", "member_status", "payment_status", "vendor_status", "created_at", 
                   "products_count"]
         read_only_fields = ['user', 'created_at']
     
@@ -218,6 +219,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'subtotal', 'delivery_charge', 'vat_amount', 'total_amount',
             'reseller_price_applied', 'reseller_price_total',
             'order_status', 'payment_status',
+            'payment_method', 'amount_paid_at_placement', 'due_amount',
             'created_at', 'updated_at', 'items'
         ]
         read_only_fields = ['order_number', 'user', 'created_at', 'updated_at']
@@ -239,7 +241,26 @@ class OrderCreateSerializer(serializers.Serializer):
         required=True
     )
     apply_reseller_price = serializers.BooleanField(default=False, required=False)
-    
+    payment_method = serializers.ChoiceField(
+        choices=[('wallet', 'Wallet'), ('mobile_banking', 'Mobile Banking'), ('cash_on_delivery', 'Cash on Delivery')],
+        required=True,
+        help_text="How reseller pays: wallet, mobile_banking, or cash_on_delivery (pay delivery at placement)",
+    )
+    delivery_payment_method = serializers.ChoiceField(
+        choices=[('wallet', 'Wallet')],
+        required=False,
+        allow_blank=True,
+        help_text="For cash_on_delivery only: how to pay delivery charge at placement (wallet).",
+    )
+
+    def validate(self, attrs):
+        if attrs.get('payment_method') == 'cash_on_delivery':
+            if not attrs.get('delivery_payment_method') or attrs.get('delivery_payment_method') != 'wallet':
+                raise serializers.ValidationError(
+                    {"delivery_payment_method": "For Cash on Delivery, pay delivery charge via Wallet to place order."}
+                )
+        return attrs
+
     def validate_items(self, value):
         """Validate order items"""
         if not value or len(value) == 0:

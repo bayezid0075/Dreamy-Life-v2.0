@@ -3,6 +3,13 @@ from django.conf import settings
 
 User = settings.AUTH_USER_MODEL
 
+VENDOR_STATUS_CHOICES = [
+    ("active", "Active"),
+    ("hold", "Hold"),
+    ("ban", "Ban"),
+]
+
+
 class Vendor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     shop_name = models.CharField(max_length=200)
@@ -10,6 +17,11 @@ class Vendor(models.Model):
     banner_image = models.ImageField(upload_to='vendor_banners/')
     member_status = models.CharField(max_length=50, default='Normal')
     payment_status = models.BooleanField(default=False)
+    vendor_status = models.CharField(
+        max_length=20,
+        choices=VENDOR_STATUS_CHOICES,
+        default="active",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -77,12 +89,13 @@ class ProductImage(models.Model):
 # --------------------- ORDER MODEL FOR RESELLING SHOP ------------------------
 class Order(models.Model):
     ORDER_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('processing', 'Processing'),
-        ('shipped', 'Shipped'),
-        ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
+        ("placed", "Placed"),
+        ("confirmed", "Confirmed"),
+        ("packed", "Packed"),
+        ("shipping", "Shipping"),
+        ("shipped", "Shipped"),
+        ("received", "Received"),
+        ("cancelled", "Cancelled"),
     ]
     
     PAYMENT_STATUS_CHOICES = [
@@ -90,6 +103,12 @@ class Order(models.Model):
         ('paid', 'Paid'),
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('wallet', 'Wallet'),
+        ('mobile_banking', 'Mobile Banking'),
+        ('cash_on_delivery', 'Cash on Delivery'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
@@ -113,8 +132,23 @@ class Order(models.Model):
     reseller_price_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     # Status
-    order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending')
+    order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default="placed")
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+
+    # Reseller payment: how reseller pays for this order
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='wallet',
+    )
+    amount_paid_at_placement = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Amount reseller paid when placing (e.g. full total for wallet, delivery only for COD)",
+    )
+    due_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Amount due to be paid later (e.g. for COD: total - delivery)",
+    )
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

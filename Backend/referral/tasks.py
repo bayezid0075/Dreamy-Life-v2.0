@@ -15,7 +15,8 @@ def task_notify_uplines_on_register(user_id):
         Notification.objects.create(
             user=up["user"],
             title="New referral registered",
-            message=f"{user.username} registered using your code (L{up['level']})."
+            message=f"{user.username} registered using your code (L{up['level']}).",
+            source="referral",
         )
 
 @shared_task

@@ -91,7 +91,8 @@ def distribute_commission(buyer_id, membership):
         Notification.objects.create(
             user=user_obj,
             title="Referral commission received",
-            message=f"You earned {amount} from {buyer.username} at level {lvl}"
+            message=f"You earned {amount} from {buyer.username} at level {lvl}",
+            source="referral",
         )
 
 def populate_referral_levels_for_user(user_id, parent_id):

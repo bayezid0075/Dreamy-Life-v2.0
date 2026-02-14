@@ -33,6 +33,22 @@ export const vendorsApi = {
     return response.data;
   },
 
+  getVendorOrder: async (orderId: number): Promise<Order> => {
+    const response = await apiClient.get<Order>(`/api/vendors/vendors/orders/${orderId}/`);
+    return response.data;
+  },
+
+  updateVendorOrderStatus: async (
+    orderId: number,
+    order_status: Order["order_status"]
+  ): Promise<Order> => {
+    const response = await apiClient.patch<Order>(
+      `/api/vendors/vendors/orders/${orderId}/`,
+      { order_status }
+    );
+    return response.data;
+  },
+
   // Product Management
   getProducts: async (): Promise<Product[]> => {
     const response = await apiClient.get<Product[]>('/api/vendors/products/');

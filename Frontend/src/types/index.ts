@@ -223,18 +223,23 @@ export interface LevelStats {
 }
 
 // Vendor Types
+export type VendorStatus = "active" | "hold" | "ban";
+
 export interface Vendor {
   id: number;
   user: number;
   user_id: number;
   user_username: string;
+  user_email?: string;
   shop_name: string;
   address: string;
   banner_image: string;
   member_status: string;
   payment_status: boolean;
+  vendor_status?: VendorStatus;
   created_at: string;
   products_count: number;
+  orders_count?: number;
 }
 
 export interface VendorCreatePayload {
@@ -338,13 +343,17 @@ export interface Order {
   reseller_price_applied: boolean;
   reseller_price_total: string | null;
   order_status:
-    | "pending"
+    | "placed"
     | "confirmed"
-    | "processing"
+    | "packed"
+    | "shipping"
     | "shipped"
-    | "delivered"
+    | "received"
     | "cancelled";
   payment_status: "pending" | "paid" | "failed" | "refunded";
+  payment_method?: "wallet" | "mobile_banking" | "cash_on_delivery";
+  amount_paid_at_placement?: string;
+  due_amount?: string;
   created_at: string;
   updated_at: string;
   items: OrderItem[];
@@ -356,6 +365,8 @@ export interface OrderItemPayload {
   reseller_price?: string;
 }
 
+export type PaymentMethod = "wallet" | "mobile_banking" | "cash_on_delivery";
+
 export interface OrderCreatePayload {
   items: OrderItemPayload[];
   customer_name: string;
@@ -364,6 +375,8 @@ export interface OrderCreatePayload {
   delivery_address: string;
   delivery_area: "inside_dhaka" | "outside_dhaka";
   apply_reseller_price?: boolean;
+  payment_method: PaymentMethod;
+  delivery_payment_method?: "wallet"; // for cash_on_delivery: pay delivery charge via wallet
 }
 
 // Shop Types
@@ -451,11 +464,16 @@ export interface AdminUserFilters {
 }
 
 // Notification Types
+export type NotificationSource = "system" | "admin" | "order" | "referral" | "wallet" | "membership";
+
 export interface Notification {
   id: number;
-  user: number;
+  user?: number;
   title: string;
   message: string;
+  image: string | null;
+  link: string | null;
+  source: NotificationSource;
   is_read: boolean;
   created_at: string;
 }

@@ -208,7 +208,7 @@ export default function DashboardPage() {
                         </p>
                         <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
                           {new Date(
-                            transaction.created_at
+                            transaction.created_at,
                           ).toLocaleDateString()}
                         </p>
                       </div>
@@ -235,286 +235,349 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Desktop View */}
-      <div className="hidden md:block space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-500 bg-clip-text text-transparent">
-            Welcome back, {user?.user.username}!
-          </h1>
-          <p className="text-muted-foreground">
-            Here&apos;s an overview of your account
-          </p>
-        </div>
-
-        {/* Referral Code Card */}
-        <Card className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-500 border-0 shadow-xl shadow-fuchsia-500/20 overflow-hidden relative">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-          <CardContent className="flex items-center justify-between p-6 relative z-10">
-            <div className="text-white">
-              <p className="text-sm font-medium text-white/80">
-                Your Referral Code
-              </p>
-              <p className="text-3xl font-bold font-mono tracking-wider">
-                {user?.own_refercode}
-              </p>
-              <p className="text-sm text-white/70 mt-1">
-                Share this code to earn commissions
+      {/* Desktop View - dashboard best practices: hierarchy, KPIs, quick actions, 2-col layout */}
+      <div className="hidden md:block">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Page header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                Welcome back, {user?.user.username}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Here&apos;s your account overview
               </p>
             </div>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={copyReferralCode}
-              className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-            >
-              {copied ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              {copied ? "Copied!" : "Copy Code"}
-            </Button>
-          </CardContent>
-        </Card>
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {new Date().toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+          </div>
 
-        {/* Stats Grid - Modern Glass Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <Card
-              key={stat.title}
-              className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
-            >
-              {/* Gradient Background */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-90`}
-              ></div>
-              {/* Grid Pattern */}
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
-              {/* Shine Effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-              <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-white/80">
-                  {stat.title}
-                </CardTitle>
-                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm group-hover:scale-110 transition-transform">
-                  <stat.icon className="h-5 w-5 text-white" />
-                </div>
-              </CardHeader>
-              <CardContent className="relative">
-                {stat.loading ? (
-                  <Skeleton className="h-8 w-24 bg-white/20" />
-                ) : (
-                  <div className="text-3xl font-bold text-white">
-                    {stat.value}
-                  </div>
-                )}
-                <p className="text-xs text-white/70 mt-1">{stat.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Reseller Shop CTA */}
-        <Card className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all group">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 opacity-90"></div>
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <CardContent className="relative flex items-center justify-between p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                <Store className="h-6 w-6 text-white" />
-              </div>
-              <div className="text-white">
-                <h3 className="text-lg font-bold">Reseller Shop</h3>
-                <p className="text-sm text-white/70">Browse products and earn with custom pricing</p>
-              </div>
-            </div>
-            <Link href="/reseller">
-              <Button
-                variant="secondary"
-                className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-              >
-                Browse
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions & Recent Activity */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Membership Status */}
-          <Card className="relative overflow-hidden border-0 bg-white dark:bg-slate-900 shadow-xl hover:shadow-2xl transition-all">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-500"></div>
-            <CardHeader>
-              <CardTitle className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                Membership Status
-              </CardTitle>
-              <CardDescription>Your current membership tier</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Badge
-                    className={`text-lg py-1 px-3 ${
-                      user?.member_status === "user"
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                        : "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0"
-                    }`}
-                  >
-                    {user?.member_status}
-                  </Badge>
-                  {user?.is_verified && (
-                    <Badge
-                      variant="outline"
-                      className="ml-2 border-emerald-500 text-emerald-600"
+          {/* Key metrics - KPI row */}
+          <section aria-label="Key metrics">
+            <h2 className="sr-only">Key metrics</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {stats.map((stat) => (
+                <div
+                  key={stat.title}
+                  className="rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${stat.iconBg}`}
                     >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              {user?.active_membership ? (
-                <div className="text-sm text-muted-foreground">
-                  <p>
-                    Active since:{" "}
-                    {new Date(
-                      user.active_membership.purchased_at
-                    ).toLocaleDateString()}
+                      <stat.icon className="h-5 w-5" />
+                    </div>
+                    {stat.loading ? (
+                      <Skeleton className="h-8 w-16" />
+                    ) : (
+                      <span className="text-xl font-semibold tabular-nums text-foreground truncate">
+                        {stat.value}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-foreground mt-3">
+                    {stat.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {stat.description}
                   </p>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Upgrade your membership to unlock more benefits
-                </p>
-              )}
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </section>
 
-          {/* Wallet Summary */}
-          <Card className="relative overflow-hidden border-0 bg-white dark:bg-slate-900 shadow-xl hover:shadow-2xl transition-all">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"></div>
-            <CardHeader>
-              <CardTitle className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
-                Wallet Summary
-              </CardTitle>
-              <CardDescription>Your financial overview</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {walletLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
+          {/* Referral + Quick actions */}
+          <section
+            className="space-y-4"
+            aria-label="Referral and quick actions"
+          >
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-pink-500/10 dark:from-violet-500/5 dark:via-fuchsia-500/5 dark:to-pink-500/5 border-b border-border lg:border-b-0 lg:border-r border-border">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Your referral code
+                  </p>
+                  <p className="text-2xl font-bold font-mono tracking-wider text-foreground mt-1">
+                    {user?.own_refercode}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Share to earn commissions
+                  </p>
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Total Income
-                    </span>
-                    <span className="font-medium text-green-600">
-                      +৳{parseFloat(wallet?.income || "0").toLocaleString()}
-                    </span>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={copyReferralCode}
+                  className="gap-2 shrink-0 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/50"
+                >
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                  {copied ? "Copied" : "Copy code"}
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                <Link
+                  href="/reseller"
+                  className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400">
+                    <Store className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Total Expense
-                    </span>
-                    <span className="font-medium text-red-600">
-                      -৳{parseFloat(wallet?.expense || "0").toLocaleString()}
-                    </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-foreground">
+                      Reseller Shop
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Browse & earn
+                    </p>
                   </div>
-                  <div className="pt-2 border-t flex items-center justify-between">
-                    <span className="font-medium">Current Balance</span>
-                    <span className="text-xl font-bold">
-                      ৳{parseFloat(wallet?.balance || "0").toLocaleString()}
-                    </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+                </Link>
+                <Link
+                  href="/wallet"
+                  className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                    <Wallet className="h-5 w-5" />
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-foreground">
+                      Wallet
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Balance & history
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+                </Link>
+                <Link
+                  href="/orders"
+                  className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400">
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-foreground">
+                      My Orders
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Track orders
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+                </Link>
+              </div>
+            </div>
+          </section>
 
-        {/* Recent Transactions */}
-        <Card className="relative overflow-hidden border-0 bg-white dark:bg-slate-900 shadow-xl hover:shadow-2xl transition-all">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500"></div>
-          <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-              Recent Transactions
-            </CardTitle>
-            <CardDescription>Your latest wallet activity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {walletLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex-1">
-                      <Skeleton className="h-4 w-1/2 mb-2" />
-                      <Skeleton className="h-3 w-1/4" />
-                    </div>
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                ))}
+          {/* Two-column: Activity + Sidebar */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Main: Recent Transactions */}
+            <section
+              className="lg:col-span-2 rounded-xl border border-border bg-card shadow-sm"
+              aria-label="Recent transactions"
+            >
+              <div className="border-b border-border px-5 py-4">
+                <h2 className="text-sm font-semibold text-foreground">
+                  Recent transactions
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Latest wallet activity
+                </p>
               </div>
-            ) : wallet?.transactions && wallet.transactions.length > 0 ? (
-              <div className="space-y-4">
-                {wallet.transactions.slice(0, 5).map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg ${
-                          transaction.transaction_type === "credit"
-                            ? "bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-500/30"
-                            : "bg-gradient-to-br from-rose-400 to-red-500 shadow-red-500/30"
-                        }`}
+              <div className="p-5">
+                {walletLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-4">
+                        <Skeleton className="h-11 w-11 rounded-xl shrink-0" />
+                        <div className="flex-1 space-y-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    ))}
+                  </div>
+                ) : wallet?.transactions && wallet.transactions.length > 0 ? (
+                  <ul className="space-y-1" role="list">
+                    {wallet.transactions.slice(0, 5).map((transaction) => (
+                      <li
+                        key={transaction.id}
+                        className="flex items-center justify-between gap-4 py-3 px-3 rounded-lg hover:bg-muted/50 transition-colors"
                       >
-                        <TrendingUp
-                          className={`h-5 w-5 text-white ${
-                            transaction.transaction_type === "debit"
-                              ? "rotate-180"
-                              : ""
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                              transaction.transaction_type === "credit"
+                                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                                : "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            <TrendingUp
+                              className={`h-5 w-5 ${
+                                transaction.transaction_type === "debit"
+                                  ? "rotate-180"
+                                  : ""
+                              }`}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate">
+                              {transaction.description || "Transaction"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(
+                                transaction.created_at,
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={`text-sm font-medium tabular-nums shrink-0 ${
+                            transaction.transaction_type === "credit"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-rose-600 dark:text-rose-400"
                           }`}
-                        />
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">
-                          {transaction.description || "Transaction"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(
-                            transaction.created_at
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`font-medium ${
-                        transaction.transaction_type === "credit"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {transaction.transaction_type === "credit" ? "+" : "-"}৳
-                      {parseFloat(transaction.amount).toLocaleString()}
-                    </span>
+                        >
+                          {transaction.transaction_type === "credit"
+                            ? "+"
+                            : "-"}
+                          ৳{parseFloat(transaction.amount).toLocaleString()}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="py-10 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      No transactions yet
+                    </p>
+                    <Link href="/wallet">
+                      <Button variant="outline" size="sm" className="mt-2">
+                        Go to Wallet
+                      </Button>
+                    </Link>
                   </div>
-                ))}
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No transactions yet
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            </section>
+
+            {/* Sidebar: Membership + Wallet summary */}
+            <aside className="space-y-6" aria-label="Account summary">
+              <Card className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold">
+                    Membership
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Current tier
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      className={
+                        user?.member_status === "user"
+                          ? "bg-muted text-muted-foreground"
+                          : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 border-0"
+                      }
+                    >
+                      {user?.member_status}
+                    </Badge>
+                    {user?.is_verified && (
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-xs"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                  {user?.active_membership ? (
+                    <p className="text-xs text-muted-foreground">
+                      Active since{" "}
+                      {new Date(
+                        user.active_membership.purchased_at,
+                      ).toLocaleDateString()}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Upgrade for more benefits
+                    </p>
+                  )}
+                  <Link href="/memberships">
+                    <Button variant="outline" size="sm" className="w-full">
+                      View plans
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold">
+                    Wallet summary
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Financial overview
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {walletLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-6 w-1/2 mt-2" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Income</span>
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+                          +৳{parseFloat(wallet?.income || "0").toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Expense</span>
+                        <span className="font-medium text-rose-600 dark:text-rose-400 tabular-nums">
+                          -৳
+                          {parseFloat(wallet?.expense || "0").toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-border flex justify-between items-baseline">
+                        <span className="text-xs font-medium text-foreground">
+                          Balance
+                        </span>
+                        <span className="text-lg font-semibold tabular-nums text-foreground">
+                          ৳{parseFloat(wallet?.balance || "0").toLocaleString()}
+                        </span>
+                      </div>
+                      <Link href="/wallet">
+                        <Button variant="outline" size="sm" className="w-full">
+                          Open wallet
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </aside>
+          </div>
+        </div>
       </div>
     </>
   );
