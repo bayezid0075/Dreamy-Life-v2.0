@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import {
   Wallet,
   TrendingUp,
@@ -18,6 +19,7 @@ import {
   Send,
   Phone,
   Percent,
+  History,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -342,11 +344,11 @@ export default function WalletPage() {
       </Card>
 
       {/* Individual Balance Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 md:gap-5">
         {accounts.map((account) => (
           <Card
             key={account.id}
-            className="group relative overflow-hidden border-0 shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-all duration-300 md:duration-500 hover:-translate-y-1 md:hover:-translate-y-2"
+            className="group relative overflow-hidden border-0 shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-all duration-300 md:duration-500 hover:-translate-y-1 md:hover:-translate-y-2 px-4 py-5 sm:px-5 sm:py-5 md:px-6 md:py-6"
           >
             {/* Gradient Background */}
             <div className={`absolute inset-0 bg-gradient-to-br ${account.gradient} opacity-90`}></div>
@@ -355,7 +357,7 @@ export default function WalletPage() {
             {/* Shine Effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-4 sm:pb-2 md:p-6 md:pb-2">
+            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 p-0 pb-3 sm:pb-4 md:pb-4">
               <CardTitle className="text-xs sm:text-sm font-medium text-white/80">
                 {account.title}
               </CardTitle>
@@ -363,7 +365,7 @@ export default function WalletPage() {
                 <account.icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
               </div>
             </CardHeader>
-            <CardContent className="relative p-3 pt-0 sm:p-4 sm:pt-0 md:p-6 md:pt-0">
+            <CardContent className="relative p-0 pt-0 space-y-2 sm:space-y-3">
               {account.loading ? (
                 <Skeleton className="h-6 w-24 sm:h-8 sm:w-32 bg-white/20" />
               ) : (
@@ -371,11 +373,11 @@ export default function WalletPage() {
                   ৳{parseFloat(account.balance).toLocaleString()}
                 </div>
               )}
-              <p className="text-[10px] sm:text-xs text-white/60 mt-0.5 sm:mt-1">
+              <p className="text-[10px] sm:text-xs text-white/60">
                 {account.description}
               </p>
               {!account.loading && (
-                <div className="flex gap-3 sm:gap-4 mt-2 sm:mt-3 text-xs sm:text-sm">
+                <div className="flex gap-3 sm:gap-4 pt-1 text-xs sm:text-sm">
                   <span className="flex items-center gap-1 text-emerald-200">
                     <ArrowDownRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     ৳{parseFloat(account.income).toLocaleString()}
@@ -386,6 +388,13 @@ export default function WalletPage() {
                   </span>
                 </div>
               )}
+              <Link
+                href={`/wallet/history/${account.id}`}
+                className="relative mt-3 sm:mt-4 inline-flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                History
+              </Link>
             </CardContent>
           </Card>
         ))}

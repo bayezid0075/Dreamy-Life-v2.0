@@ -175,6 +175,8 @@ class VerifyPaymentAPI(APIView):
                 ).first()
                 
                 if existing_purchase:
+                    from .services import set_user_verified_and_member_status
+                    set_user_verified_and_member_status(user, membership)
                     return Response({
                         "status": "success",
                         "message": "Membership already purchased",
@@ -186,11 +188,11 @@ class VerifyPaymentAPI(APIView):
                     purchase = MembershipPurchase.objects.create(
                         user=user,
                         membership=membership,
-                        is_active=True
+                        is_active=True,
                     )
-                    
-                    # Distribute commissions
                     distribute_commission(user, membership)
+                    from .services import set_user_verified_and_member_status
+                    set_user_verified_and_member_status(user, membership)
                 
                 return Response({
                     "status": "success",
@@ -236,9 +238,11 @@ class UddoktaPayWebhookAPI(APIView):
             if not existing:
                 with transaction.atomic():
                     MembershipPurchase.objects.create(
-                        user=user, membership=membership, is_active=True
+                        user=user, membership=membership, is_active=True,
                     )
                     distribute_commission(user, membership)
+            from .services import set_user_verified_and_member_status
+            set_user_verified_and_member_status(user, membership)
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         except (User.DoesNotExist, Membership.DoesNotExist, ValueError):
             return Response({"status": "received"}, status=status.HTTP_200_OK)

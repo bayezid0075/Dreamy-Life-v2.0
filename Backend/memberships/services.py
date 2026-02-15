@@ -1,8 +1,21 @@
 from decimal import Decimal
-from users.models import User
+from users.models import User, UserInfo
 from wallets.models import Wallet, WalletTransaction
 from .models import Membership, MembershipCommission, MembershipPurchase
 from django.db import transaction
+
+
+def set_user_verified_and_member_status(user: User, membership: Membership) -> None:
+    """
+    After successful membership purchase: set user as verified and update member_status.
+    Supports upgrade: buying a new membership sets member_status to the new tier.
+    """
+    valid_statuses = [c[0] for c in UserInfo.MEMBER_CHOICES if c[0] != "user"]
+    new_status = membership.name if membership.name in valid_statuses else "user"
+    user_info, _ = UserInfo.objects.get_or_create(user=user, defaults={"member_status": "user"})
+    user_info.is_verified = True
+    user_info.member_status = new_status
+    user_info.save(update_fields=["is_verified", "member_status"])
 
 @transaction.atomic
 def distribute_commission(buyer: User, membership: Membership):
@@ -41,18 +54,15 @@ def distribute_commission(buyer: User, membership: Membership):
 @transaction.atomic
 def purchase_membership(user: User, membership_id: int):
     """
-    Creates a MembershipPurchase record and distributes commissions to uplines.
+    Creates a MembershipPurchase record, distributes commissions, and marks user verified with member_status.
+    Upgrade: buying a new membership updates member_status to the new tier.
     """
     membership = Membership.objects.get(id=membership_id)
-
-    # Create purchase record
     purchase = MembershipPurchase.objects.create(
         user=user,
         membership=membership,
-        is_active=True
+        is_active=True,
     )
-
-    # Distribute commissions
     distribute_commission(user, membership)
-
+    set_user_verified_and_member_status(user, membership)
     return purchase

@@ -14,7 +14,15 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 
-from .models import User, UserInfo, AccountRestrictionConfig, RESTRICTABLE_AREAS
+from .models import (
+    User,
+    UserInfo,
+    AccountRestrictionConfig,
+    RESTRICTABLE_AREAS,
+    MEMBER_STATUS_KEYS,
+    DEFAULT_MEMBER_STATUS_ALLOWED,
+    DEFAULT_UNVERIFIED_RESTRICTED,
+)
 from .admin_serializers import AdminUserSerializer, AdminUserCreateSerializer, AdminUserInfoSerializer
 from .admin_views import AdminUserDetailView
 
@@ -168,30 +176,49 @@ class SuperadminUserDetailView(APIView):
 @permission_classes([permissions.IsAuthenticated, IsSuperadmin])
 def superadmin_restriction_config(request):
     """
-    Get or update which areas are restricted per account status (hold, ban, inactive).
-    GET: { config: { hold: [], ban: [], inactive: [] }, restrictable_areas: [] }
-    PUT: body { config: { hold: [], ban: [], inactive: [] } }
+    Get or update restriction config: account status (hold, ban, inactive), unverified areas,
+    and allowed areas per member status.
+    GET: { config: { hold, ban, inactive, unverified_restricted_areas, member_status_allowed_areas }, restrictable_areas, member_status_keys }
+    PUT: body { config: { ... } }
     """
     if request.method == "GET":
         config = AccountRestrictionConfig.get_config()
         return Response({
             "config": config,
             "restrictable_areas": RESTRICTABLE_AREAS,
+            "member_status_keys": MEMBER_STATUS_KEYS,
         })
     # PUT
     new_config = request.data.get("config")
     if not isinstance(new_config, dict):
         return Response(
-            {"detail": "Expected body.config object with keys hold, ban, inactive"},
+            {"detail": "Expected body.config object"},
             status=status.HTTP_400_BAD_REQUEST,
         )
     obj, _ = AccountRestrictionConfig.objects.get_or_create(
         pk=1,
-        defaults={"config": {"hold": [], "ban": [], "inactive": []}},
+        defaults={"config": {
+            "hold": ["wallet", "withdrawals"],
+            "ban": list(RESTRICTABLE_AREAS),
+            "inactive": list(RESTRICTABLE_AREAS),
+            "unverified_restricted_areas": list(DEFAULT_UNVERIFIED_RESTRICTED),
+            "member_status_allowed_areas": dict(DEFAULT_MEMBER_STATUS_ALLOWED),
+        }},
     )
     for key in ("hold", "ban", "inactive"):
         if key in new_config and isinstance(new_config[key], list):
             obj.config[key] = [a for a in new_config[key] if a in RESTRICTABLE_AREAS or a == "all"]
+    if "unverified_restricted_areas" in new_config and isinstance(new_config["unverified_restricted_areas"], list):
+        obj.config["unverified_restricted_areas"] = [
+            a for a in new_config["unverified_restricted_areas"] if a in RESTRICTABLE_AREAS
+        ]
+    if "member_status_allowed_areas" in new_config and isinstance(new_config["member_status_allowed_areas"], dict):
+        obj.config["member_status_allowed_areas"] = {}
+        for ms in MEMBER_STATUS_KEYS:
+            raw = new_config["member_status_allowed_areas"].get(ms)
+            obj.config["member_status_allowed_areas"][ms] = (
+                [a for a in raw if a in RESTRICTABLE_AREAS] if isinstance(raw, list) else list(obj.config.get("member_status_allowed_areas", {}).get(ms, DEFAULT_MEMBER_STATUS_ALLOWED.get(ms, [])))
+            )
     obj.save()
     return Response({"config": AccountRestrictionConfig.get_config()})
 

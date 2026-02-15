@@ -22,6 +22,8 @@ export interface AccountStatusResponse {
   account_status: AccountStatus;
   restricted_areas: string[];
   message: string | null;
+  is_verified?: boolean;
+  member_status?: string;
 }
 
 export const RESTRICTABLE_AREAS = [
@@ -35,9 +37,19 @@ export const RESTRICTABLE_AREAS = [
 
 export type RestrictableArea = (typeof RESTRICTABLE_AREAS)[number];
 
+export const MEMBER_STATUS_KEYS = ["user", "Basic", "Standard", "Smart", "VVIP"] as const;
+export type MemberStatusKey = (typeof MEMBER_STATUS_KEYS)[number];
+
 export interface RestrictionConfigResponse {
-  config: Record<"hold" | "ban" | "inactive", string[]>;
+  config: {
+    hold: string[];
+    ban: string[];
+    inactive: string[];
+    unverified_restricted_areas?: string[];
+    member_status_allowed_areas?: Record<string, string[]>;
+  };
   restrictable_areas: string[];
+  member_status_keys?: string[];
 }
 
 export interface UserInfo {

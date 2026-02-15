@@ -29,7 +29,7 @@ class AuthRepository {
     );
     final data = response.data;
     if (data == null) {
-      throw FormatException('Invalid login response: empty body');
+      throw const FormatException('Invalid login response: empty body');
     }
     return AuthTokens.fromJson(data);
   }

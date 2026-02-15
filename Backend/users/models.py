@@ -86,7 +86,7 @@ class UserInfo(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.own_refercode}"
 
-# Area slugs that can be restricted per account status (hold, ban, inactive)
+# Area slugs that can be restricted per account status (hold, ban, inactive), unverified, or member tier
 RESTRICTABLE_AREAS = [
     "wallet",
     "withdrawals",
@@ -96,15 +96,28 @@ RESTRICTABLE_AREAS = [
     "referrals",
 ]
 
+# Member status keys for allowed-areas config (must match UserInfo.MEMBER_CHOICES)
+MEMBER_STATUS_KEYS = ["user", "Basic", "Standard", "Smart", "VVIP"]
+
+DEFAULT_MEMBER_STATUS_ALLOWED = {
+    "user": ["profile_edit", "membership"],
+    "Basic": ["shop", "profile_edit", "membership", "referrals"],
+    "Standard": ["wallet", "shop", "profile_edit", "membership", "referrals"],
+    "Smart": ["wallet", "withdrawals", "shop", "profile_edit", "membership", "referrals"],
+    "VVIP": list(RESTRICTABLE_AREAS),
+}
+
+DEFAULT_UNVERIFIED_RESTRICTED = ["wallet", "withdrawals", "shop", "referrals"]
+
 
 class AccountRestrictionConfig(models.Model):
     """
-    Singleton config: which areas are blocked for each non-active account status.
-    Superadmin can edit. Keys: hold, ban, inactive; values: list of area slugs.
+    Singleton config: account status restrictions (hold, ban, inactive), unverified restrictions,
+    and which areas each member status can access.
     """
     config = models.JSONField(
         default=dict,
-        help_text='{"hold": ["wallet", "withdrawals"], "ban": ["wallet", "withdrawals", "shop", "profile_edit", "membership", "referrals"], "inactive": ["wallet", "withdrawals", "shop", "profile_edit", "membership", "referrals"]}',
+        help_text="hold, ban, inactive: lists of restricted areas. unverified_restricted_areas: list. member_status_allowed_areas: {user, Basic, Standard, Smart, VVIP: list of allowed areas}.",
     )
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -121,10 +134,17 @@ class AccountRestrictionConfig(models.Model):
                     "hold": ["wallet", "withdrawals"],
                     "ban": RESTRICTABLE_AREAS.copy(),
                     "inactive": RESTRICTABLE_AREAS.copy(),
+                    "unverified_restricted_areas": DEFAULT_UNVERIFIED_RESTRICTED.copy(),
+                    "member_status_allowed_areas": dict(DEFAULT_MEMBER_STATUS_ALLOWED),
                 },
             },
         )
-        return obj.config
+        cfg = dict(obj.config)
+        if "unverified_restricted_areas" not in cfg:
+            cfg["unverified_restricted_areas"] = DEFAULT_UNVERIFIED_RESTRICTED.copy()
+        if "member_status_allowed_areas" not in cfg:
+            cfg["member_status_allowed_areas"] = dict(DEFAULT_MEMBER_STATUS_ALLOWED)
+        return cfg
 
 
 class PasswordResetToken(models.Model):

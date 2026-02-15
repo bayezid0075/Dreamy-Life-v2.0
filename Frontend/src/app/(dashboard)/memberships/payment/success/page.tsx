@@ -34,6 +34,7 @@ export default function MembershipPaymentSuccessPage() {
             const userInfo = await usersApi.getUserInfo();
             setUser(userInfo);
             queryClient.invalidateQueries({ queryKey: ['user'] });
+            queryClient.invalidateQueries({ queryKey: ['account-status'] });
             toast.success(data.message);
           } else {
             setStatus('error');

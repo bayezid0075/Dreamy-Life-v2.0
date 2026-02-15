@@ -15,14 +15,15 @@ export function useAccountStatus() {
 
   const isAreaAllowed = (area: string): boolean => {
     if (!data) return true;
-    if (data.account_status === "active") return true;
-    return !data.restricted_areas.includes(area);
+    return !(data.restricted_areas ?? []).includes(area);
   };
 
   return {
     accountStatus: data?.account_status ?? "active",
     restrictedAreas: data?.restricted_areas ?? [],
     message: data?.message ?? null,
+    isVerified: data?.is_verified ?? false,
+    memberStatus: data?.member_status ?? "user",
     isAreaAllowed,
     isLoading,
     refetch,
