@@ -20,7 +20,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "users",
     "memberships",
-    "wallets",
+    "wallets.apps.WalletsConfig",
     "notifications",
     "referral",
     "vendors",

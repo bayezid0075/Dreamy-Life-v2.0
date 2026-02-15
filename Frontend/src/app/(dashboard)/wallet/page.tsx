@@ -388,13 +388,24 @@ export default function WalletPage() {
                   </span>
                 </div>
               )}
-              <Link
-                href={`/wallet/history/${account.id}`}
-                className="relative mt-3 sm:mt-4 inline-flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                History
-              </Link>
+              <div className="relative mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2">
+                <Link
+                  href={`/wallet/history/${account.id}`}
+                  className="inline-flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  History
+                </Link>
+                {account.id === 'funds' && (
+                  <Link
+                    href="/wallet/funds/add"
+                    className="inline-flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium bg-white/25 hover:bg-white/40 text-white backdrop-blur-sm border border-white/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Coins className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Add Funds
+                  </Link>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}

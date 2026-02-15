@@ -20,6 +20,9 @@ from django.db.models import Sum
 from django.db import transaction
 from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 try:
     from users.superadmin_views import IsSuperadmin
@@ -28,6 +31,15 @@ except Exception:
     IsSuperadmin = None
     def check_area_allowed(user, area):
         return None, False
+
+try:
+    from memberships.uddoktapay_service import (
+        create_charge as uddoktapay_create_charge,
+        verify_payment as uddoktapay_verify_payment,
+    )
+except ImportError:
+    uddoktapay_create_charge = None
+    uddoktapay_verify_payment = None
 
 # Wallet Views
 class WalletView(APIView):
@@ -145,6 +157,176 @@ class PointsView(APIView):
         data['expense'] = str(expense)
         
         return Response(data, status=status.HTTP_200_OK)
+
+
+# --- Add Funds (payment gateway) ---
+
+class AddFundsCreatePaymentView(APIView):
+    """Create UddoktaPay charge for adding funds. POST { amount: number }."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        forbidden, is_forbidden = check_area_allowed(request.user, "wallet")
+        if is_forbidden:
+            return forbidden
+        if not uddoktapay_create_charge:
+            return Response(
+                {"error": "Payment gateway not available"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        try:
+            amount = Decimal(str(request.data.get("amount", 0)))
+        except (TypeError, ValueError):
+            return Response({"error": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+        if amount < Decimal("10"):
+            return Response(
+                {"error": "Minimum amount is ৳10"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if amount > Decimal("500000"):
+            return Response(
+                {"error": "Maximum amount is ৳5,00,000"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user = request.user
+        if not user.email:
+            return Response({"error": "User email is required"}, status=status.HTTP_400_BAD_REQUEST)
+        api_key = getattr(settings, "UDDOKTAPAY_API_KEY", None)
+        if not api_key:
+            return Response(
+                {"error": "Payment gateway is not configured"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        request_scheme = request.scheme or "http"
+        request_host = request.get_host()
+        base_url = f"{request_scheme}://{request_host}"
+        frontend_url = getattr(settings, "FRONTEND_URL", None) or (
+            f"{request_scheme}://localhost:3000" if "3000" in request_host or "localhost" in request_host
+            else f"{request_scheme}://{request_host.replace(':8000', ':3000')}"
+        )
+        redirect_base = (getattr(settings, "UDDOKTAPAY_REDIRECT_BASE_URL", None) or "").strip().rstrip("/")
+        if redirect_base:
+            success_url = f"{redirect_base}/wallet/funds/add/success"
+            cancel_url = f"{redirect_base}/wallet/funds/add/cancel"
+        else:
+            success_url = f"{frontend_url}/wallet/funds/add/success"
+            cancel_url = f"{frontend_url}/wallet/funds/add/cancel"
+        webhook_url = f"{base_url}/api/wallets/funds/add/webhook/"
+        metadata = {
+            "user_id": str(user.id),
+            "type": "add_funds",
+            "amount": str(amount.quantize(Decimal("0.01"))),
+        }
+        amount_str = f"{amount:.2f}"
+        cus_name = (getattr(user, "username", None) or "Customer")[:50]
+        cus_email = (user.email or "")[:50]
+        payment_response = uddoktapay_create_charge(
+            full_name=cus_name,
+            email=cus_email,
+            amount=amount_str,
+            metadata=metadata,
+            redirect_url=success_url,
+            cancel_url=cancel_url,
+            webhook_url=webhook_url,
+            return_type="GET",
+        )
+        if payment_response.get("status") is True and payment_response.get("payment_url"):
+            return Response({
+                "payment_url": payment_response["payment_url"],
+                "message": payment_response.get("message", "Payment link created"),
+            }, status=status.HTTP_200_OK)
+        return Response(
+            {"error": payment_response.get("message", "Failed to create payment")},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+def _credit_funds_for_add_funds_payment(user_id: int, amount: Decimal, invoice_id: str) -> bool:
+    """Credit user's Funds and create transaction. Returns True if credited, False if already processed (idempotent)."""
+    from users.models import User
+    user = User.objects.get(id=user_id)
+    funds, _ = Funds.objects.get_or_create(user=user)
+    desc = f"Add funds - Invoice {invoice_id}"
+    if FundsTransaction.objects.filter(funds=funds, description=desc).exists():
+        return False
+    with transaction.atomic():
+        funds.balance = (funds.balance + amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        funds.save(update_fields=["balance"])
+        FundsTransaction.objects.create(
+            funds=funds,
+            amount=amount,
+            transaction_type="credit",
+            description=desc,
+        )
+    return True
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AddFundsVerifyView(APIView):
+    """Verify add-funds payment by invoice_id and credit Funds. Called by frontend after redirect."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if not uddoktapay_verify_payment:
+            return Response({"error": "Payment gateway not available"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        invoice_id = request.data.get("invoice_id")
+        if not invoice_id:
+            return Response({"error": "invoice_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        verify_response = uddoktapay_verify_payment(invoice_id)
+        if verify_response.get("status") != "COMPLETED":
+            return Response({
+                "status": "failed",
+                "message": verify_response.get("message", "Payment not completed"),
+            }, status=status.HTTP_200_OK)
+        metadata = verify_response.get("metadata") or {}
+        if metadata.get("type") != "add_funds":
+            return Response({"status": "failed", "message": "Invalid payment type"}, status=status.HTTP_200_OK)
+        try:
+            user_id = int(metadata.get("user_id", 0))
+            amount = Decimal(str(metadata.get("amount", 0)))
+        except (TypeError, ValueError):
+            return Response({"status": "failed", "message": "Invalid metadata"}, status=status.HTTP_200_OK)
+        if request.user.id != user_id:
+            return Response({"status": "failed", "message": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        if amount <= 0:
+            return Response({"status": "failed", "message": "Invalid amount"}, status=status.HTTP_200_OK)
+        credited = _credit_funds_for_add_funds_payment(user_id, amount, invoice_id)
+        return Response({
+            "status": "success",
+            "message": "Funds added successfully" if credited else "Funds were already added",
+            "amount": str(amount),
+        }, status=status.HTTP_200_OK)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AddFundsWebhookView(APIView):
+    """Webhook for UddoktaPay add-funds. Credits Funds on COMPLETED."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        if not uddoktapay_verify_payment:
+            return Response({"status": "received"}, status=status.HTTP_200_OK)
+        invoice_id = request.data.get("invoice_id")
+        if not invoice_id:
+            return Response({"error": "invoice_id required"}, status=status.HTTP_400_BAD_REQUEST)
+        verify_response = uddoktapay_verify_payment(invoice_id)
+        if verify_response.get("status") != "COMPLETED":
+            return Response({"status": "received"}, status=status.HTTP_200_OK)
+        metadata = verify_response.get("metadata") or {}
+        if metadata.get("type") != "add_funds":
+            return Response({"status": "received"}, status=status.HTTP_200_OK)
+        try:
+            user_id = int(metadata.get("user_id", 0))
+            amount = Decimal(str(metadata.get("amount", 0)))
+        except (TypeError, ValueError):
+            return Response({"status": "received"}, status=status.HTTP_200_OK)
+        if amount <= 0:
+            return Response({"status": "received"}, status=status.HTTP_200_OK)
+        try:
+            _credit_funds_for_add_funds_payment(user_id, amount, invoice_id)
+        except Exception:
+            pass
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
 
 
 def _calc_fee(amount: Decimal) -> Decimal:

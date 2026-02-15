@@ -11,6 +11,7 @@ class Notification(models.Model):
         ("referral", "Referral"),
         ("wallet", "Wallet"),
         ("membership", "Membership"),
+        ("transaction", "Transaction"),
     ]
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"

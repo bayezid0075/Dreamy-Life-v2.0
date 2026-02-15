@@ -476,7 +476,7 @@ export interface AdminUserFilters {
 }
 
 // Notification Types
-export type NotificationSource = "system" | "admin" | "order" | "referral" | "wallet" | "membership";
+export type NotificationSource = "system" | "admin" | "order" | "referral" | "wallet" | "membership" | "transaction";
 
 export interface Notification {
   id: number;
