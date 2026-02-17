@@ -162,6 +162,8 @@ export interface Transaction {
 export interface Wallet {
   id: number;
   balance: string;
+  reserved_balance?: string;
+  available_balance?: string;
   transactions: Transaction[];
   income: string;
   expense: string;

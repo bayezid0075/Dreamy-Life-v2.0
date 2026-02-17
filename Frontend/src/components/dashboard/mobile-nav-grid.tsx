@@ -15,6 +15,7 @@ import {
   Gift,
   CreditCard,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 
 import { useVendor } from "@/hooks/use-vendor";
@@ -55,6 +56,13 @@ const staticNavItems: NavItem[] = [
     icon: ShoppingBag,
     gradient: "from-pink-500 to-rose-500",
     iconColor: "text-pink-600",
+  },
+  {
+    title: "Marketplace",
+    href: "/marketplace",
+    icon: Briefcase,
+    gradient: "from-indigo-500 to-violet-500",
+    iconColor: "text-indigo-600",
   },
 ];
 
@@ -125,7 +133,7 @@ export function MobileNavGrid() {
     <div className="md:hidden relative z-10 -mt-2 sm:-mt-4">
       {/* Primary Grid - Floating card over the gradient */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl shadow-violet-500/20 p-3 sm:p-4 mx-3 sm:mx-4">
-        <div className="grid grid-cols-5 gap-2 sm:gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
           {primaryNavItems.map((item) => (
             <Link
               key={item.href}

@@ -15,11 +15,15 @@ class WalletTransactionSerializer(serializers.ModelSerializer):
 
 class WalletSerializer(serializers.ModelSerializer):
     transactions = WalletTransactionSerializer(many=True, read_only=True)
-    
+    available_balance = serializers.SerializerMethodField()
+
     class Meta:
         model = Wallet
-        fields = ['id', 'balance', 'transactions']
-        read_only_fields = ['id', 'balance', 'transactions']
+        fields = ['id', 'balance', 'reserved_balance', 'available_balance', 'transactions']
+        read_only_fields = ['id', 'balance', 'reserved_balance', 'transactions']
+
+    def get_available_balance(self, obj):
+        return obj.balance - obj.reserved_balance
 
 # Funds Serializers
 class FundsTransactionSerializer(serializers.ModelSerializer):

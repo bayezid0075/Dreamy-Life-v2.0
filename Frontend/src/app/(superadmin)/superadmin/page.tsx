@@ -10,10 +10,11 @@ import { SuperadminUsersTab } from "@/components/superadmin/users-tab";
 import { SuperadminVendorsTab } from "@/components/superadmin/vendors-tab";
 import { SuperadminOrdersTab } from "@/components/superadmin/orders-tab";
 import { SuperadminWithdrawalsTab } from "@/components/superadmin/withdrawals-tab";
+import { SuperadminJobsTab } from "@/components/superadmin/jobs-tab";
 import { SuperadminNotificationsTab } from "@/components/superadmin/notifications-tab";
 import { SuperadminSettingsTab } from "@/components/superadmin/settings-tab";
 
-type TabId = "overview" | "users" | "vendors" | "orders" | "withdrawals" | "notifications" | "settings";
+type TabId = "overview" | "users" | "vendors" | "orders" | "withdrawals" | "jobs" | "notifications" | "settings";
 export type SuperadminTheme = "dark" | "light";
 
 const THEME_KEY = "superadmin-theme";
@@ -232,6 +233,21 @@ export default function SuperadminPage() {
           </button>
           <button
             type="button"
+            onClick={() => setTab("jobs")}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              tab === "jobs"
+                ? isLight
+                  ? "border-amber-500 text-amber-600 bg-amber-50"
+                  : "border-amber-500 text-amber-400 bg-amber-500/5"
+                : isLight
+                  ? "border-transparent text-slate-500 hover:bg-slate-100"
+                  : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+            }`}
+          >
+            JOBS
+          </button>
+          <button
+            type="button"
             onClick={() => setTab("notifications")}
             className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
               tab === "notifications"
@@ -271,6 +287,7 @@ export default function SuperadminPage() {
         {tab === "vendors" && <SuperadminVendorsTab theme={theme} />}
         {tab === "orders" && <SuperadminOrdersTab theme={theme} />}
         {tab === "withdrawals" && <SuperadminWithdrawalsTab theme={theme} />}
+        {tab === "jobs" && <SuperadminJobsTab theme={theme} />}
         {tab === "notifications" && (
           <SuperadminNotificationsTab theme={theme} />
         )}

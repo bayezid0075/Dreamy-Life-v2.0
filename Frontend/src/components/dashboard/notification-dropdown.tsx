@@ -43,7 +43,13 @@ const SOURCE_CONFIG: Record<
   transaction: { icon: Receipt, label: "Transaction", className: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300" },
 };
 
-export function NotificationDropdown() {
+interface NotificationDropdownProps {
+  /** Use for desktop/light headers e.g. "text-foreground hover:bg-muted" */
+  triggerClassName?: string;
+}
+
+export function NotificationDropdown(props?: NotificationDropdownProps) {
+  const { triggerClassName } = props ?? {};
   const queryClient = useQueryClient();
 
   const { data: unreadCount = 0 } = useQuery({
@@ -78,7 +84,10 @@ export function NotificationDropdown() {
         <Button
           variant="ghost"
           size="icon"
-          className="text-white hover:bg-white/20 h-9 w-9 sm:h-10 sm:w-10 relative"
+          className={cn(
+            "h-9 w-9 sm:h-10 sm:w-10 relative",
+            triggerClassName ?? "text-white hover:bg-white/20"
+          )}
         >
           <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
           {unreadCount > 0 && (

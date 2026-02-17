@@ -12,6 +12,8 @@ import {
   CheckCircle,
   Store,
   ArrowRight,
+  Sparkles,
+  Briefcase,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -235,10 +237,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Desktop View - dashboard best practices: hierarchy, KPIs, quick actions, 2-col layout */}
+      {/* Desktop View - same elements as mobile: welcome, nav grid, quick stats, recent transactions + sidebar */}
       <div className="hidden md:block">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Page header */}
+        <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+          {/* Page header - same as mobile welcome */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -258,9 +260,81 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Key metrics - KPI row */}
+          {/* Quick access grid - same links as mobile nav */}
+          <section aria-label="Quick access">
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Quick access</h2>
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <Link
+                  href="/wallet"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                    <Wallet className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Wallet</span>
+                </Link>
+                <Link
+                  href="/reseller"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400">
+                    <Store className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Shop</span>
+                </Link>
+                <Link
+                  href="/referrals"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Referrals</span>
+                </Link>
+                <Link
+                  href="/orders"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400">
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Orders</span>
+                </Link>
+                <Link
+                  href="/memberships"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                    <Crown className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Memberships</span>
+                </Link>
+                <Link
+                  href="/marketplace"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Marketplace</span>
+                </Link>
+                <Link
+                  href="/vendor"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-fuchsia-100 dark:bg-fuchsia-900/30 text-fuchsia-600 dark:text-fuchsia-400">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Vendor</span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* Key metrics - same as mobile Quick Stats */}
           <section aria-label="Key metrics">
-            <h2 className="sr-only">Key metrics</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Quick stats</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {stats.map((stat) => (
                 <div
@@ -380,7 +454,7 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Two-column: Activity + Sidebar */}
+          {/* Recent transactions + sidebar - same as mobile */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Main: Recent Transactions */}
             <section

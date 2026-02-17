@@ -8,5 +8,8 @@ django-environ
 python-dotenv
 django-cors-headers
 requests
+channels
+channels-redis
+daphne
 
 

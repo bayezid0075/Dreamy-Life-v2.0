@@ -10,6 +10,7 @@ DEBUG = env("DEBUG", default="True") == "True"
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -24,6 +25,8 @@ INSTALLED_APPS = [
     "notifications",
     "referral",
     "vendors",
+    "marketplace",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -38,6 +41,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "referral_system.urls"
 WSGI_APPLICATION = "referral_system.wsgi.application"
+ASGI_APPLICATION = "referral_system.asgi.application"
 
 DATABASES = {
      'default': {
@@ -176,3 +180,20 @@ UDDOKTAPAY_BASE_URL = (env("UDDOKTAPAY_BASE_URL", default="https://sandbox.uddok
 # Optional: use a public base URL for redirect/cancel (required for sandbox if frontend is localhost)
 # Example: set to your ngrok URL, e.g. https://abc123.ngrok.io
 UDDOKTAPAY_REDIRECT_BASE_URL = (env("UDDOKTAPAY_REDIRECT_BASE_URL", default="") or "").strip().rstrip("/")
+
+# Channels (WebSocket) - Marketplace live updates
+# Use in-memory layer by default so WebSockets work without Redis. Set USE_REDIS_CHANNELS=true
+# and REDIS_URL when Redis is available (e.g. production).
+_use_redis_channels = env("USE_REDIS_CHANNELS", default="false").lower() in ("true", "1", "yes")
+_redis_url = env("REDIS_URL", default="redis://localhost:6379/1")
+if _use_redis_channels and _redis_url:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [_redis_url]},
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+    }

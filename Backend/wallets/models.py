@@ -5,9 +5,15 @@ from users.models import User
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Reserved for marketplace jobs (locked until job completion/cancellation)
+    reserved_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.user.username} - {self.balance}"
+
+    @property
+    def available_balance(self):
+        return self.balance - self.reserved_balance
 
 class WalletTransaction(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")

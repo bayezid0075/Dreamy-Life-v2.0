@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { toast } from 'sonner';
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import {
   LayoutDashboard,
   User,
@@ -24,8 +24,9 @@ import {
   CheckCircle,
   BadgeCheck,
   ChevronRight,
-} from 'lucide-react';
-import { useTheme } from 'next-themes';
+  Briefcase,
+} from "lucide-react";
+import { useTheme } from "next-themes";
 
 import {
   Sidebar,
@@ -42,70 +43,76 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/collapsible";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
-import { useAuthStore } from '@/store';
-import { useVendor } from '@/hooks/use-vendor';
+import { useAuthStore } from "@/store";
+import { useVendor } from "@/hooks/use-vendor";
 
 const mainNavItems = [
   {
-    title: 'Dashboard',
-    href: '/dashboard',
+    title: "Dashboard",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    title: 'Profile',
-    href: '/profile',
+    title: "Profile",
+    href: "/profile",
     icon: User,
   },
   {
-    title: 'Wallet',
-    href: '/wallet',
+    title: "Wallet",
+    href: "/wallet",
     icon: Wallet,
   },
   {
-    title: 'Referrals',
-    href: '/referrals',
+    title: "Referrals",
+    href: "/referrals",
     icon: Users,
   },
   {
-    title: 'Memberships',
-    href: '/memberships',
+    title: "Memberships",
+    href: "/memberships",
     icon: Crown,
   },
 ];
 
+const marketplaceNavItem = {
+  title: "Marketplace",
+  href: "/marketplace",
+  icon: Briefcase,
+};
+
 const shopNavItems = [
   {
-    title: 'Reseller Shop',
-    href: '/reseller',
+    title: "Reseller Shop",
+    href: "/reseller",
     icon: Store,
   },
   {
-    title: 'My Orders',
-    href: '/orders',
+    title: "My Orders",
+    href: "/orders",
     icon: ShoppingBag,
   },
 ];
 
 const vendorSubItems = [
-  { title: 'Overview', href: '/vendor', icon: BarChart3 },
-  { title: 'Orders', href: '/vendor/orders', icon: ShoppingCart },
-  { title: 'Inventory', href: '/vendor/products', icon: Package },
+  { title: "Overview", href: "/vendor", icon: BarChart3 },
+  { title: "Orders", href: "/vendor/orders", icon: ShoppingCart },
+  { title: "Inventory", href: "/vendor/products", icon: Package },
 ];
 
 export function AppSidebar() {
@@ -117,14 +124,14 @@ export function AppSidebar() {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   const copyReferralCode = async () => {
     if (user?.own_refercode) {
       await navigator.clipboard.writeText(user.own_refercode);
       setCopied(true);
-      toast.success('Referral code copied!');
+      toast.success("Referral code copied!");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -136,7 +143,9 @@ export function AppSidebar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/25 group-hover:shadow-fuchsia-500/40 transition-all group-hover:scale-105">
             DL
           </div>
-          <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">Dreamy Life</span>
+          <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+            Dreamy Life
+          </span>
         </Link>
       </SidebarHeader>
 
@@ -160,7 +169,7 @@ export function AppSidebar() {
                 <Avatar className="h-14 w-14 ring-3 ring-white/30 shadow-xl">
                   <AvatarImage src={user?.profile_picture || undefined} />
                   <AvatarFallback className="bg-white/20 backdrop-blur-sm text-white text-lg font-bold">
-                    {user?.user.username?.charAt(0).toUpperCase() || 'U'}
+                    {user?.user.username?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 {user?.is_verified && (
@@ -170,13 +179,17 @@ export function AppSidebar() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-base truncate">{user?.user.username}</h3>
+                <h3 className="font-bold text-base truncate">
+                  {user?.user.username}
+                </h3>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                    user?.member_status === 'user'
-                      ? 'bg-white/20'
-                      : 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg'
-                  }`}>
+                  <div
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      user?.member_status === "user"
+                        ? "bg-white/20"
+                        : "bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg"
+                    }`}
+                  >
                     <Crown className="h-3 w-3 inline mr-1" />
                     {user?.member_status}
                   </div>
@@ -189,7 +202,9 @@ export function AppSidebar() {
               {/* Phone */}
               <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 backdrop-blur-sm">
                 <Phone className="h-4 w-4 text-white/70" />
-                <span className="text-sm font-medium truncate">{user?.user.phone_number || 'No phone'}</span>
+                <span className="text-sm font-medium truncate">
+                  {user?.user.phone_number || "No phone"}
+                </span>
               </div>
 
               {/* Referral Code */}
@@ -199,7 +214,9 @@ export function AppSidebar() {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-xs text-white/70">Refer Code:</span>
-                  <span className="font-mono font-bold text-sm text-yellow-300 truncate">{user?.own_refercode}</span>
+                  <span className="font-mono font-bold text-sm text-yellow-300 truncate">
+                    {user?.own_refercode}
+                  </span>
                 </div>
                 <button className="p-1 hover:bg-white/10 rounded transition-colors">
                   {copied ? (
@@ -221,10 +238,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === item.href}>
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -237,15 +251,28 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
+          <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === marketplaceNavItem.href || pathname?.startsWith("/marketplace")}>
+                  <Link href={marketplaceNavItem.href}>
+                    <marketplaceNavItem.icon className="h-4 w-4" />
+                    <span>{marketplaceNavItem.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
           <SidebarGroupLabel>Shop</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {shopNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === item.href}>
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -267,13 +294,13 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ) : hasVendor ? (
                 <Collapsible
-                  defaultOpen={pathname.startsWith('/vendor')}
+                  defaultOpen={pathname.startsWith("/vendor")}
                   className="group/collapsible"
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
-                        isActive={pathname.startsWith('/vendor')}
+                        isActive={pathname.startsWith("/vendor")}
                       >
                         <Store className="h-4 w-4" />
                         <span>My Shop</span>
@@ -319,11 +346,14 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-violet-200/50 dark:border-violet-800/30 p-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-2 px-2 hover:bg-violet-100 dark:hover:bg-violet-900/30">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 px-2 hover:bg-violet-100 dark:hover:bg-violet-900/30"
+            >
               <Avatar className="h-8 w-8 ring-2 ring-violet-200 dark:ring-violet-800">
                 <AvatarImage src={user?.profile_picture || undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
-                  {user?.user.username?.charAt(0).toUpperCase() || 'U'}
+                  {user?.user.username?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start text-sm">
@@ -342,9 +372,9 @@ export function AppSidebar() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
-              {theme === 'dark' ? (
+              {theme === "dark" ? (
                 <Sun className="mr-2 h-4 w-4" />
               ) : (
                 <Moon className="mr-2 h-4 w-4" />
@@ -352,7 +382,10 @@ export function AppSidebar() {
               Toggle Theme
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-destructive"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </DropdownMenuItem>
