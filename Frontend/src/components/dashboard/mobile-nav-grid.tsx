@@ -124,16 +124,13 @@ export function MobileNavGrid() {
         iconColor: "text-fuchsia-600",
       };
 
-  const primaryNavItems: NavItem[] = [
-    ...staticNavItems,
-    vendorNavItem,
-  ];
+  const primaryNavItems: NavItem[] = [...staticNavItems, vendorNavItem];
 
   return (
     <div className="md:hidden relative z-10 -mt-2 sm:-mt-4">
       {/* Primary Grid - Floating card over the gradient */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl shadow-violet-500/20 p-3 sm:p-4 mx-3 sm:mx-4">
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
           {primaryNavItems.map((item) => (
             <Link
               key={item.href}

@@ -2,12 +2,17 @@
 Marketplace API: jobs (CRUD, list public), submissions (create, list), review (owner), admin (approve/reject job).
 All financial operations use atomic transactions and select_for_update.
 """
+import os
+import uuid
 from decimal import Decimal
+from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 from django.db.models import Q, Count
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -318,3 +323,34 @@ class MarketplaceWalletCheckView(APIView):
             "reserved_balance": str(wallet.reserved_balance),
             "available_balance": str(wallet.balance - wallet.reserved_balance),
         })
+
+
+class MarketplaceJobImageUploadView(APIView):
+    """Upload an image for a job listing. Returns { url: absolute_media_url }."""
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        forbidden, is_forbidden = check_area_allowed(request.user, "wallet")
+        if is_forbidden:
+            return forbidden
+        file_obj = request.FILES.get("image") or request.FILES.get("file")
+        if not file_obj:
+            return Response(
+                {"detail": "No file sent. Use form key 'image' or 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Restrict to images
+        allowed = ("image/jpeg", "image/png", "image/gif", "image/webp")
+        if file_obj.content_type not in allowed:
+            return Response(
+                {"detail": "Only image files (JPEG, PNG, GIF, WebP) are allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        ext = os.path.splitext(getattr(file_obj, "name", "img"))[1] or ".jpg"
+        if ext.lower() not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+            ext = ".jpg"
+        path = f"marketplace/job_uploads/{timezone.now().strftime('%Y/%m')}/{uuid.uuid4().hex}{ext}"
+        saved_path = default_storage.save(path, file_obj)
+        url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
+        return Response({"url": url})

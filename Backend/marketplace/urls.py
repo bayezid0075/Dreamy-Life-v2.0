@@ -20,4 +20,9 @@ urlpatterns = [
         views.MarketplaceWalletCheckView.as_view(),
         name="wallet-check",
     ),
+    path(
+        "job-image-upload/",
+        views.MarketplaceJobImageUploadView.as_view(),
+        name="job-image-upload",
+    ),
 ]

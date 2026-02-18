@@ -96,6 +96,13 @@ export const marketplaceApi = {
   createJob: (payload: JobCreatePayload): Promise<Job> =>
     apiClient.post(`${BASE}/jobs/`, payload).then((r) => r.data),
 
+  /** Upload an image file for a job listing. Returns the public URL to use in createJob images. */
+  uploadJobImage: (file: File): Promise<{ url: string }> => {
+    const form = new FormData();
+    form.append("image", file);
+    return apiClientMultipart.post<{ url: string }>(`${BASE}/job-image-upload/`, form).then((r) => r.data);
+  },
+
   publicList: (params?: {
     work_type?: WorkType;
     sort?: "latest" | "price_asc" | "price_desc";
