@@ -25,6 +25,7 @@ import {
   BadgeCheck,
   ChevronRight,
   Briefcase,
+  Smartphone,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -77,6 +78,11 @@ const mainNavItems = [
     title: "Wallet",
     href: "/wallet",
     icon: Wallet,
+  },
+  {
+    title: "Recharge",
+    href: "/recharge",
+    icon: Smartphone,
   },
   {
     title: "Referrals",

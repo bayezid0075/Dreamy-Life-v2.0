@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Sparkles,
   Briefcase,
+  Smartphone,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -320,6 +321,15 @@ export default function DashboardPage() {
                   <span className="font-medium text-sm">Marketplace</span>
                 </Link>
                 <Link
+                  href="/recharge"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+                    <Smartphone className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Recharge</span>
+                </Link>
+                <Link
                   href="/vendor"
                   className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
                 >
@@ -429,6 +439,23 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Balance & history
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+                </Link>
+                <Link
+                  href="/recharge"
+                  className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+                    <Smartphone className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-foreground">
+                      Mobile Recharge
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Recharge from wallet
                     </p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />

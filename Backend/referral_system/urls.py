@@ -14,5 +14,6 @@ urlpatterns = [
     path("api/wallets/", include("wallets.urls")),
     path("api/notifications/", include("notifications.urls")),
     path("api/marketplace/", include("marketplace.urls")),
+    path("api/recharge/", include("recharge.urls")),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

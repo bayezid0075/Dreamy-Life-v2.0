@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "referral",
     "vendors",
     "marketplace",
+    "recharge",
     "channels",
 ]
 
@@ -180,6 +181,11 @@ UDDOKTAPAY_BASE_URL = (env("UDDOKTAPAY_BASE_URL", default="https://sandbox.uddok
 # Optional: use a public base URL for redirect/cancel (required for sandbox if frontend is localhost)
 # Example: set to your ngrok URL, e.g. https://abc123.ngrok.io
 UDDOKTAPAY_REDIRECT_BASE_URL = (env("UDDOKTAPAY_REDIRECT_BASE_URL", default="") or "").strip().rstrip("/")
+
+# Mobile Recharge API (third-party)
+RECHARGE_API_URL = (env("RECHARGE_API_URL", default="http://118.179.129.98/myportal/api/rechargeapi/recharge_api_thirdparty.php") or "").strip().rstrip("/")
+RECHARGE_API_USERNAME = (env("RECHARGE_API_USERNAME", default="") or "").strip()
+RECHARGE_API_PASSWORD = (env("RECHARGE_API_PASSWORD", default="") or "").strip()
 
 # Channels (WebSocket) - Marketplace live updates
 # Use in-memory layer by default so WebSockets work without Redis. Set USE_REDIS_CHANNELS=true

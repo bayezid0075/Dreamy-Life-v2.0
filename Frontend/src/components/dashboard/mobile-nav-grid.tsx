@@ -16,6 +16,7 @@ import {
   CreditCard,
   Sparkles,
   Briefcase,
+  Smartphone,
 } from "lucide-react";
 
 import { useVendor } from "@/hooks/use-vendor";
@@ -63,6 +64,13 @@ const staticNavItems: NavItem[] = [
     icon: Briefcase,
     gradient: "from-indigo-500 to-violet-500",
     iconColor: "text-indigo-600",
+  },
+  {
+    title: "Recharge",
+    href: "/recharge",
+    icon: Smartphone,
+    gradient: "from-violet-500 to-purple-500",
+    iconColor: "text-violet-600",
   },
 ];
 
@@ -129,23 +137,24 @@ export function MobileNavGrid() {
   return (
     <div className="md:hidden relative z-10 -mt-2 sm:-mt-4">
       {/* Primary Grid - Floating card over the gradient */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl shadow-violet-500/20 p-3 sm:p-4 mx-3 sm:mx-4">
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl shadow-violet-500/20 p-4 sm:p-5 mx-3 sm:mx-4">
+        {/* 3 cols on narrow phones, 4 cols from 360px — equal cells, touch-friendly */}
+        <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4">
           {primaryNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1.5 sm:gap-2 group"
+              className="flex flex-col items-center justify-center gap-2 group min-w-0 w-full py-1 active:opacity-90 touch-manipulation"
             >
-              <div className="relative w-11 h-11 sm:w-14 sm:h-14 flex items-center justify-center">
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl overflow-hidden">
                 {/* Background with gradient border effect */}
-                <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-50 dark:from-violet-900/30 dark:to-fuchsia-900/20 group-hover:from-violet-200 group-hover:to-fuchsia-100 dark:group-hover:from-violet-800/40 dark:group-hover:to-fuchsia-800/30 transition-all duration-300 group-active:scale-95" />
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-100 to-fuchsia-50 dark:from-violet-900/30 dark:to-fuchsia-900/20 group-hover:from-violet-200 group-hover:to-fuchsia-100 dark:group-hover:from-violet-800/40 dark:group-hover:to-fuchsia-800/30 transition-all duration-300 group-active:scale-95" />
                 {/* Icon */}
                 <item.icon
-                  className={`relative h-5 w-5 sm:h-6 sm:w-6 ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300`}
+                  className={`relative h-6 w-6 sm:h-7 sm:w-7 ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 shrink-0`}
                 />
               </div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-slate-700 dark:text-slate-300 text-center leading-tight line-clamp-1">
+              <span className="text-[10px] sm:text-xs font-medium text-slate-700 dark:text-slate-300 text-center leading-tight line-clamp-1 w-full min-w-0">
                 {item.title}
               </span>
             </Link>
@@ -154,20 +163,20 @@ export function MobileNavGrid() {
 
         {/* Expandable Secondary Grid */}
         {expanded && (
-          <div className="grid grid-cols-4 gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-violet-100 dark:border-violet-800/30">
+          <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-violet-100 dark:border-violet-800/30">
             {secondaryNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center gap-1.5 sm:gap-2 group"
+                className="flex flex-col items-center justify-center gap-2 group min-w-0 w-full py-1 active:opacity-90 touch-manipulation"
               >
-                <div className="relative w-11 h-11 sm:w-14 sm:h-14 flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-50 dark:from-violet-900/30 dark:to-fuchsia-900/20 group-hover:from-violet-200 group-hover:to-fuchsia-100 dark:group-hover:from-violet-800/40 dark:group-hover:to-fuchsia-800/30 transition-all duration-300 group-active:scale-95" />
+                <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-100 to-fuchsia-50 dark:from-violet-900/30 dark:to-fuchsia-900/20 group-hover:from-violet-200 group-hover:to-fuchsia-100 dark:group-hover:from-violet-800/40 dark:group-hover:to-fuchsia-800/30 transition-all duration-300 group-active:scale-95" />
                   <item.icon
-                    className={`relative h-5 w-5 sm:h-6 sm:w-6 ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300`}
+                    className={`relative h-6 w-6 sm:h-7 sm:w-7 ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 shrink-0`}
                   />
                 </div>
-                <span className="text-[10px] sm:text-[11px] font-medium text-slate-700 dark:text-slate-300 text-center leading-tight line-clamp-1">
+                <span className="text-[10px] sm:text-xs font-medium text-slate-700 dark:text-slate-300 text-center leading-tight line-clamp-1 w-full min-w-0">
                   {item.title}
                 </span>
               </Link>
@@ -178,7 +187,7 @@ export function MobileNavGrid() {
         {/* Expand/Collapse Button */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full mt-3 sm:mt-4 flex items-center justify-center gap-1 text-xs sm:text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors py-1"
+          className="w-full mt-4 sm:mt-5 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 active:opacity-80 transition-colors py-2 min-h-[2.75rem] touch-manipulation"
         >
           {expanded ? (
             <>

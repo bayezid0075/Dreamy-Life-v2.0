@@ -154,28 +154,28 @@ class JobSubmissionViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         job = serializer.validated_data["job"]
         quantity = serializer.validated_data["quantity"]
-        job = (
-            Job.objects.select_for_update()
-            .filter(id=job.id, status="approved")
-            .first()
-        )
-        if not job:
-            return Response(
-                {"detail": "Job not found or not available."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        if job.user_id == request.user.id:
-            return Response(
-                {"detail": "You cannot submit work for your own job."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if job.remaining_quantity < quantity:
-            return Response(
-                {"detail": f"Only {job.remaining_quantity} unit(s) available."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         amount = (job.price * quantity).quantize(Decimal("0.01"))
         with transaction.atomic():
+            job = (
+                Job.objects.select_for_update()
+                .filter(id=job.id, status="approved")
+                .first()
+            )
+            if not job:
+                return Response(
+                    {"detail": "Job not found or not available."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            if job.user_id == request.user.id:
+                return Response(
+                    {"detail": "You cannot submit work for your own job."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if job.remaining_quantity < quantity:
+                return Response(
+                    {"detail": f"Only {job.remaining_quantity} unit(s) available."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             job.remaining_quantity -= quantity
             job.save(update_fields=["remaining_quantity"])
             sub = JobSubmission.objects.create(
@@ -206,23 +206,23 @@ class JobSubmissionReviewView(APIView):
                 {"detail": "action must be 'approve' or 'reject'."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        sub = (
-            JobSubmission.objects.select_related("job")
-            .select_for_update()
-            .filter(id=submission_id, status="submitted")
-            .first()
-        )
-        if not sub:
-            return Response(
-                {"detail": "Submission not found or already reviewed."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        if sub.job.user_id != request.user.id:
-            return Response(
-                {"detail": "You can only review submissions for your own jobs."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         with transaction.atomic():
+            sub = (
+                JobSubmission.objects.select_related("job")
+                .select_for_update()
+                .filter(id=submission_id, status="submitted")
+                .first()
+            )
+            if not sub:
+                return Response(
+                    {"detail": "Submission not found or already reviewed."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            if sub.job.user_id != request.user.id:
+                return Response(
+                    {"detail": "You can only review submissions for your own jobs."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             if action_type == "approve":
                 ok, err = release_payment_to_worker(
                     sub.job.user_id,

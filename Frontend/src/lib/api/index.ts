@@ -11,3 +11,4 @@ export { superadminApi, getSuperadminStreamUrl } from "./superadmin";
 export { withdrawalsApi, superadminWithdrawalsApi } from "./withdrawals";
 export { notificationsApi } from "./notifications";
 export { marketplaceApi } from "./marketplace";
+export { rechargeApi } from "./recharge";
