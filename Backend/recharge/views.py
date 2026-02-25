@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from wallets.models import Wallet, WalletTransaction
 from .models import MobileRecharge
 from .serializers import MobileRechargeSerializer, MobileRechargeCreateSerializer
-from .services import request_recharge, check_recharge_status, generate_refid
+from .services import request_recharge, check_recharge_status, generate_refid, get_drive_offer_pack_list
 
 try:
     from users.account_restriction import check_area_allowed
@@ -160,3 +160,25 @@ class RechargeStatusView(APIView):
                 rec.status = MobileRecharge.STATUS_FAILED
             rec.save(update_fields=["api_recharge_status", "api_message", "trxid", "status"])
         return Response(MobileRechargeSerializer(rec).data, status=status.HTTP_200_OK)
+
+
+class DriveOfferPackListView(APIView):
+    """List Drive Offer packs (OFFERPACK). Proxies third-party API; credentials in .env."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        forbidden, is_forbidden = check_area_allowed(request.user, "wallet")
+        if is_forbidden:
+            return forbidden
+        result = get_drive_offer_pack_list()
+        message = result.get("message") or ""
+        packs = result.get("packs") or []
+        if result["status"] != "OK":
+            return Response(
+                {"detail": message or "Could not load offer packs.", "packs": packs, "message": message},
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"packs": packs, "message": message},
+            status=status.HTTP_200_OK,
+        )

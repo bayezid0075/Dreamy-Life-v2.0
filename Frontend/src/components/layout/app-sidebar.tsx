@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Briefcase,
   Smartphone,
+  Car,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -83,6 +84,11 @@ const mainNavItems = [
     title: "Recharge",
     href: "/recharge",
     icon: Smartphone,
+  },
+  {
+    title: "Drive Offer",
+    href: "/recharge/drive",
+    icon: Car,
   },
   {
     title: "Referrals",

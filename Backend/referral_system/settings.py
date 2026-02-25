@@ -127,7 +127,8 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
 ]
-
+ALLOWED_HOSTS = ['192.168.0.214', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 # Allow credentials (cookies, authorization headers, etc.)
 CORS_ALLOW_CREDENTIALS = True
 
@@ -186,6 +187,11 @@ UDDOKTAPAY_REDIRECT_BASE_URL = (env("UDDOKTAPAY_REDIRECT_BASE_URL", default="") 
 RECHARGE_API_URL = (env("RECHARGE_API_URL", default="http://118.179.129.98/myportal/api/rechargeapi/recharge_api_thirdparty.php") or "").strip().rstrip("/")
 RECHARGE_API_USERNAME = (env("RECHARGE_API_USERNAME", default="") or "").strip()
 RECHARGE_API_PASSWORD = (env("RECHARGE_API_PASSWORD", default="") or "").strip()
+
+# Drive Offer (Offer Pack) API - same base URL; set DRIVE_OFFER_ACCESS_ID & DRIVE_OFFER_ACCESS_PASS in .env
+DRIVE_OFFER_API_URL = (env("DRIVE_OFFER_API_URL", default="") or "").strip().rstrip("/") or RECHARGE_API_URL
+DRIVE_OFFER_ACCESS_ID = (env("DRIVE_OFFER_ACCESS_ID", default="") or "").strip()
+DRIVE_OFFER_ACCESS_PASS = (env("DRIVE_OFFER_ACCESS_PASS", default="") or "").strip()
 
 # Channels (WebSocket) - Marketplace live updates
 # Use in-memory layer by default so WebSockets work without Redis. Set USE_REDIS_CHANNELS=true

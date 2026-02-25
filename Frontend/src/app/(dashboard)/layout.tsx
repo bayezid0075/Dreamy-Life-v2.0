@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store";
 import {
   SidebarProvider,
@@ -12,7 +12,9 @@ import {
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MobileBottomNav, AccountStatusBanner, NotificationDropdown } from "@/components/dashboard";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+import { MobileBottomNav, AccountStatusBanner, NotificationDropdown, MobileSideDrawer } from "@/components/dashboard";
 
 export default function DashboardLayout({
   children,
@@ -20,7 +22,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, isLoading, user } = useAuthStore();
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const isDashboard = pathname === "/dashboard";
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -80,6 +85,36 @@ export default function DashboardLayout({
 
       {/* Mobile Layout */}
       <div className="md:hidden min-h-dvh bg-slate-50 dark:bg-slate-950 pb-16">
+        <MobileSideDrawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen} />
+        {/* Slim mobile top bar with menu - show on all pages except dashboard (dashboard has its own header) */}
+        {!isDashboard && (
+          <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-violet-200/50 dark:border-violet-800/30 px-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
+            <div className="flex items-center gap-2 min-w-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileDrawerOpen(true)}
+                className="h-8 w-8 shrink-0 text-slate-700 dark:text-slate-300"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <Link href="/dashboard" className="flex items-center gap-1.5 min-w-0">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white text-xs font-bold">
+                  DL
+                </div>
+                <span className="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">Dreamy Life</span>
+              </Link>
+            </div>
+            <Link href="/profile" className="shrink-0">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.profile_picture || undefined} />
+                <AvatarFallback className="bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 text-xs font-semibold">
+                  {user?.user?.username?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          </header>
+        )}
         <main>
           <AccountStatusBanner />
           {children}

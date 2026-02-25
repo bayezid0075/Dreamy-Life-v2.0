@@ -17,6 +17,7 @@ import {
   Sparkles,
   Briefcase,
   Smartphone,
+  Car,
 } from "lucide-react";
 
 import { useVendor } from "@/hooks/use-vendor";
@@ -36,6 +37,20 @@ const staticNavItems: NavItem[] = [
     icon: Wallet,
     gradient: "from-emerald-500 to-teal-500",
     iconColor: "text-emerald-600",
+  },
+  {
+    title: "Recharge",
+    href: "/recharge",
+    icon: Smartphone,
+    gradient: "from-violet-500 to-purple-500",
+    iconColor: "text-violet-600",
+  },
+  {
+    title: "Drive Offer",
+    href: "/recharge/drive",
+    icon: Car,
+    gradient: "from-orange-500 to-amber-500",
+    iconColor: "text-orange-600",
   },
   {
     title: "Shop",
@@ -64,13 +79,6 @@ const staticNavItems: NavItem[] = [
     icon: Briefcase,
     gradient: "from-indigo-500 to-violet-500",
     iconColor: "text-indigo-600",
-  },
-  {
-    title: "Recharge",
-    href: "/recharge",
-    icon: Smartphone,
-    gradient: "from-violet-500 to-purple-500",
-    iconColor: "text-violet-600",
   },
 ];
 

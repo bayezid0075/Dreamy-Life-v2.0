@@ -29,6 +29,8 @@ import {
   HelpCircle,
   ShieldCheck,
   ChevronDown,
+  Smartphone,
+  Car,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -54,6 +56,16 @@ const mainNavItems = [
     title: "Wallet",
     href: "/wallet",
     icon: Wallet,
+  },
+  {
+    title: "Recharge",
+    href: "/recharge",
+    icon: Smartphone,
+  },
+  {
+    title: "Drive Offer",
+    href: "/recharge/drive",
+    icon: Car,
   },
   {
     title: "Referrals",

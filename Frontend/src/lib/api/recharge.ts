@@ -1,5 +1,33 @@
 import { apiClient } from "./client";
 
+/** One offer pack from OFFERPACK API. Normalized from _operator, _internet_pack, _minute_pack, _validity, _amount, _offer_type. */
+export interface DriveOfferPack {
+  [key: string]: string | number | boolean | null | undefined;
+  operator?: string;
+  operator_id?: string;
+  pack_code?: string;
+  pack_name?: string;
+  name?: string;
+  title?: string;
+  internet?: string | number;
+  data?: string | number;
+  minutes?: string | number;
+  sms?: string | number;
+  validity?: string | number;
+  price?: string | number;
+  amount?: string | number;
+  type?: string;
+  _offer_type?: string;
+  _commission_amount?: string;
+  _status?: string;
+  category?: string;
+}
+
+export interface DriveOfferListResponse {
+  packs: DriveOfferPack[];
+  message?: string;
+}
+
 export interface MobileRecharge {
   id: number;
   operator: string;
@@ -53,6 +81,12 @@ export const rechargeApi = {
     const res = await apiClient.get<MobileRecharge>(
       `/api/recharge/status/${encodeURIComponent(refid)}/`
     );
+    return res.data;
+  },
+
+  /** Drive Offer: list offer packs (OFFERPACK). Filter on frontend by operator, internet, minutes, bundle. */
+  driveOfferList: async (): Promise<DriveOfferListResponse> => {
+    const res = await apiClient.get<DriveOfferListResponse>("/api/recharge/drive-offers/");
     return res.data;
   },
 };
