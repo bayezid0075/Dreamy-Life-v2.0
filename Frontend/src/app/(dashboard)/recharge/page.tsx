@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   Smartphone,
   Wallet,
@@ -37,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { walletsApi, rechargeApi } from "@/lib/api";
 import type { MobileRecharge } from "@/lib/api/recharge";
 
+// Backend accepts 3,4,5,6,7,8,9 (GP 3/7, BL 4/9). One entry per brand for Select.
 const OPERATORS: {
   value: string;
   label: string;
@@ -51,6 +53,8 @@ const OPERATORS: {
   { value: "6", label: "Airtel", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15" },
   { value: "5", label: "TeleTalk", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15" },
 ];
+
+const ALLOWED_OPERATOR_IDS = ["3", "4", "5", "6", "7", "8", "9"];
 
 const NUMBER_TYPES = [
   { value: "1", label: "Prepaid" },
@@ -92,10 +96,28 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function RechargePage() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const [operator, setOperator] = useState("");
   const [numberType, setNumberType] = useState("1");
   const [mobileNumber, setMobileNumber] = useState("");
   const [amount, setAmount] = useState("");
+  const [fromOffer, setFromOffer] = useState(false);
+
+  // Pre-fill and lock operator + amount when coming from Drive offer (URL params)
+  useEffect(() => {
+    const op = searchParams.get("operator")?.trim();
+    const amt = searchParams.get("amount")?.trim();
+    if (op && amt) {
+      const amtNum = parseFloat(amt);
+      if (!Number.isNaN(amtNum) && amtNum >= 1 && ALLOWED_OPERATOR_IDS.includes(op)) {
+        // Normalize GP 3->7, BL 4->9 so Select displays correctly (one per brand)
+        const normalizedOp = op === "3" ? "7" : op === "4" ? "9" : op;
+        setOperator(normalizedOp);
+        setAmount(String(Math.round(amtNum)));
+        setFromOffer(true);
+      }
+    }
+  }, [searchParams]);
 
   const { data: wallet, isLoading: walletLoading } = useQuery({
     queryKey: ["wallet"],
@@ -112,7 +134,7 @@ export default function RechargePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recharge-list"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
-      setAmount("");
+      if (!fromOffer) setAmount("");
       toast.success("Recharge request submitted successfully.");
     },
     onError: (err: { response?: { data?: { detail?: string } }; detail?: string }) => {
@@ -225,7 +247,9 @@ export default function RechargePage() {
               New recharge
             </CardTitle>
             <CardDescription>
-              Choose operator, enter number and amount. Max ৳{availableBalance.toLocaleString()}.
+              {fromOffer
+                ? "Amount and operator are set from the offer. Enter mobile number to recharge."
+                : `Choose operator, enter number and amount. Max ৳${availableBalance.toLocaleString()}.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
@@ -235,9 +259,10 @@ export default function RechargePage() {
                   <Label htmlFor="operator" className="text-sm font-medium">
                     Operator
                   </Label>
-                  <Select value={operator} onValueChange={setOperator}>
+                  <Select value={operator} onValueChange={fromOffer ? () => {} : setOperator}>
                     <SelectTrigger
                       id="operator"
+                      disabled={fromOffer}
                       className="rounded-xl h-11 border-2 focus:border-primary focus:ring-primary/20 w-full min-w-[10rem] [&_span]:flex [&_span]:items-center [&_span]:gap-2"
                     >
                       <SelectValue placeholder="Select operator" />
@@ -308,30 +333,33 @@ export default function RechargePage() {
                 <Label htmlFor="amount" className="text-sm font-medium">
                   Amount (৳)
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {QUICK_AMOUNTS.map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => setQuickAmount(q)}
-                      className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
-                        amount === String(q)
-                          ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                          : "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent hover:border-primary/30"
-                      }`}
-                    >
-                      ৳{q}
-                    </button>
-                  ))}
-                </div>
+                {!fromOffer && (
+                  <div className="flex flex-wrap gap-2">
+                    {QUICK_AMOUNTS.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setQuickAmount(q)}
+                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                          amount === String(q)
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                            : "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent hover:border-primary/30"
+                        }`}
+                      >
+                        ৳{q}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <Input
                   id="amount"
                   type="number"
                   min={1}
                   step={1}
-                  placeholder={`Enter amount (max ৳${availableBalance.toLocaleString()})`}
+                  placeholder={fromOffer ? undefined : `Enter amount (max ৳${availableBalance.toLocaleString()})`}
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => !fromOffer && setAmount(e.target.value)}
+                  disabled={fromOffer}
                   className="rounded-xl h-11 border-2 focus-visible:ring-primary/20 focus-visible:border-primary text-base"
                 />
                 {amountNum > availableBalance && (
@@ -364,11 +392,21 @@ export default function RechargePage() {
         {/* Recent recharges - vibrant list */}
         <Card className="rounded-2xl border-2 border-border bg-card shadow-lg overflow-hidden">
           <CardHeader className="border-b border-border bg-muted/30 dark:bg-muted/20">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <History className="h-5 w-5 text-primary" />
-              Recent recharges
-            </CardTitle>
-            <CardDescription>Your last recharge requests</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-5 w-5 text-primary" />
+                  Recent recharges
+                </CardTitle>
+                <CardDescription>Your last recharge requests</CardDescription>
+              </div>
+              <Link
+                href="/recharge/history"
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors shrink-0"
+              >
+                View all →
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {rechargesLoading ? (

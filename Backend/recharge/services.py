@@ -17,12 +17,26 @@ def _api_url():
     )
 
 
-def _api_username():
-    return getattr(settings, "RECHARGE_API_USERNAME", "").strip()
+def _api_access_id():
+    """access_id for MRC API. Prefer RECHARGE_ACCESS_ID, fallback to RECHARGE_API_USERNAME or DRIVE_OFFER_ACCESS_ID."""
+    aid = getattr(settings, "RECHARGE_ACCESS_ID", "").strip()
+    if aid:
+        return aid
+    aid = getattr(settings, "RECHARGE_API_USERNAME", "").strip()
+    if aid:
+        return aid
+    return getattr(settings, "DRIVE_OFFER_ACCESS_ID", "").strip()
 
 
-def _api_password():
-    return getattr(settings, "RECHARGE_API_PASSWORD", "").strip()
+def _api_access_pass():
+    """access_pass for MRC API. Prefer RECHARGE_ACCESS_PASS, fallback to RECHARGE_API_PASSWORD or DRIVE_OFFER_ACCESS_PASS."""
+    apass = getattr(settings, "RECHARGE_ACCESS_PASS", "").strip()
+    if apass:
+        return apass
+    apass = getattr(settings, "RECHARGE_API_PASSWORD", "").strip()
+    if apass:
+        return apass
+    return getattr(settings, "DRIVE_OFFER_ACCESS_PASS", "").strip()
 
 
 def _parse_response(resp):
@@ -50,17 +64,23 @@ def _parse_response(resp):
 
 def request_recharge(operator: str, number_type: str, number: str, amount: str, refid: str) -> dict:
     """
-    Call recharge API (MRC). Returns dict with STATUS, RECHARGE_STATUS, MESSAGE, TRXID, etc.
+    Call recharge API (MRC).
+    URL: .../recharge_api_thirdparty.php?access_id=&access_pass=&service=MRC&operator=&number_type=&number=&amount=&refid=
+    Operator: Grameenphone=3/7, Banglalink=4/9, Robi=8, Airtel=6, TeleTalk=5
+    Number Type: Prepaid=1, Postpaid=2, Skitto=3, PowerLoad/G.Store/Amar Offer=4
+    refid must be unique (uuid4.hex).
     """
-    if not _api_username() or not _api_password():
+    access_id = _api_access_id()
+    access_pass = _api_access_pass()
+    if not access_id or not access_pass:
         return {
             "STATUS": "FAILED",
             "RECHARGE_STATUS": "FAILED",
-            "MESSAGE": "Recharge API credentials not configured.",
+            "MESSAGE": "Recharge API credentials not configured. Set RECHARGE_ACCESS_ID and RECHARGE_ACCESS_PASS in .env",
         }
     params = {
-        "access_id": _api_username(),
-        "access_pass": _api_password(),
+        "access_id": access_id,
+        "access_pass": access_pass,
         "service": "MRC",
         "operator": operator,
         "number_type": number_type,
@@ -85,11 +105,13 @@ def request_recharge(operator: str, number_type: str, number: str, amount: str, 
 
 def check_recharge_status(refid: str) -> dict:
     """Call status API (MRCSTATUS). Returns STATUS, RECHARGE_STATUS, RECHARGE_TRXID, MESSAGE."""
-    if not _api_username() or not _api_password():
+    access_id = _api_access_id()
+    access_pass = _api_access_pass()
+    if not access_id or not access_pass:
         return {"STATUS": "FAILED", "MESSAGE": "API credentials not configured."}
     params = {
-        "access_id": _api_username(),
-        "access_pass": _api_password(),
+        "access_id": access_id,
+        "access_pass": access_pass,
         "service": "MRCSTATUS",
         "refid": refid,
     }
@@ -102,7 +124,7 @@ def check_recharge_status(refid: str) -> dict:
 
 
 def generate_refid() -> str:
-    """Unique reference id for the API (no spaces)."""
+    """Unique reference id for the API (no spaces). Must be unique for each request."""
     return uuid.uuid4().hex[:32]
 
 

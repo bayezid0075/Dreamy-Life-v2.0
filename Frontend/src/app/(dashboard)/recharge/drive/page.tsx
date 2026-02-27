@@ -6,7 +6,6 @@ import { useState, useMemo } from "react";
 import {
   Car,
   ArrowLeft,
-  Zap,
   Wifi,
   PhoneCall,
   Package,
@@ -18,7 +17,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { rechargeApi } from "@/lib/api";
@@ -31,6 +30,7 @@ const OFFER_TYPE_OPTIONS = [
   { value: "bundle", label: "Bundle", icon: Package },
 ];
 
+// Backend uses 3,4,5,6,7,8,9 (GP 3/7, BL 4/9, Robi 8, Airtel 6, TeleTalk 5)
 const OPERATORS: {
   value: string;
   label: string;
@@ -39,11 +39,29 @@ const OPERATORS: {
   iconClass: string;
   bgClass: string;
 }[] = [
+  { value: "3", label: "Grameenphone", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15" },
   { value: "7", label: "Grameenphone", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15" },
+  { value: "4", label: "Banglalink", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15" },
   { value: "9", label: "Banglalink", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15" },
   { value: "8", label: "Robi", short: "Robi", icon: Wifi, iconClass: "text-rose-600 dark:text-rose-400", bgClass: "bg-rose-500/15" },
   { value: "6", label: "Airtel", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15" },
   { value: "5", label: "TeleTalk", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15" },
+];
+
+// Map pack operator_id to primary value for recharge URL (GP 3/7->7, BL 4/9->9)
+function toPrimaryOperatorId(opId: string): string {
+  if (opId === "3") return "7";
+  if (opId === "4") return "9";
+  return opId;
+}
+
+// Unique operators for filter chips (one per brand; GP 3/7, BL 4/9 map to single chip)
+const FILTER_OPERATORS: { value: string; short: string; icon: LucideIcon; iconClass: string; bgClass: string; matchIds: string[] }[] = [
+  { value: "7", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15", matchIds: ["3", "7"] },
+  { value: "9", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15", matchIds: ["4", "9"] },
+  { value: "8", short: "Robi", icon: Wifi, iconClass: "text-rose-600 dark:text-rose-400", bgClass: "bg-rose-500/15", matchIds: ["8"] },
+  { value: "6", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15", matchIds: ["6"] },
+  { value: "5", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15", matchIds: ["5"] },
 ];
 
 function getPackDisplay(pack: DriveOfferPack) {
@@ -62,7 +80,11 @@ function packMatchesFilter(
   typeFilter: string
 ): boolean {
   const { opId, internet, minutes } = getPackDisplay(pack);
-  if (operatorFilter && operatorFilter !== "all" && opId && opId !== operatorFilter) return false;
+  if (operatorFilter && operatorFilter !== "all" && opId) {
+    const filterOp = FILTER_OPERATORS.find((f) => f.value === operatorFilter);
+    const matchIds = filterOp?.matchIds ?? [operatorFilter];
+    if (!matchIds.includes(opId)) return false;
+  }
   if (typeFilter === "all") return true;
   const hasInternet = internet != null && String(internet).toLowerCase() !== "0" && String(internet) !== "";
   const hasMinutes = minutes != null && String(minutes).toLowerCase() !== "0" && String(minutes) !== "";
@@ -115,15 +137,8 @@ export default function DriveOfferPage() {
 
       <div className="max-w-4xl mx-auto space-y-6">
         <Card className="rounded-2xl border-2 border-border bg-card shadow-lg overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              Filter offers
-            </CardTitle>
-            <CardDescription>By operator and type</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Operator row: horizontal chips with icons */}
+          <CardContent className="space-y-3 pt-4">
+            {/* Operator row */}
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Operator</p>
               <div className="flex flex-wrap items-center gap-2">
@@ -140,7 +155,7 @@ export default function DriveOfferPage() {
                   <Package className="h-4 w-4 shrink-0" />
                   All
                 </button>
-                {OPERATORS.map((op) => (
+                {FILTER_OPERATORS.map((op) => (
                   <button
                     key={op.value}
                     type="button"
@@ -160,7 +175,7 @@ export default function DriveOfferPage() {
                 ))}
               </div>
             </div>
-            {/* Type row: horizontal chips with icons */}
+            {/* Type row */}
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</p>
               <div className="flex flex-wrap items-center gap-2">
@@ -218,10 +233,19 @@ export default function DriveOfferPage() {
             {filteredDrivePacks.map((pack, idx) => {
               const d = getPackDisplay(pack);
               const op = OPERATORS.find((o) => o.value === d.opId);
-              return (
+              const priceNum = typeof d.price === "number" ? d.price : parseFloat(String(d.price ?? 0));
+              const hasValidOffer = d.opId && !Number.isNaN(priceNum) && priceNum >= 1;
+              const rechargeHref = hasValidOffer
+                ? `/recharge?operator=${encodeURIComponent(toPrimaryOperatorId(d.opId))}&amount=${encodeURIComponent(priceNum)}`
+                : null;
+
+              const cardContent = (
                 <Card
                   key={idx}
-                  className="flex-row items-center gap-0 rounded-xl sm:rounded-2xl border-2 border-border bg-card shadow-md hover:shadow-lg hover:border-primary/30 transition-all overflow-hidden py-0"
+                  className={cn(
+                    "flex-row items-center gap-0 rounded-xl sm:rounded-2xl border-2 border-border bg-card shadow-md hover:shadow-lg hover:border-primary/30 transition-all overflow-hidden py-0",
+                    rechargeHref && "cursor-pointer"
+                  )}
                 >
                   <CardContent className="p-0 flex-1 min-w-0">
                     <div className="flex flex-row items-center gap-2 sm:gap-3 px-3 py-2.5 sm:px-4 sm:py-3 min-h-[3.25rem] sm:min-h-0">
@@ -274,6 +298,14 @@ export default function DriveOfferPage() {
                     </div>
                   </CardContent>
                 </Card>
+              );
+
+              return rechargeHref ? (
+                <Link key={idx} href={rechargeHref} className="block">
+                  {cardContent}
+                </Link>
+              ) : (
+                <div key={idx}>{cardContent}</div>
               );
             })}
           </div>

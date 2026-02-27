@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import {
   Wallet,
   TrendingUp,
@@ -20,8 +20,8 @@ import {
   Phone,
   Percent,
   History,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 import {
   Card,
@@ -29,12 +29,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -42,17 +42,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
-import { walletsApi, withdrawalsApi } from '@/lib/api';
-import type { Transaction, WithdrawalRequest } from '@/types';
+import { walletsApi, withdrawalsApi } from "@/lib/api";
+import type { Transaction, WithdrawalRequest } from "@/types";
+
+/** Parse amount safely; returns 0 for invalid/empty values. */
+function parseAmount(value: string | number | null | undefined): number {
+  if (value == null) return 0;
+  const n = typeof value === "number" ? value : parseFloat(String(value));
+  return Number.isFinite(n) ? n : 0;
+}
 
 function TransactionList({
   transactions,
@@ -65,7 +72,10 @@ function TransactionList({
     return (
       <div className="space-y-2 sm:space-y-3">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-violet-50/50 dark:bg-violet-900/10">
+          <div
+            key={i}
+            className="flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-violet-50/50 dark:bg-violet-900/10"
+          >
             <Skeleton className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <Skeleton className="h-3 sm:h-4 w-3/4 sm:w-1/2 mb-1.5 sm:mb-2" />
@@ -84,8 +94,12 @@ function TransactionList({
         <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/30 dark:to-fuchsia-900/30 flex items-center justify-center">
           <Wallet className="h-7 w-7 sm:h-10 sm:w-10 text-violet-400" />
         </div>
-        <p className="text-sm sm:text-base text-muted-foreground font-medium">No transactions found</p>
-        <p className="text-xs sm:text-sm text-muted-foreground/70 mt-1">Your transactions will appear here</p>
+        <p className="text-sm sm:text-base text-muted-foreground font-medium">
+          No transactions found
+        </p>
+        <p className="text-xs sm:text-sm text-muted-foreground/70 mt-1">
+          Your transactions will appear here
+        </p>
       </div>
     );
   }
@@ -100,12 +114,12 @@ function TransactionList({
           {/* Icon */}
           <div
             className={`flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg transition-transform group-hover:scale-110 flex-shrink-0 ${
-              transaction.transaction_type === 'credit'
-                ? 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-500/30'
-                : 'bg-gradient-to-br from-rose-400 to-red-500 shadow-red-500/30'
+              transaction.transaction_type === "credit"
+                ? "bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-500/30"
+                : "bg-gradient-to-br from-rose-400 to-red-500 shadow-red-500/30"
             }`}
           >
-            {transaction.transaction_type === 'credit' ? (
+            {transaction.transaction_type === "credit" ? (
               <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             ) : (
               <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
@@ -116,24 +130,24 @@ function TransactionList({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1 flex-wrap">
               <span className="font-semibold text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">
-                {transaction.description || 'Transaction'}
+                {transaction.description || "Transaction"}
               </span>
               <Badge
                 className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0 sm:py-0.5 ${
-                  transaction.transaction_type === 'credit'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                  transaction.transaction_type === "credit"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
                 }`}
               >
                 {transaction.transaction_type}
               </Badge>
             </div>
             <p className="text-[10px] sm:text-xs text-muted-foreground">
-              {new Date(transaction.created_at).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
+              {new Date(transaction.created_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
               })}
             </p>
           </div>
@@ -141,13 +155,16 @@ function TransactionList({
           {/* Amount */}
           <div
             className={`text-right font-bold text-sm sm:text-lg flex-shrink-0 ${
-              transaction.transaction_type === 'credit'
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-rose-600 dark:text-rose-400'
+              transaction.transaction_type === "credit"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400"
             }`}
           >
-            {transaction.transaction_type === 'credit' ? '+' : '-'}৳
-            {parseFloat(transaction.amount).toLocaleString()}
+            {transaction.transaction_type === "credit" ? "+" : "-"}৳
+            {parseAmount(transaction.amount).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </div>
         </div>
       ))}
@@ -160,27 +177,27 @@ export default function WalletPage() {
   const queryClient = useQueryClient();
 
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState<string>('');
-  const [withdrawMethod, setWithdrawMethod] = useState<'bkash'>('bkash');
-  const [withdrawPhone, setWithdrawPhone] = useState<string>('');
+  const [withdrawAmount, setWithdrawAmount] = useState<string>("");
+  const [withdrawMethod, setWithdrawMethod] = useState<"bkash">("bkash");
+  const [withdrawPhone, setWithdrawPhone] = useState<string>("");
 
   const { data: wallet, isLoading: walletLoading } = useQuery({
-    queryKey: ['wallet'],
+    queryKey: ["wallet"],
     queryFn: walletsApi.getWallet,
   });
 
   const { data: funds, isLoading: fundsLoading } = useQuery({
-    queryKey: ['funds'],
+    queryKey: ["funds"],
     queryFn: walletsApi.getFunds,
   });
 
   const { data: points, isLoading: pointsLoading } = useQuery({
-    queryKey: ['points'],
+    queryKey: ["points"],
     queryFn: walletsApi.getPoints,
   });
 
   const { data: withdrawals, isLoading: withdrawalsLoading } = useQuery({
-    queryKey: ['withdrawals-history'],
+    queryKey: ["withdrawals-history"],
     queryFn: withdrawalsApi.getMyWithdrawals,
   });
 
@@ -195,10 +212,10 @@ export default function WalletPage() {
   const createWithdrawal = useMutation({
     mutationFn: async () => {
       if (!withdrawPhone.trim()) {
-        throw new Error('Phone number is required');
+        throw new Error("Phone number is required");
       }
       if (amountNumber < 300) {
-        throw new Error('Minimum withdrawal amount is ৳300');
+        throw new Error("Minimum withdrawal amount is ৳300");
       }
       return withdrawalsApi.createWithdrawal({
         amount: amountNumber,
@@ -207,16 +224,21 @@ export default function WalletPage() {
       });
     },
     onSuccess: () => {
-      toast.success('Withdrawal request submitted');
+      toast.success("Withdrawal request submitted");
       setWithdrawOpen(false);
-      setWithdrawAmount('');
+      setWithdrawAmount("");
       // refresh wallet + history
-      queryClient.invalidateQueries({ queryKey: ['wallet'] });
-      queryClient.invalidateQueries({ queryKey: ['withdrawals-history'] });
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["withdrawals-history"] });
     },
     onError: (err: unknown) => {
-      const e = err as { message?: string; response?: { data?: { detail?: string } } };
-      toast.error(e.response?.data?.detail || e.message || 'Failed to request withdrawal');
+      const e = err as {
+        message?: string;
+        response?: { data?: { detail?: string } };
+      };
+      toast.error(
+        e.response?.data?.detail || e.message || "Failed to request withdrawal",
+      );
     },
   });
 
@@ -225,56 +247,62 @@ export default function WalletPage() {
     ...(wallet?.transactions || []),
     ...(funds?.transactions || []),
     ...(points?.transactions || []),
-  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  ].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
 
   const accounts = [
     {
-      id: 'wallet',
-      title: 'Wallet',
-      description: 'Commission & referral earnings',
+      id: "wallet",
+      title: "Wallet",
+      description:
+        parseAmount(wallet?.reserved_balance) > 0
+          ? `Commission & referral · ৳${parseAmount(wallet?.reserved_balance).toLocaleString()} reserved`
+          : "Commission & referral earnings",
       icon: Wallet,
-      balance: wallet?.balance || '0',
-      income: wallet?.income || '0',
-      expense: wallet?.expense || '0',
+      balance: wallet?.balance || "0",
+      income: wallet?.income || "0",
+      expense: wallet?.expense || "0",
       transactions: wallet?.transactions || [],
       loading: walletLoading,
-      gradient: 'from-violet-500 via-fuchsia-500 to-pink-500',
-      shadowColor: 'shadow-fuchsia-500/30',
-      iconBg: 'from-violet-400 to-fuchsia-500',
+      gradient: "from-violet-500 via-fuchsia-500 to-pink-500",
+      shadowColor: "shadow-fuchsia-500/30",
+      iconBg: "from-violet-400 to-fuchsia-500",
     },
     {
-      id: 'funds',
-      title: 'Funds',
-      description: 'Funds account balance',
+      id: "funds",
+      title: "Funds",
+      description: "Funds account balance",
       icon: Coins,
-      balance: funds?.balance || '0',
-      income: funds?.income || '0',
-      expense: funds?.expense || '0',
+      balance: funds?.balance || "0",
+      income: funds?.income || "0",
+      expense: funds?.expense || "0",
       transactions: funds?.transactions || [],
       loading: fundsLoading,
-      gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
-      shadowColor: 'shadow-teal-500/30',
-      iconBg: 'from-emerald-400 to-teal-500',
+      gradient: "from-emerald-500 via-teal-500 to-cyan-500",
+      shadowColor: "shadow-teal-500/30",
+      iconBg: "from-emerald-400 to-teal-500",
     },
     {
-      id: 'points',
-      title: 'Points',
-      description: 'Reward points balance',
+      id: "points",
+      title: "Points",
+      description: "Reward points balance",
       icon: Star,
-      balance: points?.balance || '0',
-      income: points?.income || '0',
-      expense: points?.expense || '0',
+      balance: points?.balance || "0",
+      income: points?.income || "0",
+      expense: points?.expense || "0",
       transactions: points?.transactions || [],
       loading: pointsLoading,
-      gradient: 'from-amber-500 via-orange-500 to-red-500',
-      shadowColor: 'shadow-orange-500/30',
-      iconBg: 'from-amber-400 to-orange-500',
+      gradient: "from-amber-500 via-orange-500 to-red-500",
+      shadowColor: "shadow-orange-500/30",
+      iconBg: "from-amber-400 to-orange-500",
     },
   ];
 
   const totalBalance = accounts.reduce(
-    (sum, acc) => sum + parseFloat(acc.balance || '0'),
-    0
+    (sum, acc) => sum + parseAmount(acc.balance),
+    0,
   );
 
   return (
@@ -311,11 +339,15 @@ export default function WalletPage() {
         <CardContent className="relative p-4 sm:p-6 md:p-8 text-white">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
             <div className="text-center md:text-left">
-              <p className="text-xs sm:text-sm font-medium text-white/70 mb-1 md:mb-2">Total Balance</p>
+              <p className="text-xs sm:text-sm font-medium text-white/70 mb-1 md:mb-2">
+                Total Balance
+              </p>
               <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-1 md:mb-2">
                 ৳{totalBalance.toLocaleString()}
               </div>
-              <p className="text-xs sm:text-sm text-white/60">Across all accounts</p>
+              <p className="text-xs sm:text-sm text-white/60">
+                Across all accounts
+              </p>
             </div>
 
             {/* Quick Stats */}
@@ -323,19 +355,35 @@ export default function WalletPage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 border border-white/20">
                 <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
                   <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-emerald-300" />
-                  <span className="text-[10px] sm:text-xs text-white/70">Income</span>
+                  <span className="text-[10px] sm:text-xs text-white/70">
+                    Income
+                  </span>
                 </div>
                 <div className="text-sm sm:text-base md:text-xl font-bold text-emerald-300">
-                  +৳{accounts.reduce((sum, acc) => sum + parseFloat(acc.income || '0'), 0).toLocaleString()}
+                  +৳
+                  {accounts
+                    .reduce((sum, acc) => sum + parseAmount(acc.income), 0)
+                    .toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 border border-white/20">
                 <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
                   <TrendingDown className="h-3 w-3 md:h-4 md:w-4 text-rose-300" />
-                  <span className="text-[10px] sm:text-xs text-white/70">Expense</span>
+                  <span className="text-[10px] sm:text-xs text-white/70">
+                    Expense
+                  </span>
                 </div>
                 <div className="text-sm sm:text-base md:text-xl font-bold text-rose-300">
-                  -৳{accounts.reduce((sum, acc) => sum + parseFloat(acc.expense || '0'), 0).toLocaleString()}
+                  -৳
+                  {accounts
+                    .reduce((sum, acc) => sum + parseAmount(acc.expense), 0)
+                    .toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                 </div>
               </div>
             </div>
@@ -351,7 +399,9 @@ export default function WalletPage() {
             className="group relative overflow-hidden border-0 shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-all duration-300 md:duration-500 hover:-translate-y-1 md:hover:-translate-y-2 px-4 py-5 sm:px-5 sm:py-5 md:px-6 md:py-6"
           >
             {/* Gradient Background */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${account.gradient} opacity-90`}></div>
+            <div
+              className={`absolute inset-0 bg-gradient-to-br ${account.gradient} opacity-90`}
+            ></div>
             {/* Grid Pattern */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:16px_16px] md:bg-[size:20px_20px] opacity-30"></div>
             {/* Shine Effect */}
@@ -370,7 +420,11 @@ export default function WalletPage() {
                 <Skeleton className="h-6 w-24 sm:h-8 sm:w-32 bg-white/20" />
               ) : (
                 <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                  ৳{parseFloat(account.balance).toLocaleString()}
+                  ৳
+                  {parseAmount(account.balance).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </div>
               )}
               <p className="text-[10px] sm:text-xs text-white/60">
@@ -379,12 +433,18 @@ export default function WalletPage() {
               {!account.loading && (
                 <div className="flex gap-3 sm:gap-4 pt-1 text-xs sm:text-sm">
                   <span className="flex items-center gap-1 text-emerald-200">
-                    <ArrowDownRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                    ৳{parseFloat(account.income).toLocaleString()}
+                    <ArrowDownRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />৳
+                    {parseAmount(account.income).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
                   <span className="flex items-center gap-1 text-rose-200">
-                    <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                    ৳{parseFloat(account.expense).toLocaleString()}
+                    <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />৳
+                    {parseAmount(account.expense).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
                 </div>
               )}
@@ -396,7 +456,7 @@ export default function WalletPage() {
                   <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   History
                 </Link>
-                {account.id === 'funds' && (
+                {account.id === "funds" && (
                   <Link
                     href="/wallet/funds/add"
                     className="inline-flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium bg-white/25 hover:bg-white/40 text-white backdrop-blur-sm border border-white/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
@@ -421,7 +481,8 @@ export default function WalletPage() {
                 Withdraw from Wallet
               </CardTitle>
               <CardDescription className="text-[10px] sm:text-xs md:text-sm mt-1">
-                Minimum ৳300 + 5% charge. Status: pending → accepted/rejected → finished.
+                Minimum ৳300 + 5% charge. Status: pending → accepted/rejected →
+                finished.
               </CardDescription>
             </div>
             <Button
@@ -436,9 +497,21 @@ export default function WalletPage() {
         <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
-              <p className="text-xs text-muted-foreground">Available wallet balance</p>
+              <p className="text-xs text-muted-foreground">
+                Available wallet balance
+              </p>
               <p className="text-lg font-bold mt-1">
-                ৳{parseFloat(wallet?.balance || '0').toLocaleString()}
+                ৳
+                {Math.max(
+                  0,
+                  wallet?.available_balance != null
+                    ? parseAmount(wallet.available_balance)
+                    : parseAmount(wallet?.balance) -
+                        parseAmount(wallet?.reserved_balance),
+                ).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
@@ -448,7 +521,9 @@ export default function WalletPage() {
               <p className="text-lg font-bold mt-1">5%</p>
             </div>
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
-              <p className="text-xs text-muted-foreground">Minimum withdrawal</p>
+              <p className="text-xs text-muted-foreground">
+                Minimum withdrawal
+              </p>
               <p className="text-lg font-bold mt-1">৳300</p>
             </div>
           </div>
@@ -478,10 +553,20 @@ export default function WalletPage() {
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                        ৳{parseFloat(w.amount).toLocaleString()} withdraw
+                        ৳
+                        {parseAmount(w.amount).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        withdraw
                         <span className="text-xs text-muted-foreground font-normal">
-                          {' '}
-                          (+৳{parseFloat(w.fee).toLocaleString()} fee)
+                          {" "}
+                          (+৳
+                          {parseAmount(w.fee).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          fee)
                         </span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
@@ -492,20 +577,18 @@ export default function WalletPage() {
                         <span className="text-slate-400">•</span>
                         <span className="uppercase">{w.method}</span>
                         <span className="text-slate-400">•</span>
-                        <span>
-                          {new Date(w.created_at).toLocaleString()}
-                        </span>
+                        <span>{new Date(w.created_at).toLocaleString()}</span>
                       </p>
                     </div>
                     <span
                       className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-lg ${
-                        w.status === 'pending'
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                          : w.status === 'accepted'
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                          : w.status === 'rejected'
-                          ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        w.status === "pending"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          : w.status === "accepted"
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                            : w.status === "rejected"
+                              ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                       }`}
                     >
                       {w.status}
@@ -527,7 +610,8 @@ export default function WalletPage() {
           <DialogHeader>
             <DialogTitle>Request withdrawal</DialogTitle>
             <DialogDescription>
-              Minimum ৳300. A 5% charge will be added and deducted from your wallet immediately. Status will be pending until approved.
+              Minimum ৳300. A 5% charge will be added and deducted from your
+              wallet immediately. Status will be pending until approved.
             </DialogDescription>
           </DialogHeader>
 
@@ -543,7 +627,8 @@ export default function WalletPage() {
                 placeholder="300"
               />
               <div className="text-xs text-muted-foreground">
-                Fee (5%): <span className="font-medium">৳{fee.toFixed(2)}</span> • Total debit:{" "}
+                Fee (5%): <span className="font-medium">৳{fee.toFixed(2)}</span>{" "}
+                • Total debit:{" "}
                 <span className="font-medium">৳{totalDebit.toFixed(2)}</span>
               </div>
             </div>
@@ -551,7 +636,10 @@ export default function WalletPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Payment method</label>
-                <Select value={withdrawMethod} onValueChange={(v) => setWithdrawMethod(v as 'bkash')}>
+                <Select
+                  value={withdrawMethod}
+                  onValueChange={(v) => setWithdrawMethod(v as "bkash")}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -561,7 +649,9 @@ export default function WalletPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Receive phone number</label>
+                <label className="text-sm font-medium">
+                  Receive phone number
+                </label>
                 <Input
                   value={withdrawPhone}
                   onChange={(e) => setWithdrawPhone(e.target.value)}
@@ -580,7 +670,7 @@ export default function WalletPage() {
               disabled={createWithdrawal.isPending}
               className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
             >
-              {createWithdrawal.isPending ? 'Submitting...' : 'Withdraw'}
+              {createWithdrawal.isPending ? "Submitting..." : "Withdraw"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -593,7 +683,9 @@ export default function WalletPage() {
           <CardTitle className="text-sm sm:text-base md:text-lg lg:text-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
             Transactions
           </CardTitle>
-          <CardDescription className="text-[10px] sm:text-xs md:text-sm mt-0.5">View your transaction history</CardDescription>
+          <CardDescription className="text-[10px] sm:text-xs md:text-sm mt-0.5">
+            View your transaction history
+          </CardDescription>
         </CardHeader>
         <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
           <Tabs defaultValue="all">

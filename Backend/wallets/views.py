@@ -368,9 +368,10 @@ class WithdrawalCreateView(APIView):
 
         with transaction.atomic():
             wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
-            if wallet.balance < total_debit:
+            available = wallet.balance - wallet.reserved_balance
+            if available < total_debit:
                 return Response(
-                    {"detail": "Insufficient wallet balance for this withdrawal (amount + 5% fee)."},
+                    {"detail": "Insufficient available balance for this withdrawal (amount + 5% fee). Reserved funds cannot be withdrawn."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

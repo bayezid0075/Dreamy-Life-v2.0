@@ -184,7 +184,13 @@ UDDOKTAPAY_BASE_URL = (env("UDDOKTAPAY_BASE_URL", default="https://sandbox.uddok
 UDDOKTAPAY_REDIRECT_BASE_URL = (env("UDDOKTAPAY_REDIRECT_BASE_URL", default="") or "").strip().rstrip("/")
 
 # Mobile Recharge API (third-party)
+# MRC: access_id, access_pass, service=MRC, operator, number_type, number, amount, refid
+# Operator: Grameenphone=3/7, Banglalink=4/9, Robi=8, Airtel=6, TeleTalk=5
+# Number Type: Prepaid=1, Postpaid=2, Skitto=3, PowerLoad/G.Store/Amar Offer=4
 RECHARGE_API_URL = (env("RECHARGE_API_URL", default="http://118.179.129.98/myportal/api/rechargeapi/recharge_api_thirdparty.php") or "").strip().rstrip("/")
+# Prefer access_id/access_pass (matches API param names); fallback to USERNAME/PASSWORD
+RECHARGE_ACCESS_ID = (env("RECHARGE_ACCESS_ID", default="") or "").strip()
+RECHARGE_ACCESS_PASS = (env("RECHARGE_ACCESS_PASS", default="") or "").strip()
 RECHARGE_API_USERNAME = (env("RECHARGE_API_USERNAME", default="") or "").strip()
 RECHARGE_API_PASSWORD = (env("RECHARGE_API_PASSWORD", default="") or "").strip()
 

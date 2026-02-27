@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 from .models import (
     Wallet, WalletTransaction,
@@ -23,7 +24,8 @@ class WalletSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'balance', 'reserved_balance', 'transactions']
 
     def get_available_balance(self, obj):
-        return obj.balance - obj.reserved_balance
+        available = (obj.balance - obj.reserved_balance).quantize(Decimal("0.01"))
+        return str(available)
 
 # Funds Serializers
 class FundsTransactionSerializer(serializers.ModelSerializer):

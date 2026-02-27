@@ -16,6 +16,7 @@ import {
   Briefcase,
   Smartphone,
   Car,
+  History,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -340,6 +341,15 @@ export default function DashboardPage() {
                   <span className="font-medium text-sm">Drive Offer</span>
                 </Link>
                 <Link
+                  href="/recharge/history"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                    <History className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm">Recharge History</span>
+                </Link>
+                <Link
                   href="/vendor"
                   className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors"
                 >
@@ -483,6 +493,23 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Pack offers by operator
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+                </Link>
+                <Link
+                  href="/recharge/history"
+                  className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                    <History className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-foreground">
+                      Recharge History
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      View all recharges
                     </p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />

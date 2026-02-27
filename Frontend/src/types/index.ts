@@ -37,7 +37,13 @@ export const RESTRICTABLE_AREAS = [
 
 export type RestrictableArea = (typeof RESTRICTABLE_AREAS)[number];
 
-export const MEMBER_STATUS_KEYS = ["user", "Basic", "Standard", "Smart", "VVIP"] as const;
+export const MEMBER_STATUS_KEYS = [
+  "user",
+  "Basic",
+  "Standard",
+  "Smart",
+  "VVIP",
+] as const;
 export type MemberStatusKey = (typeof MEMBER_STATUS_KEYS)[number];
 
 export interface RestrictionConfigResponse {
@@ -478,7 +484,14 @@ export interface AdminUserFilters {
 }
 
 // Notification Types
-export type NotificationSource = "system" | "admin" | "order" | "referral" | "wallet" | "membership" | "transaction";
+export type NotificationSource =
+  | "system"
+  | "admin"
+  | "order"
+  | "referral"
+  | "wallet"
+  | "membership"
+  | "transaction";
 
 export interface Notification {
   id: number;
