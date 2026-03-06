@@ -338,6 +338,8 @@ def superadmin_stream(request):
     """
     SSE stream for live superadmin updates.
     Auth: ?token=ACCESS_TOKEN (JWT). Must be superadmin email.
+    Runs for a bounded time (e.g. 1 hour) then ends so the connection can shut down cleanly.
+    Frontend should reconnect on close/error.
     """
     token_raw = request.GET.get("token")
     if not token_raw:
@@ -351,13 +353,18 @@ def superadmin_stream(request):
     if not allowed or user.email.lower() not in allowed:
         return Response({"detail": "Not authorized for superadmin"}, status=status.HTTP_403_FORBIDDEN)
 
+    # Bounded iterations so the stream eventually ends and connection can shut down (avoids "took too long to shut down").
+    # 1200 * 3s = 1 hour; frontend can reconnect when EventSource closes.
+    MAX_ITERATIONS = 1200
+    INTERVAL_SECONDS = 3
+
     def stream():
         from django.db.models import Sum
         from memberships.models import MembershipPurchase
         from vendors.models import Vendor, Product
         from wallets.models import Wallet
 
-        while True:
+        for _ in range(MAX_ITERATIONS):
             try:
                 total_wallet = Wallet.objects.aggregate(total=Sum("balance"))["total"] or 0
                 recent_users_qs = (
@@ -382,9 +389,14 @@ def superadmin_stream(request):
                     "recent_users": recent_users,
                 }
                 yield _sse_event("overview", overview)
+            except GeneratorExit:
+                return
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                # Client disconnected
+                return
             except Exception:
                 pass
-            time.sleep(3)
+            time.sleep(INTERVAL_SECONDS)
 
     response = StreamingHttpResponse(
         stream(),

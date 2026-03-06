@@ -46,25 +46,38 @@ export default function SuperadminPage() {
     const url = getSuperadminStreamUrl();
     if (!url) return;
 
-    const es = new EventSource(url);
-    eventSourceRef.current = es;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    const RECONNECT_DELAY_MS = 3000;
 
-    es.addEventListener("overview", (e: MessageEvent) => {
-      try {
-        const data = JSON.parse(e.data) as SuperadminOverviewStats;
-        setLiveOverview(data);
-      } catch {
-        // ignore
-      }
-    });
+    function connect() {
+      const es = new EventSource(url);
+      eventSourceRef.current = es;
 
-    es.onerror = () => {
-      es.close();
-    };
+      es.addEventListener("overview", (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data) as SuperadminOverviewStats;
+          setLiveOverview(data);
+        } catch {
+          // ignore
+        }
+      });
+
+      es.onerror = () => {
+        es.close();
+        eventSourceRef.current = null;
+        // Reconnect after delay (stream may have ended after 1h or connection dropped)
+        reconnectTimeout = setTimeout(connect, RECONNECT_DELAY_MS);
+      };
+    }
+
+    connect();
 
     return () => {
-      es.close();
-      eventSourceRef.current = null;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
   }, []);
 

@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
   ArrowLeft,
+  ImageIcon,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
@@ -55,6 +56,11 @@ const adminNavItems = [
     title: 'Users',
     href: '/admin/users',
     icon: Users,
+  },
+  {
+    title: 'Banners',
+    href: '/admin/banners',
+    icon: ImageIcon,
   },
 ];
 

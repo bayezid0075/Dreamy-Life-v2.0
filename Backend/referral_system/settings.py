@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "marketplace",
     "recharge",
     "channels",
+    "banners",
 ]
 
 MIDDLEWARE = [
