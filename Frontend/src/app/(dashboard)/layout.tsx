@@ -35,10 +35,24 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-slate-900 dark:to-slate-800">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--color-bg)" }}
+      >
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-violet-200 dark:border-violet-800 border-t-violet-600 dark:border-t-violet-400"></div>
-          <span className="text-sm text-muted-foreground">Loading...</span>
+          <div
+            className="h-10 w-10 rounded-full border-4 animate-spin"
+            style={{
+              borderColor: "var(--color-border)",
+              borderTopColor: "var(--color-primary)",
+            }}
+          />
+          <span
+            className="text-sm font-mono tracking-widest uppercase"
+            style={{ color: "var(--color-text-3)" }}
+          >
+            Loading…
+          </span>
         </div>
       </div>
     );
@@ -50,31 +64,64 @@ export default function DashboardLayout({
 
   return (
     <>
-      {/* Desktop Layout with Sidebar - same structure as mobile (sidebar = drawer nav, main = content) */}
-      <div className="hidden md:flex min-h-screen w-full">
+      {/* Desktop Layout */}
+      <div className="hidden md:flex min-h-screen w-full" style={{ background: "var(--color-bg)" }}>
         <SidebarProvider defaultOpen={true}>
           <AppSidebar />
-          <SidebarInset className="flex flex-col min-h-screen bg-gradient-to-b from-violet-50/30 via-background to-background dark:from-violet-950/20">
-            <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-violet-200/50 dark:border-violet-800/30 px-4 lg:px-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm">
+          <SidebarInset
+            className="flex flex-col min-h-screen"
+            style={{ background: "var(--color-bg)" }}
+          >
+            {/* Desktop top bar */}
+            <header
+              className="flex h-14 shrink-0 items-center justify-between gap-4 px-4 lg:px-6"
+              style={{
+                background: "var(--color-surface-1)",
+                borderBottom: "1px solid var(--color-border)",
+              }}
+            >
               <div className="flex items-center gap-2 min-w-0">
-                <SidebarTrigger className="-ml-1 shrink-0" />
-                <Separator orientation="vertical" className="mr-2 h-4 bg-violet-200 dark:bg-violet-800 shrink-0" />
-                <span className="text-sm font-medium text-muted-foreground truncate hidden sm:inline">
-                  Welcome, {user?.user?.username || "User"}
+                <SidebarTrigger
+                  className="-ml-1 shrink-0"
+                  style={{ color: "var(--color-text-2)" }}
+                />
+                <Separator
+                  orientation="vertical"
+                  className="mr-2 h-4 shrink-0"
+                  style={{ background: "var(--color-border)" }}
+                />
+                <span
+                  className="text-sm font-medium truncate hidden sm:inline"
+                  style={{ color: "var(--color-text-2)" }}
+                >
+                  Welcome,{" "}
+                  <span style={{ color: "var(--color-text-1)", fontWeight: 600 }}>
+                    {user?.user?.username || "User"}
+                  </span>
                 </span>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <NotificationDropdown triggerClassName="text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" />
-                <Link href="/profile" className="rounded-full ring-2 ring-transparent hover:ring-violet-200 dark:hover:ring-violet-800 transition-all">
-                  <Avatar className="h-8 w-8 lg:h-9 lg:w-9">
+              <div className="flex items-center gap-2 shrink-0">
+                <NotificationDropdown triggerClassName="" />
+                <Link href="/profile">
+                  <Avatar
+                    className="h-8 w-8 lg:h-9 lg:w-9 ring-2 transition-all"
+                    style={{ "--tw-ring-color": "var(--color-border)" } as React.CSSProperties}
+                  >
                     <AvatarImage src={user?.profile_picture || undefined} />
-                    <AvatarFallback className="bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 text-sm font-semibold">
+                    <AvatarFallback
+                      className="text-sm font-bold"
+                      style={{
+                        background: "var(--color-surface-3)",
+                        color: "var(--color-primary)",
+                      }}
+                    >
                       {user?.user?.username?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
               </div>
             </header>
+
             <main className="flex-1 overflow-auto p-4 lg:p-6">
               <AccountStatusBanner />
               {children}
@@ -84,37 +131,63 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden min-h-dvh bg-[var(--color-bg)]">
+      <div
+        className="md:hidden min-h-dvh"
+        style={{ background: "var(--color-bg)" }}
+      >
         <MobileSideDrawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen} />
-        {/* Slim mobile top bar with menu - show on all pages except dashboard (dashboard has its own header) */}
+
+        {/* Slim top bar for non-dashboard pages */}
         {!isDashboard && (
-          <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-violet-200/50 dark:border-violet-800/30 px-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
+          <header
+            className="sticky top-0 z-40 flex h-12 shrink-0 items-center justify-between gap-2 px-3 backdrop-blur-sm"
+            style={{
+              background: "var(--color-surface-1)",
+              borderBottom: "1px solid var(--color-border)",
+            }}
+          >
             <div className="flex items-center gap-2 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileDrawerOpen(true)}
-                className="h-8 w-8 shrink-0 text-slate-700 dark:text-slate-300"
+                className="h-8 w-8 shrink-0"
+                style={{ color: "var(--color-text-2)" }}
               >
                 <Menu className="h-5 w-5" />
               </Button>
               <Link href="/dashboard" className="flex items-center gap-1.5 min-w-0">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white text-xs font-bold">
+                <div
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white text-xs font-bold"
+                  style={{ background: "linear-gradient(135deg, var(--color-primary-d), var(--color-primary))" }}
+                >
                   DL
                 </div>
-                <span className="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">Dreamy Life</span>
+                <span
+                  className="font-semibold text-sm truncate"
+                  style={{ color: "var(--color-text-1)" }}
+                >
+                  Dreamy Life
+                </span>
               </Link>
             </div>
             <Link href="/profile" className="shrink-0">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.profile_picture || undefined} />
-                <AvatarFallback className="bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 text-xs font-semibold">
+                <AvatarFallback
+                  className="text-xs font-bold"
+                  style={{
+                    background: "var(--color-surface-3)",
+                    color: "var(--color-primary)",
+                  }}
+                >
                   {user?.user?.username?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
             </Link>
           </header>
         )}
+
         <main className="px-4 pt-4 pb-[88px]">
           <AccountStatusBanner />
           {children}

@@ -66,41 +66,13 @@ import { useAuthStore } from "@/store";
 import { useVendor } from "@/hooks/use-vendor";
 
 const mainNavItems = [
-  {
-    key: "nav.dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    key: "nav.dashboard", // could have its own key later
-    href: "/profile",
-    icon: User,
-  },
-  {
-    key: "nav.wallet",
-    href: "/wallet",
-    icon: Wallet,
-  },
-  {
-    key: "nav.recharge",
-    href: "/recharge",
-    icon: Smartphone,
-  },
-  {
-    key: "nav.driveOffer",
-    href: "/recharge/drive",
-    icon: Car,
-  },
-  {
-    key: "nav.referrals",
-    href: "/referrals",
-    icon: Users,
-  },
-  {
-    key: "nav.memberships",
-    href: "/memberships",
-    icon: Crown,
-  },
+  { key: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { key: "nav.dashboard", href: "/profile", icon: User },
+  { key: "nav.wallet", href: "/wallet", icon: Wallet },
+  { key: "nav.recharge", href: "/recharge", icon: Smartphone },
+  { key: "nav.driveOffer", href: "/recharge/drive", icon: Car },
+  { key: "nav.referrals", href: "/referrals", icon: Users },
+  { key: "nav.memberships", href: "/memberships", icon: Crown },
 ];
 
 const marketplaceNavItem = {
@@ -110,16 +82,8 @@ const marketplaceNavItem = {
 };
 
 const shopNavItems = [
-  {
-    key: "nav.shop",
-    href: "/reseller",
-    icon: Store,
-  },
-  {
-    key: "nav.orders",
-    href: "/orders",
-    icon: ShoppingBag,
-  },
+  { key: "nav.shop", href: "/reseller", icon: Store },
+  { key: "nav.orders", href: "/orders", icon: ShoppingBag },
 ];
 
 const vendorSubItems = [
@@ -151,13 +115,30 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r-violet-200/50 dark:border-r-violet-800/30">
-      <SidebarHeader className="border-b border-violet-200/50 dark:border-violet-800/30 p-4">
-        <Link href="/dashboard" className="flex items-center gap-2 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/25 group-hover:shadow-fuchsia-500/40 transition-all group-hover:scale-105">
+    <Sidebar
+      style={{
+        background: "var(--color-surface-1)",
+        borderRight: "1px solid var(--color-border)",
+      }}
+    >
+      {/* Header — Logo */}
+      <SidebarHeader
+        className="p-4"
+        style={{ borderBottom: "1px solid var(--color-border)" }}
+      >
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white font-bold text-sm shadow-lg transition-transform group-hover:scale-105"
+            style={{
+              background: "linear-gradient(135deg, var(--color-primary-d), var(--color-primary))",
+            }}
+          >
             DL
           </div>
-          <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+          <span
+            className="font-bold text-lg tracking-tight"
+            style={{ color: "var(--color-text-1)" }}
+          >
             Dreamy Life
           </span>
         </Link>
@@ -165,89 +146,116 @@ export function AppSidebar() {
 
       {/* Profile Card */}
       <div className="p-3">
-        <div className="relative overflow-hidden rounded-2xl">
-          {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500"></div>
-          <div className="absolute inset-0 bg-gradient-to-tl from-cyan-500/20 via-transparent to-amber-500/20"></div>
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:16px_16px]"></div>
-          {/* Decorative Orbs */}
-          <div className="absolute -top-6 -right-6 w-20 h-20 bg-yellow-400/30 rounded-full blur-xl"></div>
-          <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-cyan-400/30 rounded-full blur-xl"></div>
+        <div
+          className="relative overflow-hidden rounded-2xl"
+          style={{
+            background: "linear-gradient(135deg, var(--color-primary-d), var(--color-primary) 50%, var(--color-accent))",
+          }}
+        >
+          {/* Subtle grid overlay */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+              backgroundSize: "16px 16px",
+            }}
+          />
+          {/* Orb accents */}
+          <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-xl" style={{ background: "rgba(255,255,255,0.15)" }} />
+          <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full blur-xl" style={{ background: "rgba(255,255,255,0.1)" }} />
 
-          {/* Content */}
           <div className="relative p-4 text-white">
-            {/* Profile Picture & Name */}
+            {/* Avatar + name */}
             <div className="flex items-center gap-3 mb-4">
               <div className="relative">
-                <Avatar className="h-14 w-14 ring-3 ring-white/30 shadow-xl">
+                <Avatar className="h-14 w-14" style={{ boxShadow: "0 0 0 3px rgba(255,255,255,0.25)" }}>
                   <AvatarImage src={user?.profile_picture || undefined} />
-                  <AvatarFallback className="bg-white/20 backdrop-blur-sm text-white text-lg font-bold">
+                  <AvatarFallback
+                    className="text-lg font-bold"
+                    style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
+                  >
                     {user?.user.username?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 {user?.is_verified && (
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center ring-2 ring-white shadow-lg">
+                  <div
+                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white"
+                    style={{ background: "var(--color-success)" }}
+                  >
                     <BadgeCheck className="h-3 w-3 text-white" />
                   </div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-base truncate">
+                <h3 className="font-bold text-base truncate text-white">
                   {user?.user.username}
                 </h3>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      user?.member_status === "user"
-                        ? "bg-white/20"
-                        : "bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg"
-                    }`}
+                <div className="mt-0.5">
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                    style={{
+                      background:
+                        user?.member_status === "user"
+                          ? "rgba(255,255,255,0.2)"
+                          : "rgba(247,148,29,0.85)",
+                    }}
                   >
-                    <Crown className="h-3 w-3 inline mr-1" />
+                    <Crown className="h-3 w-3" />
                     {user?.member_status}
-                  </div>
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Info Items */}
+            {/* Info rows */}
             <div className="space-y-2">
-              {/* Phone */}
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 backdrop-blur-sm">
-                <Phone className="h-4 w-4 text-white/70" />
+              <div
+                className="flex items-center gap-2 rounded-lg px-3 py-2"
+                style={{ background: "rgba(255,255,255,0.12)" }}
+              >
+                <Phone className="h-4 w-4 opacity-70 shrink-0" />
                 <span className="text-sm font-medium truncate">
                   {user?.user.phone_number || "No phone"}
                 </span>
               </div>
 
-              {/* Referral Code */}
-              <div
-                className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2 backdrop-blur-sm cursor-pointer hover:bg-white/20 transition-colors group"
+              <button
                 onClick={copyReferralCode}
+                className="w-full flex items-center justify-between rounded-lg px-3 py-2 transition-colors cursor-pointer group"
+                style={{ background: "rgba(255,255,255,0.12)" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "rgba(255,255,255,0.12)")
+                }
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs text-white/70">Refer Code:</span>
-                  <span className="font-mono font-bold text-sm text-yellow-300 truncate">
+                  <span className="text-xs opacity-70 shrink-0">Refer Code:</span>
+                  <span className="font-mono font-bold text-sm truncate" style={{ color: "#fde68a" }}>
                     {user?.own_refercode}
                   </span>
                 </div>
-                <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                  {copied ? (
-                    <CheckCircle className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-white/70 group-hover:text-white" />
-                  )}
-                </button>
-              </div>
+                {copied ? (
+                  <CheckCircle className="h-4 w-4 shrink-0" style={{ color: "var(--color-success)" }} />
+                ) : (
+                  <Copy className="h-4 w-4 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+                )}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Nav content */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{t("nav.mainSection")}</SidebarGroupLabel>
+          <SidebarGroupLabel
+            style={{ color: "var(--color-text-3)", fontFamily: "var(--font-mono)", letterSpacing: "0.2em" }}
+          >
+            {t("nav.mainSection")}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -265,11 +273,21 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>{t("nav.marketplace")}</SidebarGroupLabel>
+          <SidebarGroupLabel
+            style={{ color: "var(--color-text-3)", fontFamily: "var(--font-mono)", letterSpacing: "0.2em" }}
+          >
+            {t("nav.marketplace")}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === marketplaceNavItem.href || pathname?.startsWith("/marketplace")}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={
+                    pathname === marketplaceNavItem.href ||
+                    pathname?.startsWith("/marketplace")
+                  }
+                >
                   <Link href={marketplaceNavItem.href}>
                     <marketplaceNavItem.icon className="h-4 w-4" />
                     <span>{t(marketplaceNavItem.key as any)}</span>
@@ -281,7 +299,11 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>{t("nav.shopSection")}</SidebarGroupLabel>
+          <SidebarGroupLabel
+            style={{ color: "var(--color-text-3)", fontFamily: "var(--font-mono)", letterSpacing: "0.2em" }}
+          >
+            {t("nav.shopSection")}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {shopNavItems.map((item) => (
@@ -299,7 +321,11 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>{t("nav.vendorSection")}</SidebarGroupLabel>
+          <SidebarGroupLabel
+            style={{ color: "var(--color-text-3)", fontFamily: "var(--font-mono)", letterSpacing: "0.2em" }}
+          >
+            {t("nav.vendorSection")}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {vendorLoading ? (
@@ -313,9 +339,7 @@ export function AppSidebar() {
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton
-                        isActive={pathname.startsWith("/vendor")}
-                      >
+                      <SidebarMenuButton isActive={pathname.startsWith("/vendor")}>
                         <Store className="h-4 w-4" />
                         <span>{t("nav.myShop")}</span>
                         <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -344,8 +368,8 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href="/vendor">
-                      <Sparkles className="h-4 w-4 text-fuchsia-500" />
-                      <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent font-medium">
+                      <Sparkles className="h-4 w-4" style={{ color: "var(--color-accent)" }} />
+                      <span style={{ color: "var(--color-primary)", fontWeight: 500 }}>
                         {t("nav.becomeVendor")}
                       </span>
                     </Link>
@@ -357,22 +381,35 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-violet-200/50 dark:border-violet-800/30 p-4">
+      {/* Footer */}
+      <SidebarFooter
+        className="p-4"
+        style={{ borderTop: "1px solid var(--color-border)" }}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-2 px-2 hover:bg-violet-100 dark:hover:bg-violet-900/30"
+              className="w-full justify-start gap-2 px-2 rounded-xl transition-colors"
+              style={{ color: "var(--color-text-1)" }}
             >
-              <Avatar className="h-8 w-8 ring-2 ring-violet-200 dark:ring-violet-800">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.profile_picture || undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
+                <AvatarFallback
+                  className="font-bold"
+                  style={{ background: "var(--color-surface-3)", color: "var(--color-primary)" }}
+                >
                   {user?.user.username?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start text-sm">
-                <span className="font-medium">{user?.user.username}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="font-medium" style={{ color: "var(--color-text-1)" }}>
+                  {user?.user.username}
+                </span>
+                <span
+                  className="text-xs font-mono"
+                  style={{ color: "var(--color-text-3)" }}
+                >
                   {user?.member_status}
                 </span>
               </div>
@@ -382,7 +419,6 @@ export function AppSidebar() {
             <DropdownMenuItem asChild>
               <Link href="/profile">
                 <User className="mr-2 h-4 w-4" />
-                {/* Optional: localize later */}
                 Profile
               </Link>
             </DropdownMenuItem>
@@ -394,14 +430,10 @@ export function AppSidebar() {
               ) : (
                 <Moon className="mr-2 h-4 w-4" />
               )}
-              {/* Optional: localize later */}
               Toggle Theme
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="text-destructive"
-            >
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               {t("nav.logout")}
             </DropdownMenuItem>
