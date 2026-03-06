@@ -99,20 +99,20 @@ export function NotificationDropdown(props?: NotificationDropdownProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-[340px] sm:w-[400px] p-0 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden"
+        className="w-[340px] sm:w-[380px] p-0 rounded-xl overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-1)] shadow-[var(--shadow-lg)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/80 dark:bg-slate-900/50">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200/80 dark:bg-slate-700">
-              <Bell className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-3)] text-[var(--color-primary)]">
+              <Bell className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-[var(--color-text-1)]">
                 Notifications
               </h3>
               {unreadCount > 0 && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[10px] font-medium text-[var(--color-text-3)] mt-0.5">
                   {unreadCount} unread
                 </p>
               )}
@@ -122,7 +122,7 @@ export function NotificationDropdown(props?: NotificationDropdownProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 shrink-0 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-primary-l)]"
               onClick={() => markAllReadMutation.mutate()}
             >
               Mark all read
@@ -133,29 +133,30 @@ export function NotificationDropdown(props?: NotificationDropdownProps) {
         <ScrollArea className="h-[320px]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <Loader2 className="h-8 w-8 animate-spin text-[var(--color-text-3)]" />
+              <p className="text-sm text-[var(--color-text-2)]">Loading…</p>
             </div>
           ) : list.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mb-3">
-                <Bell className="h-6 w-6 text-slate-400" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-3)] mb-3">
+                <Bell className="h-6 w-6 text-[var(--color-text-3)]" />
               </div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No notifications</p>
-              <p className="text-xs text-muted-foreground mt-1 text-center">
+              <p className="text-sm font-medium text-[var(--color-text-1)]">No notifications</p>
+              <p className="text-xs text-[var(--color-text-3)] mt-1 text-center">
                 You&apos;re all caught up
               </p>
             </div>
           ) : (
-            <div className="py-1">
+            <ul className="py-0" role="list">
               {list.map((n) => (
-                <NotificationItem
-                  key={n.id}
-                  notification={n}
-                  onMarkRead={() => markReadMutation.mutate(n.id)}
-                />
+                <li key={n.id}>
+                  <NotificationItem
+                    notification={n}
+                    onMarkRead={() => markReadMutation.mutate(n.id)}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </ScrollArea>
       </DropdownMenuContent>
@@ -176,55 +177,64 @@ function NotificationItem({
   const content = (
     <div
       className={cn(
-        "flex gap-3 px-4 py-3 transition-colors cursor-pointer border-l-2 border-transparent",
-        "hover:bg-slate-50 dark:hover:bg-slate-800/50",
-        !notification.is_read && "border-l-violet-500 bg-violet-50/50 dark:bg-violet-950/20"
+        "flex gap-3 px-4 py-3 transition-colors cursor-pointer border-b border-[var(--color-border)] last:border-b-0",
+        "hover:bg-[var(--color-surface-2)] active:bg-[var(--color-surface-3)]",
+        !notification.is_read && "bg-[var(--color-surface-2)]/80"
       )}
     >
-      {/* Source icon */}
-      {notification.image ? (
-        <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-muted ring-1 ring-slate-200/50 dark:ring-slate-700">
-          <img src={notification.image} alt="" className="h-full w-full object-cover" />
-        </div>
-      ) : (
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ring-1 ring-slate-200/50 dark:ring-slate-700",
-            config.className
-          )}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-      )}
+      {/* Left: source icon */}
+      <div className="shrink-0 pt-0.5">
+        {notification.image ? (
+          <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-[var(--color-surface-3)] ring-1 ring-[var(--color-border)]">
+            <img src={notification.image} alt="" className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <div
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-lg ring-1 ring-[var(--color-border)]",
+              config.className
+            )}
+          >
+            <Icon className="h-5 w-5" />
+          </div>
+        )}
+      </div>
 
-      <div className="flex-1 min-w-0">
+      {/* Right: content stack */}
+      <div className="flex-1 min-w-0 py-0.5">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1 leading-tight">
+          <p className={cn(
+            "text-sm leading-tight line-clamp-1",
+            notification.is_read ? "font-medium text-[var(--color-text-2)]" : "font-semibold text-[var(--color-text-1)]"
+          )}>
             {notification.title}
           </p>
           <span
             className={cn(
               "shrink-0 text-[10px] font-medium tabular-nums",
-              notification.is_read
-                ? "text-muted-foreground"
-                : "text-violet-600 dark:text-violet-400"
+              notification.is_read ? "text-[var(--color-text-3)]" : "text-[var(--color-primary)]"
             )}
           >
             {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+        <p className="text-xs text-[var(--color-text-2)] line-clamp-2 mt-1 leading-relaxed">
           {notification.message}
         </p>
         <span
           className={cn(
-            "inline-block mt-2 text-[10px] font-medium px-1.5 py-0.5 rounded",
+            "inline-block mt-2 text-[10px] font-medium px-2 py-0.5 rounded-full",
             config.className
           )}
         >
           {config.label}
         </span>
       </div>
+
+      {/* Unread dot */}
+      {!notification.is_read && (
+        <div className="shrink-0 w-2 h-2 rounded-full bg-[var(--color-primary)] mt-2" aria-hidden />
+      )}
     </div>
   );
 
@@ -232,18 +242,16 @@ function NotificationItem({
     if (!notification.is_read) onMarkRead();
   };
 
-  const itemClassName = "border-b border-slate-100 dark:border-slate-800/80 last:border-b-0";
-
   if (notification.link) {
     return (
-      <Link href={notification.link} onClick={handleClick} className={cn("block", itemClassName)}>
+      <Link href={notification.link} onClick={handleClick} className="block">
         {content}
       </Link>
     );
   }
 
   return (
-    <div onClick={handleClick} className={itemClassName}>
+    <div onClick={handleClick}>
       {content}
     </div>
   );

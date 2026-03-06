@@ -84,7 +84,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden min-h-dvh bg-slate-50 dark:bg-slate-950 pb-16">
+      <div className="md:hidden min-h-dvh bg-[var(--color-bg)]">
         <MobileSideDrawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen} />
         {/* Slim mobile top bar with menu - show on all pages except dashboard (dashboard has its own header) */}
         {!isDashboard && (
@@ -115,7 +115,7 @@ export default function DashboardLayout({
             </Link>
           </header>
         )}
-        <main>
+        <main className="px-4 pt-4 pb-[88px]">
           <AccountStatusBanner />
           {children}
         </main>

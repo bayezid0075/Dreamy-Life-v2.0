@@ -15,68 +15,72 @@ import {
   Gift,
   CreditCard,
   Sparkles,
-  Briefcase,
+  Package,
   Smartphone,
   Car,
 } from "lucide-react";
 
 import { useVendor } from "@/hooks/use-vendor";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface NavItem {
-  title: string;
+  key: string;
   href: string;
   icon: React.ElementType;
   gradient: string;
   iconColor: string;
+  /** Optional custom image URL (e.g. for Recharge); when set, shown instead of icon */
+  imageSrc?: string;
 }
 
 const staticNavItems: NavItem[] = [
   {
-    title: "Wallet",
+    key: "nav.wallet",
     href: "/wallet",
     icon: Wallet,
     gradient: "from-emerald-500 to-teal-500",
     iconColor: "text-emerald-600",
   },
   {
-    title: "Recharge",
+    key: "nav.recharge",
     href: "/recharge",
     icon: Smartphone,
     gradient: "from-violet-500 to-purple-500",
     iconColor: "text-violet-600",
+    imageSrc: "/icons/smartphone-recharge.png",
   },
   {
-    title: "Drive Offer",
+    key: "nav.driveOffer",
     href: "/recharge/drive",
     icon: Car,
     gradient: "from-orange-500 to-amber-500",
     iconColor: "text-orange-600",
   },
   {
-    title: "Shop",
+    key: "nav.shop",
     href: "/reseller",
     icon: Store,
     gradient: "from-cyan-500 to-blue-500",
     iconColor: "text-cyan-600",
   },
   {
-    title: "Referrals",
+    key: "nav.referrals",
     href: "/referrals",
     icon: Users,
     gradient: "from-blue-500 to-indigo-500",
     iconColor: "text-blue-600",
   },
   {
-    title: "Orders",
+    key: "nav.orders",
     href: "/orders",
     icon: ShoppingBag,
     gradient: "from-pink-500 to-rose-500",
     iconColor: "text-pink-600",
   },
   {
-    title: "Marketplace",
+    key: "nav.marketplace",
     href: "/marketplace",
-    icon: Briefcase,
+    icon: Package,
     gradient: "from-indigo-500 to-violet-500",
     iconColor: "text-indigo-600",
   },
@@ -84,35 +88,35 @@ const staticNavItems: NavItem[] = [
 
 const secondaryNavItems: NavItem[] = [
   {
-    title: "Memberships",
+    key: "nav.memberships",
     href: "/memberships",
     icon: Crown,
     gradient: "from-amber-500 to-orange-500",
     iconColor: "text-amber-600",
   },
   {
-    title: "Rewards",
+    key: "nav.rewards",
     href: "/rewards",
     icon: Gift,
     gradient: "from-red-500 to-orange-500",
     iconColor: "text-red-600",
   },
   {
-    title: "Payment",
+    key: "nav.payment",
     href: "/payment",
     icon: CreditCard,
     gradient: "from-indigo-500 to-violet-500",
     iconColor: "text-indigo-600",
   },
   {
-    title: "Settings",
+    key: "nav.settings",
     href: "/settings",
     icon: Settings,
     gradient: "from-slate-500 to-gray-500",
     iconColor: "text-slate-600",
   },
   {
-    title: "Help",
+    key: "nav.help",
     href: "/help",
     icon: HelpCircle,
     gradient: "from-teal-500 to-emerald-500",
@@ -123,17 +127,18 @@ const secondaryNavItems: NavItem[] = [
 export function MobileNavGrid() {
   const [expanded, setExpanded] = useState(false);
   const { hasVendor } = useVendor();
+  const { t } = useI18n();
 
   const vendorNavItem: NavItem = hasVendor
     ? {
-        title: "My Shop",
+        key: "nav.myShop",
         href: "/vendor",
         icon: Store,
         gradient: "from-cyan-500 to-blue-500",
         iconColor: "text-cyan-600",
       }
     : {
-        title: "Vendor",
+        key: "nav.vendor",
         href: "/vendor",
         icon: Sparkles,
         gradient: "from-fuchsia-500 to-pink-500",
@@ -157,13 +162,22 @@ export function MobileNavGrid() {
               <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl overflow-hidden">
                 {/* Background with gradient border effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-100 to-fuchsia-50 dark:from-violet-900/30 dark:to-fuchsia-900/20 group-hover:from-violet-200 group-hover:to-fuchsia-100 dark:group-hover:from-violet-800/40 dark:group-hover:to-fuchsia-800/30 transition-all duration-300 group-active:scale-95" />
-                {/* Icon */}
-                <item.icon
-                  className={`relative h-6 w-6 sm:h-7 sm:w-7 ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 shrink-0`}
-                />
+                {/* Icon or custom image */}
+                {item.imageSrc ? (
+                  <img
+                    src={item.imageSrc}
+                    alt=""
+                    className="relative h-7 w-7 sm:h-8 sm:w-8 object-contain group-hover:scale-110 transition-transform duration-300 shrink-0 z-10"
+                  />
+                ) : (
+                  <item.icon
+                    className={`relative h-6 w-6 sm:h-7 sm:w-7 stroke-[2] ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 shrink-0`}
+                    strokeWidth={2}
+                  />
+                )}
               </div>
               <span className="text-[10px] sm:text-xs font-medium text-slate-700 dark:text-slate-300 text-center leading-tight line-clamp-1 w-full min-w-0">
-                {item.title}
+                {t(item.key as any)}
               </span>
             </Link>
           ))}
@@ -181,11 +195,12 @@ export function MobileNavGrid() {
                 <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-100 to-fuchsia-50 dark:from-violet-900/30 dark:to-fuchsia-900/20 group-hover:from-violet-200 group-hover:to-fuchsia-100 dark:group-hover:from-violet-800/40 dark:group-hover:to-fuchsia-800/30 transition-all duration-300 group-active:scale-95" />
                   <item.icon
-                    className={`relative h-6 w-6 sm:h-7 sm:w-7 ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 shrink-0`}
+                    className={`relative h-6 w-6 sm:h-7 sm:w-7 stroke-[2] ${item.iconColor} dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 shrink-0`}
+                    strokeWidth={2}
                   />
                 </div>
                 <span className="text-[10px] sm:text-xs font-medium text-slate-700 dark:text-slate-300 text-center leading-tight line-clamp-1 w-full min-w-0">
-                  {item.title}
+                  {t(item.key as any)}
                 </span>
               </Link>
             ))}
@@ -199,11 +214,11 @@ export function MobileNavGrid() {
         >
           {expanded ? (
             <>
-              Show Less <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Show Less <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2]" strokeWidth={2} />
             </>
           ) : (
             <>
-              See More <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              See More <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2]" strokeWidth={2} />
             </>
           )}
         </button>

@@ -16,8 +16,8 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   const { user } = useAuthStore();
 
   return (
-    <div className="md:hidden">
-      {/* Gradient Background - extends behind the grid */}
+    <div className="md:hidden -mx-4 -mt-4">
+      {/* Gradient Background - full width, no margin above or sides */}
       <div className="relative">
         {/* Background Gradient - responsive height */}
         <div className="absolute inset-x-0 top-0 h-[220px] xs:h-[240px] sm:h-[260px] bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500">
@@ -31,8 +31,8 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] sm:bg-[size:24px_24px]" />
         </div>
 
-        {/* Content */}
-        <div className="relative px-3 sm:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4">
+        {/* Content - padding aligns with page */}
+        <div className="relative px-4 pt-4 pb-3 sm:pb-4">
           {/* Top Bar */}
           <div className="flex items-center justify-between">
             {/* Left: Menu + Logo */}

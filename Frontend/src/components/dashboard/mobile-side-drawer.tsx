@@ -33,6 +33,7 @@ import {
   Car,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useI18n } from "@/hooks/use-i18n";
 
 import {
   Sheet,
@@ -48,32 +49,32 @@ import { useVendor } from "@/hooks/use-vendor";
 
 const mainNavItems = [
   {
-    title: "Dashboard",
+    key: "nav.dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    title: "Wallet",
+    key: "nav.wallet",
     href: "/wallet",
     icon: Wallet,
   },
   {
-    title: "Recharge",
+    key: "nav.recharge",
     href: "/recharge",
     icon: Smartphone,
   },
   {
-    title: "Drive Offer",
+    key: "nav.driveOffer",
     href: "/recharge/drive",
     icon: Car,
   },
   {
-    title: "Referrals",
+    key: "nav.referrals",
     href: "/referrals",
     icon: Users,
   },
   {
-    title: "Memberships",
+    key: "nav.memberships",
     href: "/memberships",
     icon: Crown,
   },
@@ -81,31 +82,31 @@ const mainNavItems = [
 
 const shopNavItems = [
   {
-    title: "Reseller Shop",
+    key: "nav.shop",
     href: "/reseller",
     icon: Store,
   },
   {
-    title: "My Orders",
+    key: "nav.orders",
     href: "/orders",
     icon: ShoppingBag,
   },
 ];
 
 const vendorSubItems = [
-  { title: "Overview", href: "/vendor", icon: BarChart3 },
-  { title: "Orders", href: "/vendor/orders", icon: ShoppingCart },
-  { title: "Inventory", href: "/vendor/products", icon: Package },
+  { key: "nav.dashboard", href: "/vendor", icon: BarChart3 },
+  { key: "nav.orders", href: "/vendor/orders", icon: ShoppingCart },
+  { key: "nav.marketplace", href: "/vendor/products", icon: Package },
 ];
 
 const otherNavItems = [
   {
-    title: "Settings",
+    key: "nav.settings",
     href: "/settings",
     icon: Settings,
   },
   {
-    title: "Help & Support",
+    key: "nav.help",
     href: "/help",
     icon: HelpCircle,
   },
@@ -123,6 +124,7 @@ export function MobileSideDrawer({
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [vendorExpanded, setVendorExpanded] = useState(
     pathname.startsWith("/vendor")
@@ -159,7 +161,7 @@ export function MobileSideDrawer({
           <div className="flex items-center justify-between">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 no-underline hover:no-underline"
               onClick={handleNavClick}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white text-sm font-bold shadow-lg shadow-fuchsia-500/25">
@@ -193,7 +195,7 @@ export function MobileSideDrawer({
             <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-cyan-400/30 rounded-full blur-xl"></div>
 
             {/* Content */}
-            <div className="relative p-3 text-white">
+            <div className="relative px-3 pt-[27px] pb-[27px] text-white">
               {/* Profile Picture & Name */}
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="relative flex-shrink-0">
@@ -210,7 +212,7 @@ export function MobileSideDrawer({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm truncate">
+                  <h3 className="font-bold text-xl truncate pt-[2px] pb-[2px] text-[rgba(255,247,204,1)]">
                     {user?.user.username}
                   </h3>
                   <div className="flex items-center gap-1 mt-0.5 flex-wrap">
@@ -244,7 +246,7 @@ export function MobileSideDrawer({
                 <Link
                   href="/memberships"
                   onClick={handleNavClick}
-                  className="flex items-center justify-center gap-1.5 w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-semibold text-xs py-1.5 px-3 rounded-lg shadow-lg transition-all mb-2.5"
+                  className="flex items-center justify-center gap-1.5 w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-semibold text-xs py-1.5 px-3 rounded-lg shadow-lg transition-all mb-2.5 no-underline hover:no-underline"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Verify Now
@@ -290,7 +292,7 @@ export function MobileSideDrawer({
           {/* Main Navigation */}
           <div className="mb-3">
             <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
-              Main
+              {t("nav.mainSection")}
             </p>
             <nav className="space-y-0.5">
               {mainNavItems.map((item) => {
@@ -300,18 +302,18 @@ export function MobileSideDrawer({
                     key={item.href}
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-all no-underline hover:no-underline ${
                       isActive
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
                         : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                     }`}
                   >
                     <item.icon
-                      className={`h-4 w-4 ${
+                      className={`h-4 w-4 stroke-[2.25] ${
                         isActive ? "text-violet-600 dark:text-violet-400" : ""
                       }`}
                     />
-                    <span>{item.title}</span>
+                    <span>{t(item.key as any)}</span>
                   </Link>
                 );
               })}
@@ -321,7 +323,7 @@ export function MobileSideDrawer({
           {/* Shop Navigation */}
           <div className="mb-3">
             <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
-              Shop
+              {t("nav.shopSection")}
             </p>
             <nav className="space-y-0.5">
               {shopNavItems.map((item) => {
@@ -331,18 +333,18 @@ export function MobileSideDrawer({
                     key={item.href}
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-all no-underline hover:no-underline ${
                       isActive
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
                         : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                     }`}
                   >
                     <item.icon
-                      className={`h-4 w-4 ${
+                      className={`h-4 w-4 stroke-[2.25] ${
                         isActive ? "text-violet-600 dark:text-violet-400" : ""
                       }`}
                     />
-                    <span>{item.title}</span>
+                    <span>{t(item.key as any)}</span>
                   </Link>
                 );
               })}
@@ -352,31 +354,31 @@ export function MobileSideDrawer({
           {/* Vendor Navigation */}
           <div className="mb-3">
             <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
-              Vendor
+              {t("nav.vendorSection")}
             </p>
             <nav className="space-y-0.5">
               {hasVendor ? (
                 <>
                   <button
                     onClick={() => setVendorExpanded(!vendorExpanded)}
-                    className={`flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-sm transition-all ${
+                    className={`flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-sm font-semibold transition-all ${
                       pathname.startsWith("/vendor")
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
                         : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Store
-                        className={`h-4 w-4 ${
+                        className={`h-4 w-4 stroke-[2.25] ${
                           pathname.startsWith("/vendor")
                             ? "text-violet-600 dark:text-violet-400"
                             : ""
                         }`}
                       />
-                      <span>My Shop</span>
+                      <span>{t("nav.myShop")}</span>
                     </div>
                     <ChevronDown
-                      className={`h-4 w-4 transition-transform duration-200 ${
+                      className={`h-4 w-4 stroke-[2.25] transition-transform duration-200 ${
                         vendorExpanded ? "rotate-180" : ""
                       }`}
                     />
@@ -392,12 +394,12 @@ export function MobileSideDrawer({
                             onClick={handleNavClick}
                             className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-all ${
                               isActive
-                                ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
-                                : "text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-slate-700 dark:hover:text-slate-200"
+                                ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
+                                : "text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-slate-700 dark:hover:text-slate-200 font-semibold"
                             }`}
                           >
-                            <item.icon className="h-3.5 w-3.5" />
-                            <span>{item.title}</span>
+                            <item.icon className="h-3.5 w-3.5 stroke-[2.25]" />
+                            <span>{t(item.key as any)}</span>
                           </Link>
                         );
                       })}
@@ -408,11 +410,11 @@ export function MobileSideDrawer({
                 <Link
                   href="/vendor"
                   onClick={handleNavClick}
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5 hover:from-violet-500/10 hover:to-fuchsia-500/10 transition-all"
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5 hover:from-violet-500/10 hover:to-fuchsia-500/10 transition-all no-underline hover:no-underline"
                 >
-                  <Sparkles className="h-4 w-4 text-fuchsia-500" />
+                  <Sparkles className="h-4 w-4 stroke-[2.25] text-fuchsia-500" />
                   <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent font-medium">
-                    Become a Vendor
+                    {t("nav.becomeVendor")}
                   </span>
                 </Link>
               )}
@@ -422,7 +424,7 @@ export function MobileSideDrawer({
           {/* Other Navigation */}
           <div className="mb-3">
             <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
-              Other
+              {t("nav.otherSection")}
             </p>
             <nav className="space-y-0.5">
               {otherNavItems.map((item) => {
@@ -432,32 +434,34 @@ export function MobileSideDrawer({
                     key={item.href}
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-all no-underline hover:no-underline ${
                       isActive
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-medium"
+                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
                         : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                     }`}
                   >
                     <item.icon
-                      className={`h-4 w-4 ${
+                      className={`h-4 w-4 stroke-[2.25] ${
                         isActive ? "text-violet-600 dark:text-violet-400" : ""
                       }`}
                     />
-                    <span>{item.title}</span>
+                    <span>{t(item.key as any)}</span>
                   </Link>
                 );
               })}
               {/* Theme Toggle */}
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
               >
                 {theme === "dark" ? (
-                  <Sun className="h-4 w-4" />
+                  <Sun className="h-4 w-4 stroke-[2.25]" />
                 ) : (
-                  <Moon className="h-4 w-4" />
+                  <Moon className="h-4 w-4 stroke-[2.25]" />
                 )}
-                <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+                <span>
+                  {theme === "dark" ? t("theme.light") : t("theme.dark")}
+                </span>
               </button>
             </nav>
           </div>
@@ -471,7 +475,7 @@ export function MobileSideDrawer({
             className="flex items-center justify-center gap-2 w-full px-2 py-1.5 rounded-md text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
           >
             <LogOut className="h-3.5 w-3.5" />
-            <span>Logout</span>
+            <span>{t("nav.logout")}</span>
           </button>
 
           {/* Version */}

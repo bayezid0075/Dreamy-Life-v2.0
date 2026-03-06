@@ -29,6 +29,7 @@ import {
   Car,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useI18n } from "@/hooks/use-i18n";
 
 import {
   Sidebar,
@@ -66,71 +67,72 @@ import { useVendor } from "@/hooks/use-vendor";
 
 const mainNavItems = [
   {
-    title: "Dashboard",
+    key: "nav.dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    title: "Profile",
+    key: "nav.dashboard", // could have its own key later
     href: "/profile",
     icon: User,
   },
   {
-    title: "Wallet",
+    key: "nav.wallet",
     href: "/wallet",
     icon: Wallet,
   },
   {
-    title: "Recharge",
+    key: "nav.recharge",
     href: "/recharge",
     icon: Smartphone,
   },
   {
-    title: "Drive Offer",
+    key: "nav.driveOffer",
     href: "/recharge/drive",
     icon: Car,
   },
   {
-    title: "Referrals",
+    key: "nav.referrals",
     href: "/referrals",
     icon: Users,
   },
   {
-    title: "Memberships",
+    key: "nav.memberships",
     href: "/memberships",
     icon: Crown,
   },
 ];
 
 const marketplaceNavItem = {
-  title: "Marketplace",
+  key: "nav.marketplace",
   href: "/marketplace",
   icon: Briefcase,
 };
 
 const shopNavItems = [
   {
-    title: "Reseller Shop",
+    key: "nav.shop",
     href: "/reseller",
     icon: Store,
   },
   {
-    title: "My Orders",
+    key: "nav.orders",
     href: "/orders",
     icon: ShoppingBag,
   },
 ];
 
 const vendorSubItems = [
-  { title: "Overview", href: "/vendor", icon: BarChart3 },
-  { title: "Orders", href: "/vendor/orders", icon: ShoppingCart },
-  { title: "Inventory", href: "/vendor/products", icon: Package },
+  { key: "nav.dashboard", href: "/vendor", icon: BarChart3 },
+  { key: "nav.orders", href: "/vendor/orders", icon: ShoppingCart },
+  { key: "nav.marketplace", href: "/vendor/products", icon: Package },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const { hasVendor, isLoading: vendorLoading } = useVendor();
 
@@ -245,7 +247,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.mainSection")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -253,7 +255,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={pathname === item.href}>
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span>{t(item.key as any)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -263,14 +265,14 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.marketplace")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === marketplaceNavItem.href || pathname?.startsWith("/marketplace")}>
                   <Link href={marketplaceNavItem.href}>
                     <marketplaceNavItem.icon className="h-4 w-4" />
-                    <span>{marketplaceNavItem.title}</span>
+                    <span>{t(marketplaceNavItem.key as any)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -279,7 +281,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Shop</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.shopSection")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {shopNavItems.map((item) => (
@@ -287,7 +289,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={pathname === item.href}>
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span>{t(item.key as any)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -297,7 +299,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Vendor</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.vendorSection")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {vendorLoading ? (
@@ -315,7 +317,7 @@ export function AppSidebar() {
                         isActive={pathname.startsWith("/vendor")}
                       >
                         <Store className="h-4 w-4" />
-                        <span>My Shop</span>
+                        <span>{t("nav.myShop")}</span>
                         <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
@@ -329,7 +331,7 @@ export function AppSidebar() {
                             >
                               <Link href={item.href}>
                                 <item.icon className="h-4 w-4" />
-                                <span>{item.title}</span>
+                                <span>{t(item.key as any)}</span>
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -344,7 +346,7 @@ export function AppSidebar() {
                     <Link href="/vendor">
                       <Sparkles className="h-4 w-4 text-fuchsia-500" />
                       <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent font-medium">
-                        Become a Vendor
+                        {t("nav.becomeVendor")}
                       </span>
                     </Link>
                   </SidebarMenuButton>
@@ -380,6 +382,7 @@ export function AppSidebar() {
             <DropdownMenuItem asChild>
               <Link href="/profile">
                 <User className="mr-2 h-4 w-4" />
+                {/* Optional: localize later */}
                 Profile
               </Link>
             </DropdownMenuItem>
@@ -391,6 +394,7 @@ export function AppSidebar() {
               ) : (
                 <Moon className="mr-2 h-4 w-4" />
               )}
+              {/* Optional: localize later */}
               Toggle Theme
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -399,7 +403,7 @@ export function AppSidebar() {
               className="text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Logout
+              {t("nav.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
