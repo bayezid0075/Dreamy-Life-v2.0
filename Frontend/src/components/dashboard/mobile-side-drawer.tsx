@@ -48,49 +48,17 @@ import { useAuthStore } from "@/store";
 import { useVendor } from "@/hooks/use-vendor";
 
 const mainNavItems = [
-  {
-    key: "nav.dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    key: "nav.wallet",
-    href: "/wallet",
-    icon: Wallet,
-  },
-  {
-    key: "nav.recharge",
-    href: "/recharge",
-    icon: Smartphone,
-  },
-  {
-    key: "nav.driveOffer",
-    href: "/recharge/drive",
-    icon: Car,
-  },
-  {
-    key: "nav.referrals",
-    href: "/referrals",
-    icon: Users,
-  },
-  {
-    key: "nav.memberships",
-    href: "/memberships",
-    icon: Crown,
-  },
+  { key: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { key: "nav.wallet", href: "/wallet", icon: Wallet },
+  { key: "nav.recharge", href: "/recharge", icon: Smartphone },
+  { key: "nav.driveOffer", href: "/recharge/drive", icon: Car },
+  { key: "nav.referrals", href: "/referrals", icon: Users },
+  { key: "nav.memberships", href: "/memberships", icon: Crown },
 ];
 
 const shopNavItems = [
-  {
-    key: "nav.shop",
-    href: "/reseller",
-    icon: Store,
-  },
-  {
-    key: "nav.orders",
-    href: "/orders",
-    icon: ShoppingBag,
-  },
+  { key: "nav.shop", href: "/reseller", icon: Store },
+  { key: "nav.orders", href: "/orders", icon: ShoppingBag },
 ];
 
 const vendorSubItems = [
@@ -100,16 +68,8 @@ const vendorSubItems = [
 ];
 
 const otherNavItems = [
-  {
-    key: "nav.settings",
-    href: "/settings",
-    icon: Settings,
-  },
-  {
-    key: "nav.help",
-    href: "/help",
-    icon: HelpCircle,
-  },
+  { key: "nav.settings", href: "/settings", icon: Settings },
+  { key: "nav.help", href: "/help", icon: HelpCircle },
 ];
 
 interface MobileSideDrawerProps {
@@ -117,18 +77,13 @@ interface MobileSideDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function MobileSideDrawer({
-  open,
-  onOpenChange,
-}: MobileSideDrawerProps) {
+export function MobileSideDrawer({ open, onOpenChange }: MobileSideDrawerProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
-  const [vendorExpanded, setVendorExpanded] = useState(
-    pathname.startsWith("/vendor")
-  );
+  const [vendorExpanded, setVendorExpanded] = useState(pathname.startsWith("/vendor"));
   const { hasVendor } = useVendor();
 
   const handleLogout = () => {
@@ -145,29 +100,75 @@ export function MobileSideDrawer({
     }
   };
 
-  const handleNavClick = () => {
-    onOpenChange(false);
-  };
+  const handleNavClick = () => onOpenChange(false);
+
+  /* ── Reusable nav link ── */
+  const NavLink = ({
+    href,
+    icon: Icon,
+    label,
+    isActive,
+  }: {
+    href: string;
+    icon: React.ElementType;
+    label: string;
+    isActive: boolean;
+  }) => (
+    <Link
+      href={href}
+      onClick={handleNavClick}
+      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors no-underline hover:no-underline"
+      style={{
+        background: isActive ? "var(--color-surface-2)" : "transparent",
+        color: isActive ? "var(--color-primary)" : "var(--color-text-2)",
+        borderLeft: isActive ? `2px solid var(--color-primary)` : "2px solid transparent",
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) e.currentTarget.style.background = "var(--color-surface-2)";
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) e.currentTarget.style.background = "transparent";
+      }}
+    >
+      <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+      <span>{label}</span>
+    </Link>
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="w-[280px] max-w-[85vw] p-0 bg-white dark:bg-slate-900 border-r-violet-200/50 dark:border-r-violet-800/30 overflow-hidden"
+        className="w-[280px] max-w-[85vw] p-0 overflow-hidden flex flex-col"
+        style={{
+          background: "var(--color-surface-1)",
+          borderRight: "1px solid var(--color-border)",
+        }}
       >
-        {/* Header */}
-        <SheetHeader className="p-3 border-b border-violet-200/50 dark:border-violet-800/30">
+        {/* ── Header ── */}
+        <SheetHeader
+          className="p-3 shrink-0"
+          style={{ borderBottom: "1px solid var(--color-border)" }}
+        >
           <div className="flex items-center justify-between">
             <Link
               href="/dashboard"
               className="flex items-center gap-2 no-underline hover:no-underline"
               onClick={handleNavClick}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white text-sm font-bold shadow-lg shadow-fuchsia-500/25">
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white text-sm font-bold shadow-md"
+                style={{
+                  background: "linear-gradient(135deg, var(--color-primary-d), var(--color-primary))",
+                }}
+              >
                 DL
               </div>
-              <SheetTitle className="font-bold text-base bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+              <SheetTitle
+                className="font-bold text-base"
+                style={{ color: "var(--color-text-1)" }}
+              >
                 Dreamy Life
               </SheetTitle>
             </Link>
@@ -175,185 +176,209 @@ export function MobileSideDrawer({
               variant="ghost"
               size="icon"
               onClick={() => onOpenChange(false)}
-              className="h-7 w-7 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              className="h-7 w-7 shrink-0 rounded-lg"
+              style={{ color: "var(--color-text-3)" }}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </SheetHeader>
 
-        {/* Profile Card */}
-        <div className="p-2.5">
-          <div className="relative overflow-hidden rounded-xl">
-            {/* Gradient Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500"></div>
-            <div className="absolute inset-0 bg-gradient-to-tl from-cyan-500/20 via-transparent to-amber-500/20"></div>
-            {/* Grid Pattern */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:12px_12px]"></div>
-            {/* Decorative Orbs */}
-            <div className="absolute -top-4 -right-4 w-14 h-14 bg-yellow-400/30 rounded-full blur-xl"></div>
-            <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-cyan-400/30 rounded-full blur-xl"></div>
+        {/* ── Profile Card ── */}
+        <div className="p-2.5 shrink-0">
+          <div
+            className="relative overflow-hidden rounded-xl"
+            style={{
+              background: "linear-gradient(135deg, var(--color-primary-d), var(--color-primary) 55%, var(--color-accent))",
+            }}
+          >
+            {/* Grid overlay */}
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)",
+                backgroundSize: "12px 12px",
+              }}
+            />
+            {/* Orbs */}
+            <div
+              className="absolute -top-4 -right-4 w-14 h-14 rounded-full blur-xl"
+              style={{ background: "rgba(255,255,255,0.15)" }}
+            />
+            <div
+              className="absolute -bottom-3 -left-3 w-12 h-12 rounded-full blur-xl"
+              style={{ background: "rgba(255,255,255,0.1)" }}
+            />
 
             {/* Content */}
-            <div className="relative px-3 pt-[27px] pb-[27px] text-white">
-              {/* Profile Picture & Name */}
+            <div className="relative px-3 py-4 text-white">
+              {/* Avatar + name */}
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="relative flex-shrink-0">
-                  <Avatar className="h-11 w-11 ring-2 ring-white/30 shadow-lg">
+                <div className="relative shrink-0">
+                  <Avatar
+                    className="h-11 w-11"
+                    style={{ boxShadow: "0 0 0 2px rgba(255,255,255,0.3)" }}
+                  >
                     <AvatarImage src={user?.profile_picture || undefined} />
-                    <AvatarFallback className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold">
+                    <AvatarFallback
+                      className="text-sm font-bold"
+                      style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
+                    >
                       {user?.user.username?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   {user?.is_verified && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center ring-2 ring-white shadow-lg">
+                    <div
+                      className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white"
+                      style={{ background: "var(--color-success)" }}
+                    >
                       <BadgeCheck className="h-2.5 w-2.5 text-white" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-xl truncate pt-[2px] pb-[2px] text-[rgba(255,247,204,1)]">
+                  <h3 className="font-bold text-base truncate" style={{ color: "#fef9c3" }}>
                     {user?.user.username}
                   </h3>
                   <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                    <div
-                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                        user?.member_status === "user"
-                          ? "bg-white/20"
-                          : "bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg"
-                      }`}
+                    <span
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                      style={{
+                        background:
+                          user?.member_status === "user"
+                            ? "rgba(255,255,255,0.2)"
+                            : "rgba(247,148,29,0.85)",
+                      }}
                     >
-                      <Crown className="h-2.5 w-2.5 inline mr-0.5" />
+                      <Crown className="h-2.5 w-2.5" />
                       {user?.member_status}
-                    </div>
+                    </span>
                     {user?.is_verified ? (
-                      <div className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/90 flex items-center gap-0.5">
+                      <span
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                        style={{ background: "rgba(46,191,110,0.8)" }}
+                      >
                         <CheckCircle className="h-2.5 w-2.5" />
                         Verified
-                      </div>
+                      </span>
                     ) : (
-                      <div className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/90 flex items-center gap-0.5">
+                      <span
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                        style={{ background: "rgba(232,58,58,0.8)" }}
+                      >
                         <XCircle className="h-2.5 w-2.5" />
                         Unverified
-                      </div>
+                      </span>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Verify Button for unverified users → redirect to membership page */}
+              {/* Verify now button */}
               {!user?.is_verified && (
                 <Link
                   href="/memberships"
                   onClick={handleNavClick}
-                  className="flex items-center justify-center gap-1.5 w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-semibold text-xs py-1.5 px-3 rounded-lg shadow-lg transition-all mb-2.5 no-underline hover:no-underline"
+                  className="flex items-center justify-center gap-1.5 w-full text-white font-semibold text-xs py-1.5 px-3 rounded-lg mb-2.5 no-underline hover:no-underline transition-opacity hover:opacity-90"
+                  style={{ background: "var(--color-success)" }}
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Verify Now
                 </Link>
               )}
 
-              {/* Info Items */}
+              {/* Info rows */}
               <div className="space-y-1.5">
-                {/* Phone */}
-                <div className="flex items-center gap-2 bg-white/10 rounded-lg px-2.5 py-1.5 backdrop-blur-sm">
-                  <Phone className="h-3.5 w-3.5 text-white/70 flex-shrink-0" />
+                <div
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
+                  style={{ background: "rgba(255,255,255,0.12)" }}
+                >
+                  <Phone className="h-3.5 w-3.5 opacity-70 shrink-0" />
                   <span className="text-xs font-medium truncate">
                     {user?.user.phone_number || "No phone"}
                   </span>
                 </div>
 
-                {/* Referral Code */}
-                <div
-                  className="flex items-center justify-between bg-white/10 rounded-lg px-2.5 py-1.5 backdrop-blur-sm cursor-pointer hover:bg-white/20 transition-colors group"
+                <button
                   onClick={copyReferralCode}
+                  className="flex items-center justify-between w-full rounded-lg px-2.5 py-1.5 cursor-pointer group transition-colors"
+                  style={{ background: "rgba(255,255,255,0.12)" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "rgba(255,255,255,0.12)")
+                  }
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] text-white/70">Refer:</span>
-                    <span className="font-mono font-bold text-xs text-yellow-300 truncate">
+                    <span className="text-[10px] opacity-70 shrink-0">Refer:</span>
+                    <span className="font-mono font-bold text-xs truncate" style={{ color: "#fde68a" }}>
                       {user?.own_refercode}
                     </span>
                   </div>
-                  <button className="p-0.5 hover:bg-white/10 rounded transition-colors flex-shrink-0">
-                    {copied ? (
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5 text-white/70 group-hover:text-white" />
-                    )}
-                  </button>
-                </div>
+                  {copied ? (
+                    <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--color-success)" }} />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* ── Navigation ── */}
         <div className="flex-1 overflow-y-auto px-2.5 py-1.5">
-          {/* Main Navigation */}
-          <div className="mb-3">
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
+
+          {/* Main nav */}
+          <div className="mb-4">
+            <p
+              className="text-[9px] font-mono tracking-widest uppercase px-2.5 mb-1.5"
+              style={{ color: "var(--color-text-3)" }}
+            >
               {t("nav.mainSection")}
             </p>
             <nav className="space-y-0.5">
-              {mainNavItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={handleNavClick}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-all no-underline hover:no-underline ${
-                      isActive
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
-                    }`}
-                  >
-                    <item.icon
-                      className={`h-4 w-4 stroke-[2.25] ${
-                        isActive ? "text-violet-600 dark:text-violet-400" : ""
-                      }`}
-                    />
-                    <span>{t(item.key as any)}</span>
-                  </Link>
-                );
-              })}
+              {mainNavItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={t(item.key as any)}
+                  isActive={pathname === item.href}
+                />
+              ))}
             </nav>
           </div>
 
-          {/* Shop Navigation */}
-          <div className="mb-3">
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
+          {/* Shop nav */}
+          <div className="mb-4">
+            <p
+              className="text-[9px] font-mono tracking-widest uppercase px-2.5 mb-1.5"
+              style={{ color: "var(--color-text-3)" }}
+            >
               {t("nav.shopSection")}
             </p>
             <nav className="space-y-0.5">
-              {shopNavItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={handleNavClick}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-all no-underline hover:no-underline ${
-                      isActive
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
-                    }`}
-                  >
-                    <item.icon
-                      className={`h-4 w-4 stroke-[2.25] ${
-                        isActive ? "text-violet-600 dark:text-violet-400" : ""
-                      }`}
-                    />
-                    <span>{t(item.key as any)}</span>
-                  </Link>
-                );
-              })}
+              {shopNavItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={t(item.key as any)}
+                  isActive={pathname === item.href}
+                />
+              ))}
             </nav>
           </div>
 
-          {/* Vendor Navigation */}
-          <div className="mb-3">
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
+          {/* Vendor nav */}
+          <div className="mb-4">
+            <p
+              className="text-[9px] font-mono tracking-widest uppercase px-2.5 mb-1.5"
+              style={{ color: "var(--color-text-3)" }}
+            >
               {t("nav.vendorSection")}
             </p>
             <nav className="space-y-0.5">
@@ -361,30 +386,42 @@ export function MobileSideDrawer({
                 <>
                   <button
                     onClick={() => setVendorExpanded(!vendorExpanded)}
-                    className={`flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                      pathname.startsWith("/vendor")
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
-                    }`}
+                    className="flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{
+                      background: pathname.startsWith("/vendor")
+                        ? "var(--color-surface-2)"
+                        : "transparent",
+                      color: pathname.startsWith("/vendor")
+                        ? "var(--color-primary)"
+                        : "var(--color-text-2)",
+                      borderLeft: pathname.startsWith("/vendor")
+                        ? "2px solid var(--color-primary)"
+                        : "2px solid transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!pathname.startsWith("/vendor"))
+                        e.currentTarget.style.background = "var(--color-surface-2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!pathname.startsWith("/vendor"))
+                        e.currentTarget.style.background = "transparent";
+                    }}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Store
-                        className={`h-4 w-4 stroke-[2.25] ${
-                          pathname.startsWith("/vendor")
-                            ? "text-violet-600 dark:text-violet-400"
-                            : ""
-                        }`}
-                      />
+                      <Store className="h-4 w-4 shrink-0" strokeWidth={2} />
                       <span>{t("nav.myShop")}</span>
                     </div>
                     <ChevronDown
-                      className={`h-4 w-4 stroke-[2.25] transition-transform duration-200 ${
-                        vendorExpanded ? "rotate-180" : ""
-                      }`}
+                      className={`h-4 w-4 shrink-0 transition-transform duration-200 ${vendorExpanded ? "rotate-180" : ""}`}
+                      strokeWidth={2}
                     />
                   </button>
+
                   {vendorExpanded && (
-                    <div className="ml-4 space-y-0.5 border-l-2 border-violet-200 dark:border-violet-800 pl-2.5 mt-0.5">
+                    <div
+                      className="ml-4 pl-2.5 mt-0.5 space-y-0.5"
+                      style={{ borderLeft: "2px solid var(--color-border)" }}
+                    >
                       {vendorSubItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
@@ -392,13 +429,20 @@ export function MobileSideDrawer({
                             key={item.href}
                             href={item.href}
                             onClick={handleNavClick}
-                            className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-all ${
-                              isActive
-                                ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
-                                : "text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-slate-700 dark:hover:text-slate-200 font-semibold"
-                            }`}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors no-underline hover:no-underline"
+                            style={{
+                              color: isActive ? "var(--color-primary)" : "var(--color-text-2)",
+                              background: isActive ? "var(--color-surface-2)" : "transparent",
+                              fontWeight: isActive ? 600 : 400,
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isActive) e.currentTarget.style.background = "var(--color-surface-2)";
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isActive) e.currentTarget.style.background = "transparent";
+                            }}
                           >
-                            <item.icon className="h-3.5 w-3.5 stroke-[2.25]" />
+                            <item.icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                             <span>{t(item.key as any)}</span>
                           </Link>
                         );
@@ -410,76 +454,96 @@ export function MobileSideDrawer({
                 <Link
                   href="/vendor"
                   onClick={handleNavClick}
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5 hover:from-violet-500/10 hover:to-fuchsia-500/10 transition-all no-underline hover:no-underline"
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors no-underline hover:no-underline"
+                  style={{
+                    background: "rgba(41,171,226,0.06)",
+                    color: "var(--color-primary)",
+                    border: "1px solid rgba(41,171,226,0.2)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "rgba(41,171,226,0.12)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "rgba(41,171,226,0.06)")
+                  }
                 >
-                  <Sparkles className="h-4 w-4 stroke-[2.25] text-fuchsia-500" />
-                  <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent font-medium">
-                    {t("nav.becomeVendor")}
-                  </span>
+                  <Sparkles className="h-4 w-4 shrink-0" style={{ color: "var(--color-accent)" }} strokeWidth={2} />
+                  <span>{t("nav.becomeVendor")}</span>
                 </Link>
               )}
             </nav>
           </div>
 
-          {/* Other Navigation */}
+          {/* Other nav */}
           <div className="mb-3">
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2.5 mb-1.5">
+            <p
+              className="text-[9px] font-mono tracking-widest uppercase px-2.5 mb-1.5"
+              style={{ color: "var(--color-text-3)" }}
+            >
               {t("nav.otherSection")}
             </p>
             <nav className="space-y-0.5">
-              {otherNavItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={handleNavClick}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-all no-underline hover:no-underline ${
-                      isActive
-                        ? "bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-violet-600 dark:text-violet-400 font-bold"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20"
-                    }`}
-                  >
-                    <item.icon
-                      className={`h-4 w-4 stroke-[2.25] ${
-                        isActive ? "text-violet-600 dark:text-violet-400" : ""
-                      }`}
-                    />
-                    <span>{t(item.key as any)}</span>
-                  </Link>
-                );
-              })}
-              {/* Theme Toggle */}
+              {otherNavItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={t(item.key as any)}
+                  isActive={pathname === item.href}
+                />
+              ))}
+
+              {/* Theme toggle */}
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{ color: "var(--color-text-2)", borderLeft: "2px solid transparent" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--color-surface-2)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 {theme === "dark" ? (
-                  <Sun className="h-4 w-4 stroke-[2.25]" />
+                  <Sun className="h-4 w-4 shrink-0" strokeWidth={2} />
                 ) : (
-                  <Moon className="h-4 w-4 stroke-[2.25]" />
+                  <Moon className="h-4 w-4 shrink-0" strokeWidth={2} />
                 )}
-                <span>
-                  {theme === "dark" ? t("theme.light") : t("theme.dark")}
-                </span>
+                <span>{theme === "dark" ? t("theme.light") : t("theme.dark")}</span>
               </button>
             </nav>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-2 border-t border-violet-200/50 dark:border-violet-800/30">
-          {/* Logout */}
+        {/* ── Footer ── */}
+        <div
+          className="p-2.5 shrink-0"
+          style={{ borderTop: "1px solid var(--color-border)" }}
+        >
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center gap-2 w-full px-2 py-1.5 rounded-md text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{
+              color: "var(--color-error)",
+              background: "rgba(232,58,58,0.08)",
+              border: "1px solid rgba(232,58,58,0.2)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(232,58,58,0.14)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "rgba(232,58,58,0.08)")
+            }
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-3.5 w-3.5" strokeWidth={2} />
             <span>{t("nav.logout")}</span>
           </button>
 
-          {/* Version */}
-          <p className="text-[9px] text-center text-slate-400 dark:text-slate-500 mt-1.5">
+          <p
+            className="text-[9px] text-center mt-1.5 font-mono"
+            style={{ color: "var(--color-text-3)" }}
+          >
             v1.0.0
           </p>
         </div>
