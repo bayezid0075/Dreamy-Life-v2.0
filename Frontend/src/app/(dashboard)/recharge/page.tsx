@@ -25,7 +25,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -36,6 +42,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { walletsApi, rechargeApi } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import type { MobileRecharge } from "@/lib/api/recharge";
 
 // Backend accepts 3,4,5,6,7,8,9 (GP 3/7, BL 4/9). One entry per brand for Select.
@@ -46,12 +53,54 @@ const OPERATORS: {
   icon: LucideIcon;
   iconClass: string;
   bgClass: string;
+  /** Transparent logo image (no background). When set, shown instead of icon in Select. */
+  logo?: string;
 }[] = [
-  { value: "7", label: "Grameenphone", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15" },
-  { value: "9", label: "Banglalink", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15" },
-  { value: "8", label: "Robi", short: "Robi", icon: Wifi, iconClass: "text-rose-600 dark:text-rose-400", bgClass: "bg-rose-500/15" },
-  { value: "6", label: "Airtel", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15" },
-  { value: "5", label: "TeleTalk", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15" },
+  {
+    value: "7",
+    label: "Grameenphone",
+    short: "GP",
+    icon: Signal,
+    iconClass: "text-emerald-600 dark:text-emerald-400",
+    bgClass: "bg-emerald-500/15",
+    logo: "/operators/grameenphone.png",
+  },
+  {
+    value: "9",
+    label: "Banglalink",
+    short: "BL",
+    icon: Radio,
+    iconClass: "text-blue-600 dark:text-blue-400",
+    bgClass: "bg-blue-500/15",
+    logo: "/operators/banglalink.png",
+  },
+  {
+    value: "8",
+    label: "Robi",
+    short: "Robi",
+    icon: Wifi,
+    iconClass: "text-rose-600 dark:text-rose-400",
+    bgClass: "bg-rose-500/15",
+    logo: "/operators/robi.png",
+  },
+  {
+    value: "6",
+    label: "Airtel",
+    short: "Airtel",
+    icon: Smartphone,
+    iconClass: "text-red-600 dark:text-red-400",
+    bgClass: "bg-red-500/15",
+    logo: "/operators/airtel.png",
+  },
+  {
+    value: "5",
+    label: "TeleTalk",
+    short: "TT",
+    icon: Phone,
+    iconClass: "text-violet-600 dark:text-violet-400",
+    bgClass: "bg-violet-500/15",
+    logo: "/operators/teletalk.png",
+  },
 ];
 
 const ALLOWED_OPERATOR_IDS = ["3", "4", "5", "6", "7", "8", "9"];
@@ -109,7 +158,11 @@ export default function RechargePage() {
     const amt = searchParams.get("amount")?.trim();
     if (op && amt) {
       const amtNum = parseFloat(amt);
-      if (!Number.isNaN(amtNum) && amtNum >= 1 && ALLOWED_OPERATOR_IDS.includes(op)) {
+      if (
+        !Number.isNaN(amtNum) &&
+        amtNum >= 1 &&
+        ALLOWED_OPERATOR_IDS.includes(op)
+      ) {
         // Normalize GP 3->7, BL 4->9 so Select displays correctly (one per brand)
         const normalizedOp = op === "3" ? "7" : op === "4" ? "9" : op;
         setOperator(normalizedOp);
@@ -137,15 +190,23 @@ export default function RechargePage() {
       if (!fromOffer) setAmount("");
       toast.success("Recharge request submitted successfully.");
     },
-    onError: (err: { response?: { data?: { detail?: string } }; detail?: string }) => {
+    onError: (err: {
+      response?: { data?: { detail?: string } };
+      detail?: string;
+    }) => {
       const msg =
-        err?.response?.data?.detail ?? (err as { detail?: string }).detail ?? "Recharge failed.";
+        err?.response?.data?.detail ??
+        (err as { detail?: string }).detail ??
+        "Recharge failed.";
       toast.error(msg);
     },
   });
 
   const availableBalance = wallet
-    ? Math.max(0, parseFloat(wallet.balance) - parseFloat(wallet.reserved_balance || "0"))
+    ? Math.max(
+        0,
+        parseFloat(wallet.balance) - parseFloat(wallet.reserved_balance || "0"),
+      )
     : 0;
   const amountNum = parseFloat(amount) || 0;
   const canSubmit =
@@ -201,7 +262,8 @@ export default function RechargePage() {
                 Mobile Recharge
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5 max-w-md">
-                Recharge any number instantly from your wallet. Verified users only.
+                Recharge any number instantly from your wallet. Verified users
+                only.
               </p>
             </div>
           </div>
@@ -226,14 +288,19 @@ export default function RechargePage() {
                 View wallet →
               </Link>
             </div>
-            <CardDescription>Amount will be deducted from your wallet</CardDescription>
+            <CardDescription>
+              Amount will be deducted from your wallet
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {walletLoading ? (
               <Skeleton className="h-10 w-40 rounded-xl" />
             ) : (
               <p className="text-3xl sm:text-4xl font-bold tracking-tight text-primary">
-                ৳{availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ৳
+                {availableBalance.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
               </p>
             )}
           </CardContent>
@@ -256,39 +323,49 @@ export default function RechargePage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="operator" className="text-sm font-medium">
-                    Operator
-                  </Label>
-                  <Select value={operator} onValueChange={fromOffer ? () => {} : setOperator}>
-                    <SelectTrigger
-                      id="operator"
-                      disabled={fromOffer}
-                      className="rounded-xl h-11 border-2 focus:border-primary focus:ring-primary/20 w-full min-w-[10rem] [&_span]:flex [&_span]:items-center [&_span]:gap-2"
-                    >
-                      <SelectValue placeholder="Select operator" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl min-w-[var(--radix-select-trigger-width)]">
-                      {OPERATORS.map((op) => {
-                        const Icon = op.icon;
-                        return (
-                          <SelectItem
-                            key={op.value}
-                            value={op.value}
-                            className="rounded-lg pl-3 gap-3 py-2.5"
-                          >
-                            <span className="flex items-center gap-3">
-                              <span
-                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${op.bgClass} ${op.iconClass}`}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </span>
-                              <span className="font-medium">{op.label}</span>
+                  <Label className="text-sm font-medium">Operator</Label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {OPERATORS.map((op) => {
+                      const Icon = op.icon;
+                      const isSelected = operator === op.value;
+                      return (
+                        <button
+                          key={op.value}
+                          type="button"
+                          id={op.value === "7" ? "operator" : undefined}
+                          disabled={fromOffer}
+                          onClick={() => !fromOffer && setOperator(op.value)}
+                          className={cn(
+                            "inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all shrink-0",
+                            isSelected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-muted/40 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground",
+                          )}
+                        >
+                          {op.logo ? (
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white">
+                              <img
+                                src={op.logo}
+                                alt=""
+                                className="h-8 w-8 object-contain object-center"
+                              />
                             </span>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                          ) : (
+                            <span
+                              className={cn(
+                                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                                op.bgClass,
+                                op.iconClass,
+                              )}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </span>
+                          )}
+                          <span>{op.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="number_type" className="text-sm font-medium">
@@ -303,7 +380,11 @@ export default function RechargePage() {
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {NUMBER_TYPES.map((nt) => (
-                        <SelectItem key={nt.value} value={nt.value} className="rounded-lg">
+                        <SelectItem
+                          key={nt.value}
+                          value={nt.value}
+                          className="rounded-lg"
+                        >
                           {nt.label}
                         </SelectItem>
                       ))}
@@ -322,7 +403,9 @@ export default function RechargePage() {
                   placeholder="e.g. 01700000000"
                   value={mobileNumber}
                   onChange={(e) =>
-                    setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 11))
+                    setMobileNumber(
+                      e.target.value.replace(/\D/g, "").slice(0, 11),
+                    )
                   }
                   className="rounded-xl h-11 border-2 focus-visible:ring-primary/20 focus-visible:border-primary text-base"
                   maxLength={11}
@@ -356,7 +439,11 @@ export default function RechargePage() {
                   type="number"
                   min={1}
                   step={1}
-                  placeholder={fromOffer ? undefined : `Enter amount (max ৳${availableBalance.toLocaleString()})`}
+                  placeholder={
+                    fromOffer
+                      ? undefined
+                      : `Enter amount (max ৳${availableBalance.toLocaleString()})`
+                  }
                   value={amount}
                   onChange={(e) => !fromOffer && setAmount(e.target.value)}
                   disabled={fromOffer}
@@ -420,7 +507,9 @@ export default function RechargePage() {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-4">
                   <History className="h-7 w-7" />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground">No recharges yet</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  No recharges yet
+                </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Your recharge history will appear here
                 </p>
@@ -434,14 +523,16 @@ export default function RechargePage() {
                   >
                     <div className="flex items-center gap-4 min-w-0">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-semibold text-sm">
-                        {OPERATORS.find((o) => o.value === r.operator)?.short ?? "—"}
+                        {OPERATORS.find((o) => o.value === r.operator)?.short ??
+                          "—"}
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-foreground truncate">
                           {r.mobile_number}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          ৳{parseFloat(r.amount).toLocaleString()} · {r.refid.slice(0, 8)}…
+                          ৳{parseFloat(r.amount).toLocaleString()} ·{" "}
+                          {r.refid.slice(0, 8)}…
                         </p>
                       </div>
                     </div>

@@ -30,12 +30,13 @@ const OPERATORS: {
   icon: LucideIcon;
   bgClass: string;
   iconClass: string;
+  logo?: string;
 }[] = [
-  { value: "7", short: "GP", icon: Signal, bgClass: "bg-emerald-500/15", iconClass: "text-emerald-600 dark:text-emerald-400" },
-  { value: "9", short: "BL", icon: Radio, bgClass: "bg-blue-500/15", iconClass: "text-blue-600 dark:text-blue-400" },
-  { value: "8", short: "Robi", icon: Wifi, bgClass: "bg-rose-500/15", iconClass: "text-rose-600 dark:text-rose-400" },
-  { value: "6", short: "Airtel", icon: Smartphone, bgClass: "bg-red-500/15", iconClass: "text-red-600 dark:text-red-400" },
-  { value: "5", short: "TT", icon: Phone, bgClass: "bg-violet-500/15", iconClass: "text-violet-600 dark:text-violet-400" },
+  { value: "7", short: "GP", icon: Signal, bgClass: "bg-emerald-500/15", iconClass: "text-emerald-600 dark:text-emerald-400", logo: "/operators/grameenphone.png" },
+  { value: "9", short: "BL", icon: Radio, bgClass: "bg-blue-500/15", iconClass: "text-blue-600 dark:text-blue-400", logo: "/operators/banglalink.png" },
+  { value: "8", short: "Robi", icon: Wifi, bgClass: "bg-rose-500/15", iconClass: "text-rose-600 dark:text-rose-400", logo: "/operators/robi.png" },
+  { value: "6", short: "Airtel", icon: Smartphone, bgClass: "bg-red-500/15", iconClass: "text-red-600 dark:text-red-400", logo: "/operators/airtel.png" },
+  { value: "5", short: "TT", icon: Phone, bgClass: "bg-violet-500/15", iconClass: "text-violet-600 dark:text-violet-400", logo: "/operators/teletalk.png" },
 ];
 
 function StatusBadge({ status }: { status: string }) {
@@ -212,9 +213,11 @@ export default function RechargeHistoryPage() {
                     >
                       <div className="flex items-center gap-4 min-w-0">
                         <div
-                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${op?.bgClass ?? "bg-muted"} ${op?.iconClass ?? "text-muted-foreground"}`}
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl overflow-hidden ${op?.logo ? "bg-white" : `${op?.bgClass ?? "bg-muted"} ${op?.iconClass ?? "text-muted-foreground"}`}`}
                         >
-                          {op ? (
+                          {op?.logo ? (
+                            <img src={op.logo} alt="" className="h-9 w-9 object-contain object-center" />
+                          ) : op ? (
                             <op.icon className="h-5 w-5" />
                           ) : (
                             <Smartphone className="h-5 w-5" />

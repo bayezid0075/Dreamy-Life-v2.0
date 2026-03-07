@@ -33,7 +33,7 @@ interface NavItem {
 
 const staticNavItems: NavItem[] = [
   { key: "nav.wallet", href: "/wallet", icon: Wallet },
-  { key: "nav.recharge", href: "/recharge", icon: Smartphone, imageSrc: "/icons/smartphone-recharge.png" },
+  { key: "nav.recharge", href: "/recharge", icon: Smartphone },
   { key: "nav.driveOffer", href: "/recharge/drive", icon: Car },
   { key: "nav.shop", href: "/reseller", icon: Store },
   { key: "nav.referrals", href: "/referrals", icon: Users },
@@ -59,6 +59,14 @@ export function MobileNavGrid() {
     : { key: "nav.vendor", href: "/vendor", icon: Sparkles };
 
   const primaryNavItems: NavItem[] = [...staticNavItems, vendorNavItem];
+
+  /** First 3 rows visible initially (3×3 = 9 items on 3-col grid). Rest after "Show More". */
+  const INITIAL_ROWS = 3;
+  const COLS_SMALL = 3;
+  const initialCount = INITIAL_ROWS * COLS_SMALL; // 9 items = 3 rows when grid-cols-3
+  const initialItems = primaryNavItems.slice(0, Math.min(primaryNavItems.length, initialCount));
+  const morePrimaryItems = primaryNavItems.slice(initialItems.length);
+  const allMoreItems: NavItem[] = [...morePrimaryItems, ...secondaryNavItems];
 
   const renderNavItem = (item: NavItem) => (
     <Link
@@ -106,37 +114,41 @@ export function MobileNavGrid() {
           boxShadow: "var(--shadow-lg)",
         }}
       >
-        {/* Primary grid */}
+        {/* First 3 rows (initial items) */}
         <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4">
-          {primaryNavItems.map(renderNavItem)}
+          {initialItems.map(renderNavItem)}
         </div>
 
-        {/* Expandable secondary grid */}
-        {expanded && (
+        {/* Divider line after 3 rows */}
+        {allMoreItems.length > 0 && (
           <div
-            className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-5 pt-4 sm:pt-5"
+            className="mt-4 sm:mt-5 pt-4 sm:pt-5"
             style={{ borderTop: "1px solid var(--color-border)" }}
           >
-            {secondaryNavItems.map(renderNavItem)}
+            {expanded ? (
+              <>
+                <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4">
+                  {allMoreItems.map(renderNavItem)}
+                </div>
+                <button
+                  onClick={() => setExpanded(false)}
+                  className="w-full mt-4 sm:mt-5 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium transition-colors py-2 min-h-11 touch-manipulation font-mono tracking-wide"
+                  style={{ color: "var(--color-primary)" }}
+                >
+                  Show Less <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setExpanded(true)}
+                className="w-full flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium transition-colors py-2 min-h-11 touch-manipulation font-mono tracking-wide"
+                style={{ color: "var(--color-primary)" }}
+              >
+                See More <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+              </button>
+            )}
           </div>
         )}
-
-        {/* Expand / collapse */}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full mt-4 sm:mt-5 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium transition-colors py-2 min-h-11 touch-manipulation font-mono tracking-wide"
-          style={{ color: "var(--color-primary)" }}
-        >
-          {expanded ? (
-            <>
-              Show Less <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
-            </>
-          ) : (
-            <>
-              See More <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
-            </>
-          )}
-        </button>
       </div>
     </div>
   );

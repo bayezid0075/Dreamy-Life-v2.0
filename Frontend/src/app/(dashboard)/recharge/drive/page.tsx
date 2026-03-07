@@ -38,14 +38,15 @@ const OPERATORS: {
   icon: LucideIcon;
   iconClass: string;
   bgClass: string;
+  logo?: string;
 }[] = [
-  { value: "3", label: "Grameenphone", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15" },
-  { value: "7", label: "Grameenphone", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15" },
-  { value: "4", label: "Banglalink", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15" },
-  { value: "9", label: "Banglalink", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15" },
-  { value: "8", label: "Robi", short: "Robi", icon: Wifi, iconClass: "text-rose-600 dark:text-rose-400", bgClass: "bg-rose-500/15" },
-  { value: "6", label: "Airtel", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15" },
-  { value: "5", label: "TeleTalk", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15" },
+  { value: "3", label: "Grameenphone", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15", logo: "/operators/grameenphone.png" },
+  { value: "7", label: "Grameenphone", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15", logo: "/operators/grameenphone.png" },
+  { value: "4", label: "Banglalink", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15", logo: "/operators/banglalink.png" },
+  { value: "9", label: "Banglalink", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15", logo: "/operators/banglalink.png" },
+  { value: "8", label: "Robi", short: "Robi", icon: Wifi, iconClass: "text-rose-600 dark:text-rose-400", bgClass: "bg-rose-500/15", logo: "/operators/robi.png" },
+  { value: "6", label: "Airtel", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15", logo: "/operators/airtel.png" },
+  { value: "5", label: "TeleTalk", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15", logo: "/operators/teletalk.png" },
 ];
 
 // Map pack operator_id to primary value for recharge URL (GP 3/7->7, BL 4/9->9)
@@ -56,12 +57,12 @@ function toPrimaryOperatorId(opId: string): string {
 }
 
 // Unique operators for filter chips (one per brand; GP 3/7, BL 4/9 map to single chip)
-const FILTER_OPERATORS: { value: string; short: string; icon: LucideIcon; iconClass: string; bgClass: string; matchIds: string[] }[] = [
-  { value: "7", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15", matchIds: ["3", "7"] },
-  { value: "9", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15", matchIds: ["4", "9"] },
-  { value: "8", short: "Robi", icon: Wifi, iconClass: "text-rose-600 dark:text-rose-400", bgClass: "bg-rose-500/15", matchIds: ["8"] },
-  { value: "6", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15", matchIds: ["6"] },
-  { value: "5", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15", matchIds: ["5"] },
+const FILTER_OPERATORS: { value: string; short: string; icon: LucideIcon; iconClass: string; bgClass: string; logo?: string; matchIds: string[] }[] = [
+  { value: "7", short: "GP", icon: Signal, iconClass: "text-emerald-600 dark:text-emerald-400", bgClass: "bg-emerald-500/15", logo: "/operators/grameenphone.png", matchIds: ["3", "7"] },
+  { value: "9", short: "BL", icon: Radio, iconClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/15", logo: "/operators/banglalink.png", matchIds: ["4", "9"] },
+  { value: "8", short: "Robi", icon: Wifi, iconClass: "text-rose-600 dark:text-rose-400", bgClass: "bg-rose-500/15", logo: "/operators/robi.png", matchIds: ["8"] },
+  { value: "6", short: "Airtel", icon: Smartphone, iconClass: "text-red-600 dark:text-red-400", bgClass: "bg-red-500/15", logo: "/operators/airtel.png", matchIds: ["6"] },
+  { value: "5", short: "TT", icon: Phone, iconClass: "text-violet-600 dark:text-violet-400", bgClass: "bg-violet-500/15", logo: "/operators/teletalk.png", matchIds: ["5"] },
 ];
 
 function getPackDisplay(pack: DriveOfferPack) {
@@ -167,9 +168,15 @@ export default function DriveOfferPage() {
                         : "border-border bg-muted/40 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground"
                     )}
                   >
-                    <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md", op.bgClass, op.iconClass)}>
-                      <op.icon className="h-3.5 w-3.5" />
-                    </span>
+                    {op.logo ? (
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md overflow-hidden bg-white">
+                        <img src={op.logo} alt="" className="h-5 w-5 object-contain object-center" />
+                      </span>
+                    ) : (
+                      <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md", op.bgClass, op.iconClass)}>
+                        <op.icon className="h-3.5 w-3.5" />
+                      </span>
+                    )}
                     {op.short}
                   </button>
                 ))}
@@ -251,8 +258,14 @@ export default function DriveOfferPage() {
                     <div className="flex flex-row items-center gap-2 sm:gap-3 px-3 py-2.5 sm:px-4 sm:py-3 min-h-[3.25rem] sm:min-h-0">
                       {/* Operator icon */}
                       {op && (
-                        <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg ${op.bgClass} ${op.iconClass}`}>
-                          <op.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white">
+                          {op.logo ? (
+                            <img src={op.logo} alt="" className="h-8 w-8 sm:h-9 sm:w-9 object-contain object-center" />
+                          ) : (
+                            <div className={`flex h-full w-full items-center justify-center rounded-lg ${op.bgClass} ${op.iconClass}`}>
+                              <op.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </div>
+                          )}
                         </div>
                       )}
                       {!op && (
