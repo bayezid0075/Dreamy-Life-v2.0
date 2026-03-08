@@ -180,39 +180,42 @@ export default function WalletHistoryPage() {
           ))}
         </div>
 
-        {/* Summary card with visual */}
-        <Card className={`relative overflow-hidden border-0 shadow-xl bg-gradient-to-br ${config.gradient}`}>
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:20px_20px] opacity-50 pointer-events-none" />
+        {/* Summary card with visual - vibrant theme */}
+        <Card className={`relative overflow-hidden border-0 shadow-2xl shadow-violet-500/20 bg-gradient-to-br ${config.gradient}`}>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:20px_20px] opacity-40 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
           <CardHeader className="relative pb-2">
-            <CardTitle className="text-sm font-medium text-white/90 flex items-center gap-2">
-              <Receipt className="h-4 w-4" />
+            <CardTitle className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)]">
+              <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-white/25 backdrop-blur-sm border border-white/40 shadow-inner">
+                <Receipt className="h-4 w-4 sm:h-5 sm:w-5" />
+              </span>
               Summary
             </CardTitle>
           </CardHeader>
           <CardContent className="relative space-y-4">
             {isLoading ? (
               <div className="space-y-3">
-                <Skeleton className="h-10 w-full bg-white/20 rounded-xl" />
-                <Skeleton className="h-8 w-3/4 bg-white/20 rounded-lg" />
+                <Skeleton className="h-10 w-full bg-white/25 rounded-xl" />
+                <Skeleton className="h-8 w-3/4 bg-white/25 rounded-lg" />
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="rounded-xl bg-white/20 backdrop-blur-sm p-3 sm:p-4 border border-white/30">
-                    <div className="flex items-center gap-2 text-white/80 text-xs sm:text-sm font-medium">
-                      <TrendingUp className="h-4 w-4" />
+                  <div className="rounded-xl bg-black/30 backdrop-blur-sm p-3 sm:p-4 border border-white/30 shadow-md">
+                    <div className="flex items-center gap-2 text-white text-xs sm:text-sm font-semibold [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
+                      <TrendingUp className="h-4 w-4 flex-shrink-0" />
                       Credit
                     </div>
-                    <p className="text-lg sm:text-xl font-bold text-emerald-200 mt-1">
+                    <p className="text-lg sm:text-xl font-bold text-white mt-1 [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">
                       +৳{summary.credit.toLocaleString()}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-white/20 backdrop-blur-sm p-3 sm:p-4 border border-white/30">
-                    <div className="flex items-center gap-2 text-white/80 text-xs sm:text-sm font-medium">
-                      <TrendingDown className="h-4 w-4" />
+                  <div className="rounded-xl bg-black/30 backdrop-blur-sm p-3 sm:p-4 border border-white/30 shadow-md">
+                    <div className="flex items-center gap-2 text-white text-xs sm:text-sm font-semibold [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
+                      <TrendingDown className="h-4 w-4 flex-shrink-0" />
                       Debit
                     </div>
-                    <p className="text-lg sm:text-xl font-bold text-rose-200 mt-1">
+                    <p className="text-lg sm:text-xl font-bold text-white mt-1 [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">
                       -৳{summary.debit.toLocaleString()}
                     </p>
                   </div>
@@ -220,22 +223,22 @@ export default function WalletHistoryPage() {
 
                 {/* Bar visual */}
                 <div className="space-y-2">
-                  <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-white/20">
+                  <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-white/30">
                     <div
-                      className="h-full bg-emerald-400/90 rounded-l-full transition-all duration-500"
+                      className="h-full bg-emerald-300 rounded-l-full transition-all duration-500"
                       style={{ width: `${(summary.credit / summary.max) * 100}%` }}
                     />
                     <div
-                      className="h-full bg-rose-400/90 rounded-r-full transition-all duration-500"
+                      className="h-full bg-rose-300 rounded-r-full transition-all duration-500"
                       style={{ width: `${(summary.debit / summary.max) * 100}%` }}
                     />
                   </div>
-                  <p className="text-[10px] sm:text-xs text-white/70 text-center">
+                  <p className="text-xs sm:text-sm text-white font-medium text-center drop-shadow-sm">
                     Credit vs Debit · Net: {summary.total >= 0 ? '+' : ''}৳{summary.total.toLocaleString()}
                   </p>
                 </div>
 
-                <p className="text-xs text-white/60">
+                <p className="text-xs sm:text-sm text-white/95 font-medium">
                   {filtered.length} transaction{filtered.length !== 1 ? 's' : ''} in selected period
                 </p>
               </>

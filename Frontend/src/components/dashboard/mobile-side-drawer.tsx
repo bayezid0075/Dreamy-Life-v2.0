@@ -29,7 +29,6 @@ import {
   HelpCircle,
   ShieldCheck,
   ChevronDown,
-  Car,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useI18n } from "@/hooks/use-i18n";
@@ -56,11 +55,6 @@ const mainNavItems = [
     key: "nav.wallet",
     href: "/wallet",
     icon: Wallet,
-  },
-  {
-    key: "nav.driveOffer",
-    href: "/recharge/drive",
-    icon: Car,
   },
   {
     key: "nav.referrals",

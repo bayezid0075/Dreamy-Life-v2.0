@@ -172,9 +172,9 @@ export default function RechargePage() {
     }
   }, [searchParams]);
 
-  const { data: wallet, isLoading: walletLoading } = useQuery({
-    queryKey: ["wallet"],
-    queryFn: walletsApi.getWallet,
+  const { data: funds, isLoading: fundsLoading } = useQuery({
+    queryKey: ["funds"],
+    queryFn: walletsApi.getFunds,
   });
 
   const { data: recharges, isLoading: rechargesLoading } = useQuery({
@@ -187,6 +187,7 @@ export default function RechargePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recharge-list"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["funds"] });
       if (!fromOffer) setAmount("");
       toast.success("Recharge request submitted successfully.");
     },
@@ -202,11 +203,8 @@ export default function RechargePage() {
     },
   });
 
-  const availableBalance = wallet
-    ? Math.max(
-        0,
-        parseFloat(wallet.balance) - parseFloat(wallet.reserved_balance || "0"),
-      )
+  const availableBalance = funds
+    ? Math.max(0, parseFloat(String(funds.balance ?? 0)))
     : 0;
   const amountNum = parseFloat(amount) || 0;
   const canSubmit =
@@ -279,7 +277,7 @@ export default function RechargePage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
                   <Wallet className="h-4 w-4" />
                 </div>
-                Available balance
+                Funds balance
               </CardTitle>
               <Link
                 href="/wallet"
@@ -289,11 +287,11 @@ export default function RechargePage() {
               </Link>
             </div>
             <CardDescription>
-              Amount will be deducted from your wallet
+              Recharge is deducted from your funds only
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {walletLoading ? (
+            {fundsLoading ? (
               <Skeleton className="h-10 w-40 rounded-xl" />
             ) : (
               <p className="text-3xl sm:text-4xl font-bold tracking-tight text-primary">

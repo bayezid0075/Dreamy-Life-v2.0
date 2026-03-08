@@ -25,7 +25,6 @@ import {
   BadgeCheck,
   ChevronRight,
   Briefcase,
-  Car,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useI18n } from "@/hooks/use-i18n";
@@ -68,7 +67,6 @@ const mainNavItems = [
   { key: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
   { key: "nav.dashboard", href: "/profile", icon: User },
   { key: "nav.wallet", href: "/wallet", icon: Wallet },
-  { key: "nav.driveOffer", href: "/recharge/drive", icon: Car },
   { key: "nav.referrals", href: "/referrals", icon: Users },
   { key: "nav.memberships", href: "/memberships", icon: Crown },
 ];

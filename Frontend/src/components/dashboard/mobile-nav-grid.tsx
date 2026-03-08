@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Smartphone,
@@ -33,6 +34,25 @@ import {
   ChevronUp,
   Sparkles,
 } from "lucide-react";
+
+import { useAuthStore } from "@/store";
+
+/** Routes that have real pages; all other nav hrefs are "non linked" and redirect to verify or coming-soon. */
+const LINKED_HREFS = new Set([
+  "/recharge",
+  "/recharge/drive",
+  "/vendor",
+  "/reseller",
+  "/marketplace",
+  "/wallet",
+  "/memberships",
+  "/orders",
+  "/referrals",
+  "/profile",
+  "/settings",
+  "/dashboard",
+  "/withdraw",
+]);
 
 interface NavItem {
   label: string;
@@ -76,13 +96,17 @@ const secondaryNavItems: NavItem[] = [
   { label: "পায়ে হাটা",         href: "/walking",          icon: Activity,     color: "#16A34A" },
 ];
 
-function NavChip({ item }: { item: NavItem }) {
-  return (
-    <Link
-      href={item.href}
-      className="flex flex-col items-center gap-1.5 group touch-manipulation active:opacity-75"
-    >
-      {/* Solid color square chip */}
+function NavChip({
+  item,
+  isLinked,
+  onNonLinkedClick,
+}: {
+  item: NavItem;
+  isLinked: boolean;
+  onNonLinkedClick: () => void;
+}) {
+  const content = (
+    <>
       <div
         className="w-full aspect-square flex items-center justify-center rounded-2xl transition-transform duration-150 group-hover:scale-105 group-active:scale-95"
         style={{
@@ -92,20 +116,49 @@ function NavChip({ item }: { item: NavItem }) {
       >
         <item.icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" strokeWidth={1.75} />
       </div>
-
-      {/* Bengali label */}
       <span
         className="text-[10px] sm:text-[11px] font-semibold text-center leading-tight line-clamp-2 min-h-[2.4em] w-full"
         style={{ color: "var(--color-text-1)" }}
       >
         {item.label}
       </span>
-    </Link>
+    </>
+  );
+
+  if (isLinked) {
+    return (
+      <Link
+        href={item.href}
+        className="flex flex-col items-center gap-1.5 group touch-manipulation active:opacity-75"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onNonLinkedClick}
+      className="flex flex-col items-center gap-1.5 group touch-manipulation active:opacity-75 w-full min-w-0"
+    >
+      {content}
+    </button>
   );
 }
 
 export function MobileNavGrid() {
   const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+
+  const handleNonLinkedClick = () => {
+    if (user?.is_verified) {
+      router.push("/coming-soon");
+    } else {
+      router.push("/verify-account");
+    }
+  };
 
   return (
     <div className="md:hidden relative z-10 -mt-2 sm:-mt-4">
@@ -120,7 +173,12 @@ export function MobileNavGrid() {
         {/* Primary grid — always visible */}
         <div className="grid grid-cols-4 gap-3 sm:gap-4">
           {primaryNavItems.map((item) => (
-            <NavChip key={item.href} item={item} />
+            <NavChip
+              key={item.href}
+              item={item}
+              isLinked={LINKED_HREFS.has(item.href)}
+              onNonLinkedClick={handleNonLinkedClick}
+            />
           ))}
         </div>
 
@@ -132,7 +190,12 @@ export function MobileNavGrid() {
           {expanded && (
             <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-4">
               {secondaryNavItems.map((item) => (
-                <NavChip key={item.href} item={item} />
+                <NavChip
+                  key={item.href}
+                  item={item}
+                  isLinked={LINKED_HREFS.has(item.href)}
+                  onNonLinkedClick={handleNonLinkedClick}
+                />
               ))}
             </div>
           )}

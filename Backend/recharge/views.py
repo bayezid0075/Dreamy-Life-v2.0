@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from wallets.models import Wallet, WalletTransaction
+from wallets.models import Wallet, WalletTransaction, Funds, FundsTransaction
 from .models import MobileRecharge
 from .serializers import MobileRechargeSerializer, MobileRechargeCreateSerializer
 from .services import request_recharge, check_recharge_status, generate_refid, get_drive_offer_pack_list
@@ -36,8 +36,8 @@ class RechargeListView(APIView):
 
 class RechargeCreateView(APIView):
     """
-    Create mobile recharge: verified user only, amount <= wallet balance.
-    Deduct wallet -> call API -> if not RECEIVED, refund.
+    Create mobile recharge: verified user only, amount <= funds balance.
+    Deduct funds -> call API -> if not RECEIVED, refund to funds.
     """
     permission_classes = [IsAuthenticated]
 
@@ -58,23 +58,18 @@ class RechargeCreateView(APIView):
         amount = ser.validated_data["amount"].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         with transaction.atomic():
-            wallet = Wallet.objects.select_for_update().filter(user=request.user).first()
-            if not wallet:
+            funds, _ = Funds.objects.select_for_update().get_or_create(user=request.user)
+            if funds.balance < amount:
+                available = funds.balance.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 return Response(
-                    {"detail": "Wallet not found. Add funds first."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            available = (wallet.balance - wallet.reserved_balance).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            if available < amount:
-                return Response(
-                    {"detail": f"Insufficient balance. Available: ৳{available}."},
+                    {"detail": f"Insufficient funds. Available: ৳{available}."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             refid = generate_refid()
-            wallet.balance = (wallet.balance - amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            wallet.save(update_fields=["balance"])
-            WalletTransaction.objects.create(
-                wallet=wallet,
+            funds.balance = (funds.balance - amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            funds.save(update_fields=["balance"])
+            FundsTransaction.objects.create(
+                funds=funds,
                 amount=amount,
                 transaction_type="debit",
                 description=f"Mobile recharge {mobile_number} ৳{amount} (ref: {refid})",
@@ -117,11 +112,11 @@ class RechargeCreateView(APIView):
         rec.status = MobileRecharge.STATUS_FAILED
         rec.save(update_fields=["api_status", "api_recharge_status", "api_message", "trxid", "status"])
         with transaction.atomic():
-            wallet = Wallet.objects.select_for_update().get(user=request.user)
-            wallet.balance = (wallet.balance + amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            wallet.save(update_fields=["balance"])
-            WalletTransaction.objects.create(
-                wallet=wallet,
+            funds = Funds.objects.select_for_update().get(user=request.user)
+            funds.balance = (funds.balance + amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            funds.save(update_fields=["balance"])
+            FundsTransaction.objects.create(
+                funds=funds,
                 amount=amount,
                 transaction_type="credit",
                 description=f"Refund: mobile recharge failed – {api_message[:100]} (ref: {refid})",

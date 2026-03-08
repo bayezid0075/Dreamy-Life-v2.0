@@ -53,10 +53,13 @@ import {
 import { walletsApi, withdrawalsApi } from "@/lib/api";
 import type { Transaction, WithdrawalRequest } from "@/types";
 
-/** Parse amount safely; returns 0 for invalid/empty values. */
+/** Parse amount safely; returns 0 for invalid/empty values. Handles commas and string numbers. */
 function parseAmount(value: string | number | null | undefined): number {
   if (value == null) return 0;
-  const n = typeof value === "number" ? value : parseFloat(String(value));
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const s = String(value).replace(/,/g, "").trim();
+  if (s === "") return 0;
+  const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -208,12 +211,22 @@ export default function WalletPage() {
   const fee = useMemo(() => amountNumber * 0.05, [amountNumber]);
   const totalDebit = useMemo(() => amountNumber + fee, [amountNumber, fee]);
 
-  /** Withdrawable = wallet balance minus reserved (computed here to match backend logic). */
+  /** Withdrawable = wallet available balance. Prefer API available_balance, else balance - reserved. */
   const withdrawableBalance = useMemo(() => {
+    const fromApi = parseAmount(wallet?.available_balance);
+    if (fromApi >= 0 && (wallet?.available_balance != null && String(wallet.available_balance).trim() !== "")) {
+      return Math.round(fromApi * 100) / 100;
+    }
     const b = parseAmount(wallet?.balance);
     const r = parseAmount(wallet?.reserved_balance);
     return Math.max(0, Math.round((b - r) * 100) / 100);
-  }, [wallet?.balance, wallet?.reserved_balance]);
+  }, [wallet?.balance, wallet?.reserved_balance, wallet?.available_balance]);
+
+  /** Original wallet balance (raw balance from API) for display. */
+  const walletBalance = useMemo(
+    () => parseAmount(wallet?.balance),
+    [wallet?.balance],
+  );
 
   const createWithdrawal = useMutation({
     mutationFn: async () => {
@@ -433,14 +446,22 @@ export default function WalletPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
               <p className="text-xs text-muted-foreground">
-                Available wallet balance
+                Wallet balance
               </p>
               <p className="text-lg font-bold mt-1">
                 ৳
-                {withdrawableBalance.toLocaleString(undefined, {
+                {walletBalance.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
+              </p>
+              {parseAmount(wallet?.reserved_balance) > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Withdrawable: ৳{withdrawableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (after reserved)
+                </p>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                You can only withdraw from your wallet balance
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
@@ -548,11 +569,41 @@ export default function WalletPage() {
                 value={withdrawAmount}
                 onChange={(e) => setWithdrawAmount(e.target.value)}
                 placeholder="300"
+                className={
+                  amountNumber >= 300 && totalDebit > withdrawableBalance
+                    ? "border-destructive focus-visible:ring-destructive/50"
+                    : ""
+                }
+                aria-invalid={amountNumber >= 300 && totalDebit > withdrawableBalance}
               />
+              {amountNumber >= 300 && totalDebit > withdrawableBalance && (
+                <p className="text-xs font-medium text-destructive">
+                  Amount + fee (৳{totalDebit.toFixed(2)}) cannot exceed your
+                  withdrawable balance (৳
+                  {withdrawableBalance.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                  ).
+                </p>
+              )}
               <div className="text-xs text-muted-foreground">
                 Fee (5%): <span className="font-medium">৳{fee.toFixed(2)}</span>{" "}
                 • Total debit:{" "}
                 <span className="font-medium">৳{totalDebit.toFixed(2)}</span>
+                {withdrawableBalance > 0 && (
+                  <>
+                    {" "}
+                    • Max:{" "}
+                    <span className="font-medium">
+                      ৳
+                      {withdrawableBalance.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -590,7 +641,13 @@ export default function WalletPage() {
             </Button>
             <Button
               onClick={() => createWithdrawal.mutate()}
-              disabled={createWithdrawal.isPending}
+              disabled={
+                createWithdrawal.isPending ||
+                amountNumber < 300 ||
+                totalDebit > withdrawableBalance ||
+                !withdrawPhone.trim() ||
+                withdrawableBalance < 315
+              }
               className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
             >
               {createWithdrawal.isPending ? "Submitting..." : "Withdraw"}
