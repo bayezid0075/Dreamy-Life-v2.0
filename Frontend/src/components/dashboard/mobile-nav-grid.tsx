@@ -31,6 +31,7 @@ import {
   Activity,
   ChevronDown,
   ChevronUp,
+  Sparkles,
 } from "lucide-react";
 
 interface NavItem {
@@ -43,11 +44,12 @@ interface NavItem {
 // First 12 — shown by default (3 rows × 4 cols)
 const primaryNavItems: NavItem[] = [
   { label: "মোবাইল রিচার্জ",    href: "/recharge",            icon: Smartphone,   color: "#06B6D4" },
-  { label: "ইজি ড্রাইভ",        href: "/recharge/easy-drive", icon: Zap,          color: "#3B82F6" },
-  { label: "ড্রাইভ প্যাক",      href: "/recharge/drive-pack", icon: Package,      color: "#6366F1" },
+  { label: "ইজি ড্রাইভ",        href: "/recharge/drive",     icon: Zap,          color: "#3B82F6" },
+  { label: "ভেন্ডর",            href: "/vendor",             icon: Sparkles,     color: "#6366F1" },
   { label: "রিসেলিং",           href: "/reseller",            icon: Store,        color: "#F97316" },
-  { label: "মাইক্রোজব",         href: "/micro-job",           icon: Briefcase,    color: "#8B5CF6" },
+  { label: "মাইক্রোজব",         href: "/marketplace",         icon: Briefcase,    color: "#8B5CF6" },
   { label: "জব পোস্ট",          href: "/job-post",            icon: FileText,     color: "#EC4899" },
+  { label: "ড্রাইভ প্যাক",      href: "/recharge/drive-pack", icon: Package,      color: "#0EA5E9" },
   { label: "জিমেইল সেল",        href: "/sell/gmail",          icon: Mail,         color: "#EF4444" },
   { label: "ফেসবুক সেল",        href: "/sell/facebook",       icon: Globe,        color: "#2563EB" },
   { label: "ইনস্টাগ্রাম সেল",  href: "/sell/instagram",      icon: Camera,       color: "#DB2777" },

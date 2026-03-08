@@ -18,7 +18,6 @@ import {
   ChevronLeft,
   Send,
   Phone,
-  Percent,
   History,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -209,6 +208,13 @@ export default function WalletPage() {
   const fee = useMemo(() => amountNumber * 0.05, [amountNumber]);
   const totalDebit = useMemo(() => amountNumber + fee, [amountNumber, fee]);
 
+  /** Withdrawable = wallet balance minus reserved (computed here to match backend logic). */
+  const withdrawableBalance = useMemo(() => {
+    const b = parseAmount(wallet?.balance);
+    const r = parseAmount(wallet?.reserved_balance);
+    return Math.max(0, Math.round((b - r) * 100) / 100);
+  }, [wallet?.balance, wallet?.reserved_balance]);
+
   const createWithdrawal = useMutation({
     mutationFn: async () => {
       if (!withdrawPhone.trim()) {
@@ -300,11 +306,6 @@ export default function WalletPage() {
     },
   ];
 
-  const totalBalance = accounts.reduce(
-    (sum, acc) => sum + parseAmount(acc.balance),
-    0,
-  );
-
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-0 md:py-0 space-y-3 sm:space-y-4 md:space-y-6 pb-4 md:pb-0">
       {/* Header with Back Button */}
@@ -324,72 +325,6 @@ export default function WalletPage() {
           </p>
         </div>
       </div>
-
-      {/* Total Balance Card */}
-      <Card className="relative overflow-hidden border-0 shadow-xl md:shadow-2xl">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500"></div>
-        <div className="absolute inset-0 bg-gradient-to-tl from-cyan-500/20 via-transparent to-amber-500/20"></div>
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:16px_16px] md:bg-[size:24px_24px]"></div>
-        {/* Decorative Orbs */}
-        <div className="absolute -top-8 -right-8 w-24 h-24 md:-top-12 md:-right-12 md:w-48 md:h-48 bg-yellow-400/30 rounded-full blur-2xl md:blur-3xl"></div>
-        <div className="absolute -bottom-8 -left-8 w-24 h-24 md:-bottom-12 md:-left-12 md:w-48 md:h-48 bg-cyan-400/30 rounded-full blur-2xl md:blur-3xl"></div>
-
-        <CardContent className="relative p-4 sm:p-6 md:p-8 text-white">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
-            <div className="text-center md:text-left">
-              <p className="text-xs sm:text-sm font-medium text-white/70 mb-1 md:mb-2">
-                Total Balance
-              </p>
-              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-1 md:mb-2">
-                ৳{totalBalance.toLocaleString()}
-              </div>
-              <p className="text-xs sm:text-sm text-white/60">
-                Across all accounts
-              </p>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:flex md:gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 border border-white/20">
-                <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
-                  <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-emerald-300" />
-                  <span className="text-[10px] sm:text-xs text-white/70">
-                    Income
-                  </span>
-                </div>
-                <div className="text-sm sm:text-base md:text-xl font-bold text-emerald-300">
-                  +৳
-                  {accounts
-                    .reduce((sum, acc) => sum + parseAmount(acc.income), 0)
-                    .toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                </div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 border border-white/20">
-                <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
-                  <TrendingDown className="h-3 w-3 md:h-4 md:w-4 text-rose-300" />
-                  <span className="text-[10px] sm:text-xs text-white/70">
-                    Expense
-                  </span>
-                </div>
-                <div className="text-sm sm:text-base md:text-xl font-bold text-rose-300">
-                  -৳
-                  {accounts
-                    .reduce((sum, acc) => sum + parseAmount(acc.expense), 0)
-                    .toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Individual Balance Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 md:gap-5">
@@ -495,30 +430,18 @@ export default function WalletPage() {
           </div>
         </CardHeader>
         <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
               <p className="text-xs text-muted-foreground">
                 Available wallet balance
               </p>
               <p className="text-lg font-bold mt-1">
                 ৳
-                {Math.max(
-                  0,
-                  wallet?.available_balance != null
-                    ? parseAmount(wallet.available_balance)
-                    : parseAmount(wallet?.balance) -
-                        parseAmount(wallet?.reserved_balance),
-                ).toLocaleString(undefined, {
+                {withdrawableBalance.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
               </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Percent className="h-3.5 w-3.5" /> Charge
-              </p>
-              <p className="text-lg font-bold mt-1">5%</p>
             </div>
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
               <p className="text-xs text-muted-foreground">
@@ -720,33 +643,35 @@ export default function WalletPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all">
-              <TransactionList
-                transactions={allTransactions}
-                isLoading={walletLoading || fundsLoading || pointsLoading}
-              />
-            </TabsContent>
+            <div className="max-h-[50vh] sm:max-h-[55vh] md:max-h-[480px] overflow-y-auto overflow-x-hidden -mx-1 px-1">
+              <TabsContent value="all" className="mt-0">
+                <TransactionList
+                  transactions={allTransactions}
+                  isLoading={walletLoading || fundsLoading || pointsLoading}
+                />
+              </TabsContent>
 
-            <TabsContent value="wallet">
-              <TransactionList
-                transactions={wallet?.transactions}
-                isLoading={walletLoading}
-              />
-            </TabsContent>
+              <TabsContent value="wallet" className="mt-0">
+                <TransactionList
+                  transactions={wallet?.transactions}
+                  isLoading={walletLoading}
+                />
+              </TabsContent>
 
-            <TabsContent value="funds">
-              <TransactionList
-                transactions={funds?.transactions}
-                isLoading={fundsLoading}
-              />
-            </TabsContent>
+              <TabsContent value="funds" className="mt-0">
+                <TransactionList
+                  transactions={funds?.transactions}
+                  isLoading={fundsLoading}
+                />
+              </TabsContent>
 
-            <TabsContent value="points">
-              <TransactionList
-                transactions={points?.transactions}
-                isLoading={pointsLoading}
-              />
-            </TabsContent>
+              <TabsContent value="points" className="mt-0">
+                <TransactionList
+                  transactions={points?.transactions}
+                  isLoading={pointsLoading}
+                />
+              </TabsContent>
+            </div>
           </Tabs>
         </CardContent>
       </Card>

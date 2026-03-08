@@ -72,7 +72,21 @@ function getPackDisplay(pack: DriveOfferPack) {
   const validity = pack.validity;
   const price = pack.price ?? pack.amount;
   const opId = String(pack.operator_id ?? pack.operator ?? "").trim();
-  return { name: String(name || "Offer"), internet, minutes, validity, price, opId };
+  const rawCommission = pack._commission_amount;
+  const commissionNum =
+    rawCommission != null && rawCommission !== ""
+      ? parseFloat(String(rawCommission).replace(/,/g, ""))
+      : NaN;
+  const displayCommission = !Number.isNaN(commissionNum) ? commissionNum * 0.5 : null;
+  return {
+    name: String(name || "Offer"),
+    internet,
+    minutes,
+    validity,
+    price,
+    opId,
+    displayCommission,
+  };
 }
 
 function packMatchesFilter(
@@ -297,14 +311,21 @@ export default function DriveOfferPage() {
                           <span className="text-xs sm:text-sm text-muted-foreground italic">Offer</span>
                         )}
                       </div>
-                      {/* Price + operator label side by side */}
-                      <div className="flex items-center gap-2 sm:gap-3 shrink-0 border-l border-border pl-2 sm:pl-3">
-                        <span className="text-base sm:text-lg font-bold text-violet-700 dark:text-violet-300 tabular-nums">
-                          ৳{typeof d.price === "number" ? d.price.toLocaleString() : (d.price ?? "—")}
-                        </span>
-                        {op && (
-                          <span className="text-[10px] sm:text-xs font-semibold text-foreground/80">
-                            {op.short}
+                      {/* Price + operator label + commission (50% of API) */}
+                      <div className="flex flex-col items-end gap-0.5 shrink-0 border-l border-border pl-2 sm:pl-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <span className="text-base sm:text-lg font-bold text-violet-700 dark:text-violet-300 tabular-nums">
+                            ৳{typeof d.price === "number" ? d.price.toLocaleString() : (d.price ?? "—")}
+                          </span>
+                          {op && (
+                            <span className="text-[10px] sm:text-xs font-semibold text-foreground/80">
+                              {op.short}
+                            </span>
+                          )}
+                        </div>
+                        {d.displayCommission != null && d.displayCommission >= 0 && (
+                          <span className="text-xs sm:text-sm font-bold text-primary bg-primary/15 dark:bg-primary/25 text-center px-2 py-0.5 rounded-md">
+                            Commission ৳{d.displayCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </span>
                         )}
                       </div>
