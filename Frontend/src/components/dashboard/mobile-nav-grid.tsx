@@ -27,26 +27,26 @@ interface NavItem {
   key: string;
   href: string;
   icon: React.ElementType;
-  /** Optional custom image URL */
+  color: string;
   imageSrc?: string;
 }
 
 const staticNavItems: NavItem[] = [
-  { key: "nav.wallet", href: "/wallet", icon: Wallet },
-  { key: "nav.recharge", href: "/recharge", icon: Smartphone },
-  { key: "nav.driveOffer", href: "/recharge/drive", icon: Car },
-  { key: "nav.shop", href: "/reseller", icon: Store },
-  { key: "nav.referrals", href: "/referrals", icon: Users },
-  { key: "nav.orders", href: "/orders", icon: ShoppingBag },
-  { key: "nav.marketplace", href: "/marketplace", icon: Package },
+  { key: "nav.wallet",     href: "/wallet",        icon: Wallet,      color: "#F59E0B" },
+  { key: "nav.recharge",   href: "/recharge",      icon: Smartphone,  color: "#06B6D4" },
+  { key: "nav.driveOffer", href: "/recharge/drive", icon: Car,        color: "#3B82F6" },
+  { key: "nav.shop",       href: "/reseller",      icon: Store,       color: "#F97316" },
+  { key: "nav.referrals",  href: "/referrals",     icon: Users,       color: "#8B5CF6" },
+  { key: "nav.orders",     href: "/orders",        icon: ShoppingBag, color: "#EF4444" },
+  { key: "nav.marketplace",href: "/marketplace",   icon: Package,     color: "#6366F1" },
 ];
 
 const secondaryNavItems: NavItem[] = [
-  { key: "nav.memberships", href: "/memberships", icon: Crown },
-  { key: "nav.rewards", href: "/rewards", icon: Gift },
-  { key: "nav.payment", href: "/payment", icon: CreditCard },
-  { key: "nav.settings", href: "/settings", icon: Settings },
-  { key: "nav.help", href: "/help", icon: HelpCircle },
+  { key: "nav.memberships", href: "/memberships", icon: Crown,       color: "#D97706" },
+  { key: "nav.rewards",     href: "/rewards",     icon: Gift,        color: "#F43F5E" },
+  { key: "nav.payment",     href: "/payment",     icon: CreditCard,  color: "#7C3AED" },
+  { key: "nav.settings",    href: "/settings",    icon: Settings,    color: "#64748B" },
+  { key: "nav.help",        href: "/help",        icon: HelpCircle,  color: "#0EA5E9" },
 ];
 
 export function MobileNavGrid() {
@@ -55,15 +55,14 @@ export function MobileNavGrid() {
   const { t } = useI18n();
 
   const vendorNavItem: NavItem = hasVendor
-    ? { key: "nav.myShop", href: "/vendor", icon: Store }
-    : { key: "nav.vendor", href: "/vendor", icon: Sparkles };
+    ? { key: "nav.myShop",  href: "/vendor", icon: Store,     color: "#EC4899" }
+    : { key: "nav.vendor",  href: "/vendor", icon: Sparkles,  color: "#10B981" };
 
   const primaryNavItems: NavItem[] = [...staticNavItems, vendorNavItem];
 
-  /** First 3 rows visible initially (3×3 = 9 items on 3-col grid). Rest after "Show More". */
   const INITIAL_ROWS = 3;
   const COLS_SMALL = 3;
-  const initialCount = INITIAL_ROWS * COLS_SMALL; // 9 items = 3 rows when grid-cols-3
+  const initialCount = INITIAL_ROWS * COLS_SMALL;
   const initialItems = primaryNavItems.slice(0, Math.min(primaryNavItems.length, initialCount));
   const morePrimaryItems = primaryNavItems.slice(initialItems.length);
   const allMoreItems: NavItem[] = [...morePrimaryItems, ...secondaryNavItems];
@@ -72,31 +71,35 @@ export function MobileNavGrid() {
     <Link
       key={item.href}
       href={item.href}
-      className="flex flex-col items-center justify-center gap-2 group min-w-0 w-full py-1 active:opacity-80 touch-manipulation"
+      className="flex flex-col items-center gap-2 group touch-manipulation active:opacity-80"
     >
-      {/* Icon container */}
+      {/* Colored square chip */}
       <div
-        className="relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl overflow-hidden transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
-        style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}
+        className="w-full aspect-square flex items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
+        style={{
+          background: item.color,
+          boxShadow: `0 4px 12px ${item.color}55`,
+        }}
       >
         {item.imageSrc ? (
           <img
             src={item.imageSrc}
             alt=""
-            className="h-7 w-7 sm:h-8 sm:w-8 object-contain group-hover:scale-110 transition-transform duration-200 z-10"
+            className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
           />
         ) : (
           <item.icon
-            className="h-5 w-5 sm:h-6 sm:w-6 shrink-0 transition-transform duration-200 group-hover:scale-110"
-            style={{ color: "var(--color-primary)" }}
-            strokeWidth={2}
+            className="h-7 w-7 sm:h-8 sm:w-8"
+            color="white"
+            strokeWidth={1.75}
           />
         )}
       </div>
+
       {/* Label */}
       <span
-        className="text-[10px] sm:text-xs font-medium text-center leading-tight line-clamp-1 w-full min-w-0"
-        style={{ color: "var(--color-text-2)", fontFamily: "var(--font-body)" }}
+        className="text-[10px] sm:text-[11px] font-semibold text-center leading-tight line-clamp-2 min-h-[2.4em] w-full"
+        style={{ color: "var(--color-text-1)" }}
       >
         {t(item.key as any)}
       </span>
@@ -105,7 +108,6 @@ export function MobileNavGrid() {
 
   return (
     <div className="md:hidden relative z-10 -mt-2 sm:-mt-4">
-      {/* Floating card over gradient hero */}
       <div
         className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 mx-3 sm:mx-4"
         style={{
@@ -114,12 +116,12 @@ export function MobileNavGrid() {
           boxShadow: "var(--shadow-lg)",
         }}
       >
-        {/* First 3 rows (initial items) */}
+        {/* Primary grid */}
         <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4">
           {initialItems.map(renderNavItem)}
         </div>
 
-        {/* Divider line after 3 rows */}
+        {/* More items */}
         {allMoreItems.length > 0 && (
           <div
             className="mt-4 sm:mt-5 pt-4 sm:pt-5"
@@ -132,19 +134,19 @@ export function MobileNavGrid() {
                 </div>
                 <button
                   onClick={() => setExpanded(false)}
-                  className="w-full mt-4 sm:mt-5 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium transition-colors py-2 min-h-11 touch-manipulation font-mono tracking-wide"
+                  className="w-full mt-4 sm:mt-5 flex items-center justify-center gap-1.5 text-xs font-medium py-2 min-h-11 touch-manipulation font-mono tracking-wide"
                   style={{ color: "var(--color-primary)" }}
                 >
-                  Show Less <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+                  Show Less <ChevronUp className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>
               </>
             ) : (
               <button
                 onClick={() => setExpanded(true)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium transition-colors py-2 min-h-11 touch-manipulation font-mono tracking-wide"
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-medium py-2 min-h-11 touch-manipulation font-mono tracking-wide"
                 style={{ color: "var(--color-primary)" }}
               >
-                See More <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+                See More <ChevronDown className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
             )}
           </div>

@@ -1,2 +1,0 @@
-# Windows reserved name - avoid "invalid path 'nul'" on git add
-/nul
