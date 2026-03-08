@@ -3,108 +3,107 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  Wallet,
-  Users,
-  Crown,
-  ShoppingBag,
+  Smartphone,
+  Zap,
+  Package,
   Store,
-  Settings,
+  Briefcase,
+  FileText,
+  Mail,
+  Globe,
+  Camera,
+  Send,
+  Heart,
+  Gift,
+  Sun,
+  Target,
+  Crown,
+  Keyboard,
+  Calculator,
+  Receipt,
+  Tag,
   HelpCircle,
+  Video,
+  Share2,
+  Star,
+  PlayCircle,
+  MousePointer,
+  Activity,
   ChevronDown,
   ChevronUp,
-  Gift,
-  CreditCard,
-  Sparkles,
-  Package,
-  Smartphone,
-  Car,
 } from "lucide-react";
 
-import { useVendor } from "@/hooks/use-vendor";
-import { useI18n } from "@/hooks/use-i18n";
-
 interface NavItem {
-  key: string;
+  label: string;
   href: string;
   icon: React.ElementType;
   color: string;
-  imageSrc?: string;
 }
 
-const staticNavItems: NavItem[] = [
-  { key: "nav.wallet",     href: "/wallet",        icon: Wallet,      color: "#F59E0B" },
-  { key: "nav.recharge",   href: "/recharge",      icon: Smartphone,  color: "#06B6D4" },
-  { key: "nav.driveOffer", href: "/recharge/drive", icon: Car,        color: "#3B82F6" },
-  { key: "nav.shop",       href: "/reseller",      icon: Store,       color: "#F97316" },
-  { key: "nav.referrals",  href: "/referrals",     icon: Users,       color: "#8B5CF6" },
-  { key: "nav.orders",     href: "/orders",        icon: ShoppingBag, color: "#EF4444" },
-  { key: "nav.marketplace",href: "/marketplace",   icon: Package,     color: "#6366F1" },
+// First 12 — shown by default (3 rows × 4 cols)
+const primaryNavItems: NavItem[] = [
+  { label: "মোবাইল রিচার্জ",    href: "/recharge",            icon: Smartphone,   color: "#06B6D4" },
+  { label: "ইজি ড্রাইভ",        href: "/recharge/easy-drive", icon: Zap,          color: "#3B82F6" },
+  { label: "ড্রাইভ প্যাক",      href: "/recharge/drive-pack", icon: Package,      color: "#6366F1" },
+  { label: "রিসেলিং",           href: "/reseller",            icon: Store,        color: "#F97316" },
+  { label: "মাইক্রোজব",         href: "/micro-job",           icon: Briefcase,    color: "#8B5CF6" },
+  { label: "জব পোস্ট",          href: "/job-post",            icon: FileText,     color: "#EC4899" },
+  { label: "জিমেইল সেল",        href: "/sell/gmail",          icon: Mail,         color: "#EF4444" },
+  { label: "ফেসবুক সেল",        href: "/sell/facebook",       icon: Globe,        color: "#2563EB" },
+  { label: "ইনস্টাগ্রাম সেল",  href: "/sell/instagram",      icon: Camera,       color: "#DB2777" },
+  { label: "টেলিগ্রাম সেল",    href: "/sell/telegram",       icon: Send,         color: "#0EA5E9" },
+  { label: "ব্লাড",             href: "/blood",               icon: Heart,        color: "#DC2626" },
+  { label: "ওয়েলকাম বোনাস",   href: "/bonus/welcome",       icon: Gift,         color: "#10B981" },
 ];
 
+// Remaining 14 — shown on "See More"
 const secondaryNavItems: NavItem[] = [
-  { key: "nav.memberships", href: "/memberships", icon: Crown,       color: "#D97706" },
-  { key: "nav.rewards",     href: "/rewards",     icon: Gift,        color: "#F43F5E" },
-  { key: "nav.payment",     href: "/payment",     icon: CreditCard,  color: "#7C3AED" },
-  { key: "nav.settings",    href: "/settings",    icon: Settings,    color: "#64748B" },
-  { key: "nav.help",        href: "/help",        icon: HelpCircle,  color: "#0EA5E9" },
+  { label: "ডেইলি বোনাস",        href: "/bonus/daily",      icon: Sun,          color: "#F59E0B" },
+  { label: "মাসিক টার্গেট",      href: "/target/monthly",   icon: Target,       color: "#14B8A6" },
+  { label: "লিডারশীপ",           href: "/leadership",       icon: Crown,        color: "#D97706" },
+  { label: "টাইপিং",             href: "/jobs/typing",      icon: Keyboard,     color: "#475569" },
+  { label: "অঙ্ক",               href: "/jobs/math",        icon: Calculator,   color: "#7C3AED" },
+  { label: "ট্যাক্স",            href: "/tax",              icon: Receipt,      color: "#0D9488" },
+  { label: "গিফট কোড",           href: "/gift-code",        icon: Tag,          color: "#F43F5E" },
+  { label: "কুইজ",               href: "/quiz",             icon: HelpCircle,   color: "#A855F7" },
+  { label: "ভিডিও অ্যাডস",      href: "/ads/video",        icon: Video,        color: "#EA580C" },
+  { label: "সোশ্যাল মিডিয়া",   href: "/social-media",     icon: Share2,       color: "#1D4ED8" },
+  { label: "পয়েন্ট আর্নিং",    href: "/points",           icon: Star,         color: "#EAB308" },
+  { label: "ভিডিও টিউটোরিয়াল", href: "/tutorials",        icon: PlayCircle,   color: "#DC2626" },
+  { label: "ক্লিক",              href: "/click-game",       icon: MousePointer, color: "#4F46E5" },
+  { label: "পায়ে হাটা",         href: "/walking",          icon: Activity,     color: "#16A34A" },
 ];
 
-export function MobileNavGrid() {
-  const [expanded, setExpanded] = useState(false);
-  const { hasVendor } = useVendor();
-  const { t } = useI18n();
-
-  const vendorNavItem: NavItem = hasVendor
-    ? { key: "nav.myShop",  href: "/vendor", icon: Store,     color: "#EC4899" }
-    : { key: "nav.vendor",  href: "/vendor", icon: Sparkles,  color: "#10B981" };
-
-  const primaryNavItems: NavItem[] = [...staticNavItems, vendorNavItem];
-
-  const INITIAL_ROWS = 3;
-  const COLS_SMALL = 3;
-  const initialCount = INITIAL_ROWS * COLS_SMALL;
-  const initialItems = primaryNavItems.slice(0, Math.min(primaryNavItems.length, initialCount));
-  const morePrimaryItems = primaryNavItems.slice(initialItems.length);
-  const allMoreItems: NavItem[] = [...morePrimaryItems, ...secondaryNavItems];
-
-  const renderNavItem = (item: NavItem) => (
+function NavChip({ item }: { item: NavItem }) {
+  return (
     <Link
-      key={item.href}
       href={item.href}
-      className="flex flex-col items-center gap-2 group touch-manipulation active:opacity-80"
+      className="flex flex-col items-center gap-1.5 group touch-manipulation active:opacity-75"
     >
-      {/* Colored square chip */}
+      {/* Solid color square chip */}
       <div
-        className="w-full aspect-square flex items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
+        className="w-full aspect-square flex items-center justify-center rounded-2xl transition-transform duration-150 group-hover:scale-105 group-active:scale-95"
         style={{
           background: item.color,
-          boxShadow: `0 4px 12px ${item.color}55`,
+          boxShadow: `0 4px 14px ${item.color}55`,
         }}
       >
-        {item.imageSrc ? (
-          <img
-            src={item.imageSrc}
-            alt=""
-            className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
-          />
-        ) : (
-          <item.icon
-            className="h-7 w-7 sm:h-8 sm:w-8"
-            color="white"
-            strokeWidth={1.75}
-          />
-        )}
+        <item.icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" strokeWidth={1.75} />
       </div>
 
-      {/* Label */}
+      {/* Bengali label */}
       <span
         className="text-[10px] sm:text-[11px] font-semibold text-center leading-tight line-clamp-2 min-h-[2.4em] w-full"
         style={{ color: "var(--color-text-1)" }}
       >
-        {t(item.key as any)}
+        {item.label}
       </span>
     </Link>
   );
+}
+
+export function MobileNavGrid() {
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="md:hidden relative z-10 -mt-2 sm:-mt-4">
@@ -116,41 +115,38 @@ export function MobileNavGrid() {
           boxShadow: "var(--shadow-lg)",
         }}
       >
-        {/* Primary grid */}
-        <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4">
-          {initialItems.map(renderNavItem)}
+        {/* Primary grid — always visible */}
+        <div className="grid grid-cols-4 gap-3 sm:gap-4">
+          {primaryNavItems.map((item) => (
+            <NavChip key={item.href} item={item} />
+          ))}
         </div>
 
-        {/* More items */}
-        {allMoreItems.length > 0 && (
-          <div
-            className="mt-4 sm:mt-5 pt-4 sm:pt-5"
-            style={{ borderTop: "1px solid var(--color-border)" }}
+        {/* Secondary grid — toggled */}
+        <div
+          className="mt-4 pt-4"
+          style={{ borderTop: "1px solid var(--color-border)" }}
+        >
+          {expanded && (
+            <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-4">
+              {secondaryNavItems.map((item) => (
+                <NavChip key={item.href} item={item} />
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full flex items-center justify-center gap-1.5 text-xs font-medium py-2 min-h-10 touch-manipulation"
+            style={{ color: "var(--color-primary)", fontFamily: "var(--font-mono)" }}
           >
             {expanded ? (
-              <>
-                <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-3 sm:gap-4">
-                  {allMoreItems.map(renderNavItem)}
-                </div>
-                <button
-                  onClick={() => setExpanded(false)}
-                  className="w-full mt-4 sm:mt-5 flex items-center justify-center gap-1.5 text-xs font-medium py-2 min-h-11 touch-manipulation font-mono tracking-wide"
-                  style={{ color: "var(--color-primary)" }}
-                >
-                  Show Less <ChevronUp className="h-3.5 w-3.5" strokeWidth={2} />
-                </button>
-              </>
+              <>কম দেখুন <ChevronUp className="h-3.5 w-3.5" strokeWidth={2} /></>
             ) : (
-              <button
-                onClick={() => setExpanded(true)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs font-medium py-2 min-h-11 touch-manipulation font-mono tracking-wide"
-                style={{ color: "var(--color-primary)" }}
-              >
-                See More <ChevronDown className="h-3.5 w-3.5" strokeWidth={2} />
-              </button>
+              <>আরো দেখুন <ChevronDown className="h-3.5 w-3.5" strokeWidth={2} /></>
             )}
-          </div>
-        )}
+          </button>
+        </div>
       </div>
     </div>
   );
