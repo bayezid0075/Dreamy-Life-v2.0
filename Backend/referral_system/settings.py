@@ -45,14 +45,14 @@ WSGI_APPLICATION = "referral_system.wsgi.application"
 ASGI_APPLICATION = "referral_system.asgi.application"
 
 DATABASES = {
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',  # Or 'django.db.backends.postgresql' for psycopg
-        'NAME': 'dreamy_life_v2.0_data',  # Replace with your PostgreSQL database name
-        'USER': 'postgres',      # Replace with your PostgreSQL username (e.g., 'postgres')
-        'PASSWORD': '2516',  # Replace with your PostgreSQL user's password
-        'HOST': 'localhost',
-        'PORT': '5432',               # Default PostgreSQL port
-    }
+    "default": {
+        "ENGINE": env("DB_ENGINE", default="django.db.backends.postgresql"),
+        "NAME": env("DB_NAME", default="dreamy_life_v2.0_data"),
+        "USER": env("DB_USER", default="postgres"),
+        "PASSWORD": env("DB_PASSWORD", default="2516"),
+        "HOST": env("DB_HOST", default="localhost"),
+        "PORT": env("DB_PORT", default="5432"),
+    },
 }
 
 AUTH_USER_MODEL = "users.User"
@@ -121,9 +121,12 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:3333",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
+    "http://127.0.0.1:3333",
     "http://192.168.0.214:3000",
+    "http://192.168.0.214:3333",
 ]
 # Allow dev servers on any port for these hosts (useful for Next.js, Vite, etc.)
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -171,10 +174,10 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER or "noreply@dreamylife.com")
 
 # Frontend URL for password reset links
-FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3333")
 
 # Backend URL for absolute image URLs
-BACKEND_URL = env("BACKEND_URL", default="http://localhost:8000")
+BACKEND_URL = env("BACKEND_URL", default="http://localhost:8888")
 
 # Superadmin: comma-separated list of emails allowed to access the superadmin panel
 SUPERADMIN_ALLOWED_EMAILS = [e.strip().lower() for e in env("SUPERADMIN_ALLOWED_EMAILS", default="").split(",") if e.strip()]

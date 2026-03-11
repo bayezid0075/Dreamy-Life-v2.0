@@ -166,7 +166,7 @@ export const superadminApi = {
 };
 
 export function getSuperadminStreamUrl(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8888";
   const token =
     typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   if (!token) return "";

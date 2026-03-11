@@ -86,10 +86,10 @@ class CreatePaymentAPI(APIView):
         base_url = f"{request_scheme}://{request_host}"
         frontend_url = getattr(settings, 'FRONTEND_URL', None)
         if not frontend_url:
-            if '3000' in request_host or 'localhost' in request_host:
-                frontend_url = f"{request_scheme}://localhost:3000"
+            if '3333' in request_host or 'localhost' in request_host:
+                frontend_url = f"{request_scheme}://localhost:3333"
             else:
-                frontend_url = f"{request_scheme}://{request_host.replace(':8000', ':3000')}"
+                frontend_url = f"{request_scheme}://{request_host.replace(':8888', ':3333')}"
         # UddoktaPay often rejects localhost redirect URLs; use public base if set (e.g. ngrok)
         redirect_base = getattr(settings, 'UDDOKTAPAY_REDIRECT_BASE_URL', None) or ""
         redirect_base = (redirect_base or "").strip().rstrip("/")

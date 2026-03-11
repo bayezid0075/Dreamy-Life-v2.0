@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dreamy_life}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./Backend
+    command: python manage.py runserver 0.0.0.0:8888
+    depends_on:
+      - postgres
+    environment:
+      DEBUG: "True"
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: ${POSTGRES_DB:-dreamy_life}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:8888}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3333}
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./Backend:/app
+
+  frontend:
+    build:
+      context: ./Frontend
+    command: npm run dev -- -p 3333
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8888}
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:

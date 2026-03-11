@@ -171,7 +171,7 @@ class PasswordResetRequestView(APIView):
         )
         
         # Get frontend URL from settings or use default
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3333')
         reset_url = f"{frontend_url}/reset-password?token={token}"
         
         # Check if email is configured

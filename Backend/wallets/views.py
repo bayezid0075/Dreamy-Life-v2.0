@@ -201,8 +201,8 @@ class AddFundsCreatePaymentView(APIView):
         request_host = request.get_host()
         base_url = f"{request_scheme}://{request_host}"
         frontend_url = getattr(settings, "FRONTEND_URL", None) or (
-            f"{request_scheme}://localhost:3000" if "3000" in request_host or "localhost" in request_host
-            else f"{request_scheme}://{request_host.replace(':8000', ':3000')}"
+            f"{request_scheme}://localhost:3333" if "3333" in request_host or "localhost" in request_host
+            else f"{request_scheme}://{request_host.replace(':8888', ':3333')}"
         )
         redirect_base = (getattr(settings, "UDDOKTAPAY_REDIRECT_BASE_URL", None) or "").strip().rstrip("/")
         if redirect_base:

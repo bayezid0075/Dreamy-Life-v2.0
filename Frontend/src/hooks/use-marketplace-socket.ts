@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const getWsUrl = () => {
   if (typeof window === "undefined") return null;
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8888";
   const wsProtocol = api.startsWith("https") ? "wss" : "ws";
   const host = api.replace(/^https?:\/\//, "");
   return `${wsProtocol}://${host}/ws/marketplace/`;
