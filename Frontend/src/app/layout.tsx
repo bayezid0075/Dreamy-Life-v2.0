@@ -1,25 +1,13 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Sora, DM_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import "@fontsource/bebas-neue/400.css";
+import "@fontsource-variable/sora";
+import "@fontsource/dm-mono/300.css";
+import "@fontsource/dm-mono/400.css";
+import "@fontsource/dm-mono/500.css";
 import "./globals.css";
 
-const bebasNeue = Bebas_Neue({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-bebas-neue",
-});
-
-const sora = Sora({
-  weight: ["300", "400", "500", "600", "700", "800"],
-  subsets: ["latin"],
-  variable: "--font-sora",
-});
-
-const dmMono = DM_Mono({
-  weight: ["300", "400", "500"],
-  subsets: ["latin"],
-  variable: "--font-dm-mono",
-});
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "Dreamy Life",
@@ -33,9 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${bebasNeue.variable} ${sora.variable} ${dmMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -54,10 +54,13 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* --- Typography (variables for font-family; load via layout) --- */
-  --font-display: var(--font-bebas-neue), sans-serif;
-  --font-body: var(--font-sora), sans-serif;
-  --font-mono: var(--font-dm-mono), monospace;
+  /* --- Typography (font families from @fontsource packages) --- */
+  --font-bebas-neue: 'Bebas Neue';
+  --font-sora: 'Sora Variable';
+  --font-dm-mono: 'DM Mono';
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Sora Variable', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 
   /* --- Type Scale --- */
   --text-display-xl: 72px;

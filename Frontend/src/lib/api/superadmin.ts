@@ -9,6 +9,7 @@ import type {
   AccountStatus,
   Vendor,
   Order,
+  SupportConversation,
 } from "@/types";
 
 export const superadminApi = {
@@ -162,6 +163,21 @@ export const superadminApi = {
       payload
     );
     return response.data;
+  },
+
+  // Support (superadmin)
+  getSupportConversations: async (): Promise<SupportConversation[]> => {
+    const response = await apiClient.get<SupportConversation[]>("/api/superadmin/support/conversations/");
+    return response.data;
+  },
+
+  getSupportConversation: async (id: number): Promise<SupportConversation> => {
+    const response = await apiClient.get<SupportConversation>(`/api/superadmin/support/conversations/${id}/`);
+    return response.data;
+  },
+
+  replySupportConversation: async (id: number, message: string): Promise<void> => {
+    await apiClient.post(`/api/superadmin/support/conversations/${id}/`, { message });
   },
 };
 

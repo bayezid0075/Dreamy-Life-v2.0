@@ -130,7 +130,10 @@ export default function MarketplacePage() {
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={workType || "all"} onValueChange={(v) => setWorkType(v === "all" ? "" : v)}>
+              <Select
+                value={workType || "all"}
+                onValueChange={(v) => setWorkType((v === "all" ? "" : v) as "" | "single" | "multi")}
+              >
                 <SelectTrigger className="w-full sm:w-[140px] h-10 rounded-md border border-[#eaecef] dark:border-[#474d57] bg-white dark:bg-[#2b3139] text-sm">
                   <SelectValue placeholder="Work type" />
                 </SelectTrigger>

@@ -517,3 +517,30 @@ export interface PaginatedResponse<T> {
   previous: string | null;
   results: T[];
 }
+
+// Support Types
+export interface SupportMessage {
+  id: number;
+  sender_type: "user" | "guest" | "admin" | string;
+  body: string;
+  admin_user: number | null;
+  created_at: string;
+}
+
+export interface SupportConversation {
+  id: number;
+  user: number | null;
+  guest_email: string;
+  guest_name: string;
+  status: "open" | "closed";
+  created_at: string;
+  updated_at: string;
+  messages?: SupportMessage[];
+  last_message?: {
+    body: string;
+    created_at: string;
+    sender_type: "user" | "guest" | "admin" | string;
+  } | null;
+  user_display_name?: string | null;
+  user_refer_code?: string | null;
+}

@@ -12,3 +12,4 @@ export { withdrawalsApi, superadminWithdrawalsApi } from "./withdrawals";
 export { notificationsApi } from "./notifications";
 export { marketplaceApi } from "./marketplace";
 export { rechargeApi } from "./recharge";
+export { supportApi } from "./support";
