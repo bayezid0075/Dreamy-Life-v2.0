@@ -15,12 +15,17 @@ ENV NODE_ENV=production \
     PORT=3333 \
     HOSTNAME=0.0.0.0
 
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.* ./
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3333
 
-CMD ["npm", "run", "start", "--", "-p", "3333"]
+ENV PORT=3333
+
+# server.js is created by next build from the standalone output
+# https://nextjs.org/docs/pages/api-reference/next-config-js/output
+CMD ["node", "server.js"]
