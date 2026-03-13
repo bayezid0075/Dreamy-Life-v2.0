@@ -62,6 +62,7 @@ import {
 
 import { useAuthStore } from "@/store";
 import { useVendor } from "@/hooks/use-vendor";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 const mainNavItems = [
   { key: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -123,14 +124,7 @@ export function AppSidebar() {
         style={{ borderBottom: "1px solid var(--color-border)" }}
       >
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-white font-bold text-sm shadow-lg transition-transform group-hover:scale-105"
-            style={{
-              background: "linear-gradient(135deg, var(--color-primary-d), var(--color-primary))",
-            }}
-          >
-            DL
-          </div>
+          <BrandLogo size={36} className="shadow-lg transition-transform group-hover:scale-105" />
           <span
             className="font-bold text-lg tracking-tight"
             style={{ color: "var(--color-text-1)" }}

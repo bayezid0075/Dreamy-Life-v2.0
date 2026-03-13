@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdown } from "@/components/dashboard/notification-dropdown";
 import { useAuthStore } from "@/store";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -65,12 +66,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
                 <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
               <Link href="/dashboard" className="flex items-center gap-1.5 sm:gap-2">
-                <div
-                  className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg sm:rounded-xl text-white text-sm sm:text-base font-bold backdrop-blur-sm shadow-lg"
-                  style={{ background: "rgba(255,255,255,0.18)" }}
-                >
-                  DL
-                </div>
+                <BrandLogo size={36} className="backdrop-blur-sm shadow-lg" />
                 <span className="font-bold text-base sm:text-xl text-white">
                   Dreamy Life
                 </span>

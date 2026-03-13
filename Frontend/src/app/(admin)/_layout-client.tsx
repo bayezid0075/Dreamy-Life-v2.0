@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
@@ -13,8 +13,8 @@ import {
   Moon,
   Sun,
   ArrowLeft,
-} from 'lucide-react';
-import { useTheme } from 'next-themes';
+} from "lucide-react";
+import { useTheme } from "next-themes";
 
 import {
   Sidebar,
@@ -30,20 +30,21 @@ import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
-import { useAuthStore } from '@/store';
+import { useAuthStore } from "@/store";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 const adminNavItems = [
   {
@@ -72,9 +73,7 @@ function AdminSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b p-4">
         <Link href="/admin" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-            DL
-          </div>
+          <BrandLogo size={32} />
           <span className="font-semibold text-lg">Admin Panel</span>
         </Link>
       </SidebarHeader>

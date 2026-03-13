@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ShoppingCart, User, Menu } from 'lucide-react';
-import { useState } from 'react';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ShoppingCart, User, Menu } from "lucide-react";
+import { useState } from "react";
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { ThemeToggleSimple } from '@/components/ui/theme-toggle';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ThemeToggleSimple } from "@/components/ui/theme-toggle";
 
-import { useAuthStore, useCartStore } from '@/store';
+import { useAuthStore, useCartStore } from "@/store";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export default function ShopLayout({
   children,
@@ -33,9 +34,10 @@ export default function ShopLayout({
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/25 group-hover:shadow-fuchsia-500/40 transition-all group-hover:scale-105">
-                DL
-              </div>
+              <BrandLogo
+                size={36}
+                className="shadow-lg shadow-fuchsia-500/25 group-hover:shadow-fuchsia-500/40 transition-transform group-hover:scale-105"
+              />
               <span className="font-bold text-lg hidden sm:inline bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
                 Dreamy Life Shop
               </span>
@@ -122,10 +124,10 @@ export default function ShopLayout({
           <div className="grid gap-8 md:grid-cols-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white font-bold shadow-lg">
-                  DL
-                </div>
-                <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">Dreamy Life</span>
+                <BrandLogo size={36} className="shadow-lg" />
+                <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  Dreamy Life
+                </span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Your dream lifestyle platform

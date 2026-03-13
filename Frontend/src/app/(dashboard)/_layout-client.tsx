@@ -14,7 +14,13 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import { MobileBottomNav, AccountStatusBanner, NotificationDropdown, MobileSideDrawer } from "@/components/dashboard";
+import {
+  MobileBottomNav,
+  AccountStatusBanner,
+  NotificationDropdown,
+  MobileSideDrawer,
+} from "@/components/dashboard";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export default function DashboardLayoutClient({
   children,
@@ -157,12 +163,7 @@ export default function DashboardLayoutClient({
                 <Menu className="h-5 w-5" />
               </Button>
               <Link href="/dashboard" className="flex items-center gap-1.5 min-w-0">
-                <div
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white text-xs font-bold"
-                  style={{ background: "linear-gradient(135deg, var(--color-primary-d), var(--color-primary))" }}
-                >
-                  DL
-                </div>
+                <BrandLogo size={28} />
                 <span
                   className="font-semibold text-sm truncate"
                   style={{ color: "var(--color-text-1)" }}

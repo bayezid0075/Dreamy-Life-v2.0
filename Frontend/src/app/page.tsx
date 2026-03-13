@@ -1,10 +1,23 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ArrowRight, ShoppingBag, Users, Crown, Store, Sparkles, Zap, Shield, TrendingUp, Star, ChevronRight } from 'lucide-react';
+import Link from "next/link";
+import {
+  ArrowRight,
+  ShoppingBag,
+  Users,
+  Crown,
+  Store,
+  Sparkles,
+  Zap,
+  Shield,
+  TrendingUp,
+  Star,
+  ChevronRight,
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export default function HomePage() {
   return (
@@ -13,9 +26,10 @@ export default function HomePage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/30 group-hover:shadow-fuchsia-500/50 transition-all group-hover:scale-105">
-              DL
-            </div>
+            <BrandLogo
+              size={40}
+              className="shadow-lg shadow-fuchsia-500/30 group-hover:shadow-fuchsia-500/50 transition-transform group-hover:scale-105"
+            />
             <span className="font-bold text-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
               Dreamy Life
             </span>
@@ -388,10 +402,8 @@ export default function HomePage() {
         <div className="container mx-auto px-4 relative">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/30">
-                  DL
-                </div>
+            <div className="flex items-center gap-2 mb-6">
+              <BrandLogo size={48} className="shadow-lg shadow-fuchsia-500/30" />
                 <span className="font-bold text-2xl">Dreamy Life</span>
               </div>
               <p className="text-slate-400 mb-6">

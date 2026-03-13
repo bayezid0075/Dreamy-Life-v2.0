@@ -44,6 +44,7 @@ import { Button } from "@/components/ui/button";
 
 import { useAuthStore } from "@/store";
 import { useVendor } from "@/hooks/use-vendor";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 const mainNavItems = [
   {
@@ -152,9 +153,7 @@ export function MobileSideDrawer({
               className="flex items-center gap-2 no-underline hover:no-underline"
               onClick={handleNavClick}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 text-white text-sm font-bold shadow-lg shadow-fuchsia-500/25">
-                DL
-              </div>
+              <BrandLogo size={32} className="shadow-lg shadow-fuchsia-500/25" />
               <SheetTitle className="font-bold text-base bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
                 Dreamy Life
               </SheetTitle>
