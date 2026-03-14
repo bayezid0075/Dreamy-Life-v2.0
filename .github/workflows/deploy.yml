@@ -23,6 +23,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 60m
           script: |
             set -e
             APP_DIR="${{ secrets.VPS_APP_DIR }}"
