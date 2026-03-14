@@ -357,6 +357,10 @@ def superadmin_stream(request):
         from vendors.models import Vendor, Product
         from wallets.models import Wallet
 
+        interval_sec = 3
+        heartbeat_sec = 0.5
+        n_heartbeats = max(1, int(interval_sec / heartbeat_sec))
+
         while True:
             try:
                 total_wallet = Wallet.objects.aggregate(total=Sum("balance"))["total"] or 0
@@ -384,7 +388,10 @@ def superadmin_stream(request):
                 yield _sse_event("overview", overview)
             except Exception:
                 pass
-            time.sleep(3)
+            # Yield heartbeats so the stream yields often; avoids "took too long to shut down" (Daphne)
+            for _ in range(n_heartbeats):
+                time.sleep(heartbeat_sec)
+                yield ": heartbeat\n\n"
 
     response = StreamingHttpResponse(
         stream(),

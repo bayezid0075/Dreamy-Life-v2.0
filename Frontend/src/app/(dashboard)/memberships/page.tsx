@@ -83,16 +83,26 @@ const membershipIcons: Record<string, typeof Crown> = {
 // Most popular plan (adjust as needed)
 const MOST_POPULAR = 'Smart';
 
+// Force Tailwind to include gradient classes (dynamic concatenation is purged otherwise)
+const TAILWIND_SAFELIST_GRADIENTS =
+  ' from-blue-500 via-blue-600 to-indigo-600 from-purple-500 via-purple-600 to-fuchsia-600 from-fuchsia-500 via-pink-600 to-rose-600 from-amber-500 via-orange-600 to-red-600 from-gray-500 via-gray-600 to-gray-700' +
+  ' from-blue-50 to-indigo-50 from-purple-50 to-fuchsia-50 from-fuchsia-50 to-pink-50 from-amber-50 to-orange-50 from-gray-50 to-gray-100' +
+  ' dark:from-blue-950/30 dark:to-indigo-950/30 dark:from-purple-950/30 dark:to-fuchsia-950/30 dark:from-fuchsia-950/30 dark:to-pink-950/30 dark:from-amber-950/30 dark:to-orange-950/30 dark:from-gray-950/30 dark:to-gray-900/30';
+
 export default function MembershipsPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
   const [selectedMembership, setSelectedMembership] = useState<Membership | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { data: memberships, isLoading } = useQuery({
+  const { data: rawMemberships, isLoading, isError, refetch } = useQuery({
     queryKey: ['memberships'],
-    queryFn: membershipsApi.getMemberships,
+    queryFn: async () => {
+      const res = await membershipsApi.getMemberships();
+      return Array.isArray(res) ? res : [];
+    },
   });
+  const memberships = Array.isArray(rawMemberships) ? rawMemberships : [];
 
   const purchaseMutation = useMutation({
     mutationFn: membershipsApi.createPayment,
@@ -128,8 +138,13 @@ export default function MembershipsPage() {
     return membershipIndex <= currentIndex && user?.member_status !== 'user';
   };
 
+  const normalizedName = (name: string) =>
+    name === 'VVIP' ? 'VVIP' : name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+
   return (
-    <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-0 md:py-0 space-y-4 sm:space-y-5 md:space-y-6 pb-4 md:pb-0">
+    <div className="min-h-dvh bg-slate-50 dark:bg-slate-950 pb-6 md:pb-8">
+      <div className={`hidden ${TAILWIND_SAFELIST_GRADIENTS}`} aria-hidden />
+      <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-0 md:py-0 space-y-4 sm:space-y-5 md:space-y-6">
       {/* Header with Back Button */}
       <div className="flex items-center gap-3">
         <button
@@ -194,13 +209,36 @@ export default function MembershipsPage() {
             </Card>
           ))}
         </div>
+      ) : isError ? (
+        <Card className="border border-red-200 dark:border-red-900/50 shadow-lg">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">Could not load plans</p>
+            <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+              Check your connection and try again.
+            </p>
+            <Button onClick={() => refetch()} className="mt-4" variant="outline">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      ) : memberships.length === 0 ? (
+        <Card className="border border-slate-200 dark:border-slate-800 shadow-lg">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <Crown className="h-14 w-14 text-slate-300 dark:text-slate-600 mb-4" />
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No plans available</h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+              Membership plans are not configured yet. Please try again later.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {memberships?.map((membership) => {
-            const features = membershipFeatures[membership.name] || [];
-            const colorClass = membershipColors[membership.name] || 'from-gray-500 via-gray-600 to-gray-700';
-            const bgColorClass = membershipBgColors[membership.name] || 'from-gray-50 to-gray-100';
-            const IconComponent = membershipIcons[membership.name] || Crown;
+          {memberships.map((membership) => {
+            const nameKey = normalizedName(membership.name);
+            const features = membershipFeatures[membership.name] || membershipFeatures[nameKey] || [];
+            const colorClass = membershipColors[membership.name] || membershipColors[nameKey] || 'from-gray-500 via-gray-600 to-gray-700';
+            const bgColorClass = membershipBgColors[membership.name] || membershipBgColors[nameKey] || 'from-gray-50 to-gray-100 dark:from-gray-950/30 dark:to-gray-900/30';
+            const IconComponent = membershipIcons[membership.name] || membershipIcons[nameKey] || Crown;
             const isCurrent = isCurrentMembership(membership.name);
             const alreadyPurchased = isPurchased(membership.name);
             const isPopular = membership.name === MOST_POPULAR;
@@ -254,7 +292,7 @@ export default function MembershipsPage() {
                   {/* Price */}
                   <div className="mt-3 sm:mt-4">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r ${colorClass} bg-clip-text text-transparent">
+                      <span className={`text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r ${colorClass} bg-clip-text text-transparent`}>
                         ৳{parseFloat(membership.price).toLocaleString()}
                       </span>
                     </div>
@@ -331,7 +369,7 @@ export default function MembershipsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="space-y-3">
             <div className="flex items-center justify-center">
-              <div className={`h-16 w-16 rounded-full bg-gradient-to-r ${membershipColors[selectedMembership?.name || 'Basic']} flex items-center justify-center shadow-lg`}>
+              <div className={`h-16 w-16 rounded-full bg-gradient-to-r ${membershipColors[selectedMembership ? normalizedName(selectedMembership.name) : 'Basic']} flex items-center justify-center shadow-lg`}>
                 {selectedMembership?.name === 'VVIP' ? (
                   <Sparkles className="h-8 w-8 text-white" />
                 ) : (
@@ -382,7 +420,7 @@ export default function MembershipsPage() {
             <Button
               onClick={confirmPurchase}
               disabled={purchaseMutation.isPending}
-              className={`w-full sm:w-auto bg-gradient-to-r ${membershipColors[selectedMembership?.name || 'Basic']} hover:opacity-90 text-white shadow-lg order-1 sm:order-2`}
+              className={`w-full sm:w-auto bg-gradient-to-r ${membershipColors[selectedMembership ? normalizedName(selectedMembership.name) : 'Basic']} hover:opacity-90 text-white shadow-lg order-1 sm:order-2`}
             >
               {purchaseMutation.isPending ? (
                 <>
@@ -399,6 +437,7 @@ export default function MembershipsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
