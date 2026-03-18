@@ -2,11 +2,6 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: "class",
-  safelist: [
-    { pattern: /^from-(blue|purple|fuchsia|pink|amber|orange|red|gray|indigo|rose|slate)-(50|100|200|300|400|500|600|700|800|950)(\/\d+)?$/ },
-    { pattern: /^via-(blue|purple|fuchsia|pink|amber|orange|red|gray|indigo|rose)-(500|600)(\/\d+)?$/ },
-    { pattern: /^to-(blue|purple|fuchsia|pink|amber|orange|red|gray|indigo|rose|slate)-(50|100|600|700|950)(\/\d+)?$/ },
-  ],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
