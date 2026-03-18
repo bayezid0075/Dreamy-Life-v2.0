@@ -30,7 +30,7 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ./.env:/app/.env
+      - ${ENV_FILE:-./.env}:/app/.env
 
   frontend:
     build:

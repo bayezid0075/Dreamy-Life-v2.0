@@ -30,7 +30,7 @@ services:
       - "8888:8888"
     volumes:
       - ./Backend:/app
-      - ./.env:/app/.env
+      - ${ENV_FILE:-./.env}:/app/.env
 
   frontend:
     build:

@@ -4,24 +4,13 @@ import environ
 
 env = environ.Env(DEBUG=(bool, False))
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Environment-aware root env loading.
-# - Local default: <repo>/.env
-# - Production: <repo>/.env.production (set DJANGO_ENV=production)
+# Always load a single env file from project root: <repo>/.env
 # Falls back to Backend/.env for backward compatibility.
-_repo_dir = BASE_DIR.parent
-_django_env = (os.getenv("DJANGO_ENV") or os.getenv("ENVIRONMENT") or "").strip().lower()
-_candidates = []
-if _django_env in ("prod", "production"):
-    _candidates.append(_repo_dir / ".env.production")
-elif _django_env in ("local", "dev", "development", "staging"):
-    _candidates.append(_repo_dir / f".env.{_django_env}")
-_candidates.append(_repo_dir / ".env")
-_candidates.append(BASE_DIR / ".env")
-
-for _env_path in _candidates:
-    if _env_path.is_file():
-        environ.Env.read_env(str(_env_path))
-        break
+_repo_env = BASE_DIR.parent / ".env"
+if _repo_env.is_file():
+    environ.Env.read_env(str(_repo_env))
+else:
+    environ.Env.read_env(str(BASE_DIR / ".env"))
 SECRET_KEY = env("SECRET_KEY", default="unsafe-secret")
 DEBUG = env("DEBUG", default="True") == "True"
 ALLOWED_HOSTS = ["*"]
