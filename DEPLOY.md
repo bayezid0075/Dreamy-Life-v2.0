@@ -2,7 +2,7 @@
 
 This project uses **Docker Compose** for local development and **GitHub Actions** for automatic deploy to a VPS on push to `master`.
 
-**Single `.env`:** The whole project uses one `.env` file at the **project root**. Docker Compose and Django (Backend) both read from it. See `.env.example` for all variables.
+**Env files:** Use `.env` for local and `.env.production` for the VPS. Django loads the right env when `DJANGO_ENV=production`. Docker Compose should be run with `--env-file` so `${...}` substitutions use the correct env file.
 
 ---
 
@@ -25,7 +25,7 @@ This project uses **Docker Compose** for local development and **GitHub Actions*
 2. **Start dev stack**:
 
    ```bash
-   docker compose -f docker-compose.dev.yml up -d --build
+   docker compose --env-file .env -f docker-compose.dev.yml up -d --build
    ```
 
    First start may take a minute while the frontend runs `npm ci` inside the container. Wait until logs show the dev server listening.
@@ -33,7 +33,7 @@ This project uses **Docker Compose** for local development and **GitHub Actions*
 3. **Apply migrations (first time or after model changes)**:
 
    ```bash
-   docker compose -f docker-compose.dev.yml exec backend python manage.py migrate --noinput
+   docker compose --env-file .env -f docker-compose.dev.yml exec backend python manage.py migrate --noinput
    ```
 
    - Backend: http://localhost:8888  
@@ -48,8 +48,8 @@ This project uses **Docker Compose** for local development and **GitHub Actions*
 ### Optional: run production build locally
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
+docker compose --env-file .env -f docker-compose.prod.yml up -d --build
+docker compose --env-file .env -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
 ```
 
 ---
@@ -77,7 +77,7 @@ Deploy is handled by [.github/workflows/deploy.yml](.github/workflows/deploy.yml
    cd /home/ubuntu/dreamy-life
    ```
 
-3. **Create `.env`** in project root with production values (same file as local; see `.env.example`):
+3. **Create `.env.production`** in project root with production values (see `.env.production.example`):
 
    - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
    - `BACKEND_URL`, `FRONTEND_URL`, `NEXT_PUBLIC_API_URL` (your domain URLs)
@@ -86,8 +86,8 @@ Deploy is handled by [.github/workflows/deploy.yml](.github/workflows/deploy.yml
 4. **First run** (optional; CI/CD will also do this on first deploy):
 
    ```bash
-   docker compose -f docker-compose.prod.yml up -d --build
-   docker compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
+   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+   docker compose --env-file .env.production -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
    ```
 
 ### GitHub Actions secrets

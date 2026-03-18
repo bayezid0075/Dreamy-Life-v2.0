@@ -22,3 +22,4 @@
 docker-compose.dev.yml
 docker-compose.prod.yml
 DEPLOY.md
+users_dump.sql

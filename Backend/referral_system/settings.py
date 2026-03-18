@@ -4,12 +4,24 @@ import environ
 
 env = environ.Env(DEBUG=(bool, False))
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Single .env at project root (parent of Backend); fallback to Backend/.env
-_root_env = BASE_DIR.parent / ".env"
-if _root_env.is_file():
-    environ.Env.read_env(str(_root_env))
-else:
-    environ.Env.read_env(BASE_DIR / ".env")
+# Environment-aware root env loading.
+# - Local default: <repo>/.env
+# - Production: <repo>/.env.production (set DJANGO_ENV=production)
+# Falls back to Backend/.env for backward compatibility.
+_repo_dir = BASE_DIR.parent
+_django_env = (os.getenv("DJANGO_ENV") or os.getenv("ENVIRONMENT") or "").strip().lower()
+_candidates = []
+if _django_env in ("prod", "production"):
+    _candidates.append(_repo_dir / ".env.production")
+elif _django_env in ("local", "dev", "development", "staging"):
+    _candidates.append(_repo_dir / f".env.{_django_env}")
+_candidates.append(_repo_dir / ".env")
+_candidates.append(BASE_DIR / ".env")
+
+for _env_path in _candidates:
+    if _env_path.is_file():
+        environ.Env.read_env(str(_env_path))
+        break
 SECRET_KEY = env("SECRET_KEY", default="unsafe-secret")
 DEBUG = env("DEBUG", default="True") == "True"
 ALLOWED_HOSTS = ["*"]
@@ -132,6 +144,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3333",
     "http://192.168.0.214:3000",
     "http://192.168.0.214:3333",
+    "http://107.167.94.254:8888",
+    "http://107.167.94.254:3333",
 ]
 # Allow dev servers on any port for these hosts (useful for Next.js, Vite, etc.)
 CORS_ALLOWED_ORIGIN_REGEXES = [
