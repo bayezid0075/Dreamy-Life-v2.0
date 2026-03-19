@@ -7,6 +7,7 @@ from users.models import User, UserInfo
 from wallets.models import Wallet
 from memberships.models import Membership, MembershipPurchase
 from django.utils import timezone
+import time
 
 
 class Command(BaseCommand):
@@ -42,7 +43,7 @@ class Command(BaseCommand):
             )
             return
 
-        # Use double-quoted identifier for PostgreSQL; backticks are MySQL-only and cause syntax error.
+        # Quote table name appropriately for the active DB backend (Postgres uses double quotes).
         table_quoted = connection.ops.quote_name(table)
         with connection.cursor() as cur:
             cur.execute(
@@ -107,6 +108,18 @@ class Command(BaseCommand):
         def import_batch():
             created_users = 0
             created_wallets = 0
+            started = time.time()
+
+            # Preload existing uniques to avoid O(N^2) "exists()" loops.
+            existing_emails = set(User.objects.values_list("email", flat=True))
+            existing_phones = set(User.objects.values_list("phone_number", flat=True))
+
+            # Only resolve Basic membership once (if needed).
+            basic_membership = None
+            if any(safe_str(r[-1]).lower() == "active" for r in rows):
+                basic_membership = Membership.objects.filter(name="Basic").first()
+                if not basic_membership:
+                    raise ValueError("Membership 'Basic' not found. Create it in Admin first.")
 
             # First pass: create users, userinfo, wallets (without referrals)
             for (
@@ -133,15 +146,17 @@ class Command(BaseCommand):
                 # Avoid collisions on unique email/phone without touching model structure.
                 base_email = email
                 suffix = 1
-                while User.objects.filter(email=email).exists():
+                while email in existing_emails:
                     email = f"{legacy_id}-{suffix}-{base_email}"
                     suffix += 1
+                existing_emails.add(email)
 
                 base_phone = phone
                 suffix = 1
-                while User.objects.filter(phone_number=phone).exists():
+                while phone in existing_phones:
                     phone = f"{base_phone}-{suffix}"
                     suffix += 1
+                existing_phones.add(phone)
 
                 user = User.objects.create_user(
                     email=email,
@@ -180,9 +195,6 @@ class Command(BaseCommand):
                 # Also create active membership purchase so frontend "active_membership"
                 # immediately reflects Basic membership for legacy Active users.
                 if mt == "active":
-                    basic_membership = Membership.objects.filter(name="Basic").first()
-                    if not basic_membership:
-                        raise ValueError("Membership 'Basic' not found. Create it in Admin first.")
                     MembershipPurchase.objects.update_or_create(
                         user=user,
                         membership=basic_membership,
@@ -213,6 +225,19 @@ class Command(BaseCommand):
                 if referral_code:
                     code_to_user[referral_code] = user
 
+                if created_users % 200 == 0:
+                    elapsed = time.time() - started
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Progress: {created_users}/{len(rows)} users processed "
+                            f"({elapsed:.1f}s elapsed)..."
+                        )
+                    )
+                    try:
+                        self.stdout.flush()
+                    except Exception:
+                        pass
+
             # Second pass: stitch referral chain using referred_by column
             linked = 0
             for (
@@ -220,6 +245,7 @@ class Command(BaseCommand):
                 username,
                 phone,
                 email,
+                password,
                 referral_code,
                 referred_by_code,
                 legacy_level,
