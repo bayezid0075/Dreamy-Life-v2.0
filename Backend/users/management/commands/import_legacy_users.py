@@ -5,6 +5,8 @@ from django.db import connection, transaction
 
 from users.models import User, UserInfo
 from wallets.models import Wallet
+from memberships.models import Membership, MembershipPurchase
+from django.utils import timezone
 
 
 class Command(BaseCommand):
@@ -40,6 +42,8 @@ class Command(BaseCommand):
             )
             return
 
+        # Use double-quoted identifier for PostgreSQL; backticks are MySQL-only and cause syntax error.
+        table_quoted = connection.ops.quote_name(table)
         with connection.cursor() as cur:
             cur.execute(
                 f"""
@@ -48,11 +52,13 @@ class Command(BaseCommand):
                   username,
                   phone,
                   email,
+                  password,
                   referral_code,
                   referred_by,
+                  level,
                   wallet_balance,
                   member_type
-                FROM `{table}`
+                FROM {table_quoted}
                 ORDER BY id ASC
                 """
             )
@@ -77,7 +83,7 @@ class Command(BaseCommand):
 
         def safe_str(val):
             if isinstance(val, str):
-                return val
+                return val.strip()
             if val is None:
                 return ""
             return str(val)
@@ -108,8 +114,10 @@ class Command(BaseCommand):
                 username,
                 phone,
                 email,
+                password,
                 referral_code,
                 referred_by_code,
+                legacy_level,
                 wallet_balance,
                 member_type,
             ) in rows:
@@ -117,8 +125,10 @@ class Command(BaseCommand):
                 phone = safe_str(phone) or f"0{legacy_id:010d}"
                 email = safe_str(email) or f"legacy-{legacy_id}@example.com"
                 referral_code = safe_str(referral_code) or None
+                password = safe_str(password) or "changeme123"
 
                 account_status = map_member_type(member_type)
+                mt = safe_str(member_type).lower()
 
                 # Avoid collisions on unique email/phone without touching model structure.
                 base_email = email
@@ -137,7 +147,7 @@ class Command(BaseCommand):
                     email=email,
                     username=username,
                     phone_number=phone,
-                    password="changeme123",
+                    password=password,
                 )
                 user.account_status = account_status
                 user.save(update_fields=["account_status"])
@@ -145,8 +155,42 @@ class Command(BaseCommand):
                 # UserInfo: keep referral_code as own_refercode when present, else auto-generated.
                 info = UserInfo(user=user)
                 if referral_code:
-                    info.own_refercode = referral_code[:8]
+                    candidate = referral_code[:8]
+                    # own_refercode is unique and max_length=8. Avoid collisions; if it collides, let
+                    # UserInfo.save() auto-generate a fresh code for this user.
+                    if candidate and not UserInfo.objects.filter(own_refercode=candidate).exists():
+                        info.own_refercode = candidate
+
+                # Legacy membership mapping:
+                # - If member_type was "Active" => verified + Basic membership
+                # - Otherwise => not verified + "user" tier
+                if mt == "active":
+                    info.is_verified = True
+                    info.member_status = "Basic"
+                else:
+                    info.is_verified = False
+                    info.member_status = "user"
+
+                try:
+                    info.level = int(legacy_level) if legacy_level is not None else 0
+                except (TypeError, ValueError):
+                    info.level = 0
                 info.save()
+
+                # Also create active membership purchase so frontend "active_membership"
+                # immediately reflects Basic membership for legacy Active users.
+                if mt == "active":
+                    basic_membership = Membership.objects.filter(name="Basic").first()
+                    if not basic_membership:
+                        raise ValueError("Membership 'Basic' not found. Create it in Admin first.")
+                    MembershipPurchase.objects.update_or_create(
+                        user=user,
+                        membership=basic_membership,
+                        defaults={
+                            "is_active": True,
+                            "purchased_at": timezone.now(),
+                        },
+                    )
 
                 # Wallet: set legacy wallet_balance
                 try:
@@ -178,6 +222,7 @@ class Command(BaseCommand):
                 email,
                 referral_code,
                 referred_by_code,
+                legacy_level,
                 wallet_balance,
                 member_type,
             ) in rows:
