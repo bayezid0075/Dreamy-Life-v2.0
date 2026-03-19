@@ -7,7 +7,6 @@ from users.models import User, UserInfo
 from wallets.models import Wallet
 from memberships.models import Membership, MembershipPurchase
 from django.utils import timezone
-import time
 
 
 class Command(BaseCommand):
@@ -23,6 +22,18 @@ class Command(BaseCommand):
             help="Legacy table name to import from (default: users).",
         )
         parser.add_argument(
+            "--batch-size",
+            type=int,
+            default=250,
+            help="How many users to import per DB transaction commit (default: 250).",
+        )
+        parser.add_argument(
+            "--progress-every",
+            type=int,
+            default=100,
+            help="Print progress every N imported users (default: 100).",
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Parse and simulate import without writing any data.",
@@ -30,6 +41,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         table = options["table"]
+        batch_size = options["batch_size"]
+        progress_every = options["progress_every"]
         dry_run = options["dry_run"]
 
         # DB-agnostic table existence check (works on Postgres, MySQL, etc.)
@@ -43,7 +56,7 @@ class Command(BaseCommand):
             )
             return
 
-        # Quote table name appropriately for the active DB backend (Postgres uses double quotes).
+        # Use double-quoted identifier for PostgreSQL; backticks are MySQL-only and cause syntax error.
         table_quoted = connection.ops.quote_name(table)
         with connection.cursor() as cur:
             cur.execute(
@@ -104,193 +117,197 @@ class Command(BaseCommand):
             # Treat admin / active / anything else as active; staff/superuser can be set manually.
             return "active"
 
-        @transaction.atomic
-        def import_batch():
+        def import_all():
+            """
+            Import in small transactions so progress is visible and we don't appear "stuck".
+            Also avoids O(n) DB lookups per row by maintaining in-memory sets for unique fields.
+            """
             created_users = 0
             created_wallets = 0
-            started = time.time()
 
-            # Preload existing uniques to avoid O(N^2) "exists()" loops.
+            # Cache current unique fields for fast collision avoidance.
             existing_emails = set(User.objects.values_list("email", flat=True))
             existing_phones = set(User.objects.values_list("phone_number", flat=True))
+            existing_ref_codes = set(UserInfo.objects.values_list("own_refercode", flat=True))
 
-            # Only resolve Basic membership once (if needed).
-            basic_membership = None
-            if any(safe_str(r[-1]).lower() == "active" for r in rows):
-                basic_membership = Membership.objects.filter(name="Basic").first()
-                if not basic_membership:
-                    raise ValueError("Membership 'Basic' not found. Create it in Admin first.")
+            basic_membership = Membership.objects.filter(name="Basic").first()
 
-            # First pass: create users, userinfo, wallets (without referrals)
-            for (
-                legacy_id,
-                username,
-                phone,
-                email,
-                password,
-                referral_code,
-                referred_by_code,
-                legacy_level,
-                wallet_balance,
-                member_type,
-            ) in rows:
-                username = safe_str(username) or f"user{legacy_id}"
-                phone = safe_str(phone) or f"0{legacy_id:010d}"
-                email = safe_str(email) or f"legacy-{legacy_id}@example.com"
-                referral_code = safe_str(referral_code) or None
-                password = safe_str(password) or "changeme123"
+            total = len(rows)
 
-                account_status = map_member_type(member_type)
-                mt = safe_str(member_type).lower()
+            # First pass: create users, userinfo, wallets (without referrals) in batches.
+            for start in range(0, total, batch_size):
+                chunk = rows[start : start + batch_size]
+                with transaction.atomic():
+                    for idx, (
+                        legacy_id,
+                        username,
+                        phone,
+                        email,
+                        password,
+                        referral_code,
+                        referred_by_code,
+                        legacy_level,
+                        wallet_balance,
+                        member_type,
+                    ) in enumerate(chunk, start=start + 1):
+                        username = safe_str(username) or f"user{legacy_id}"
+                        phone = safe_str(phone) or f"0{legacy_id:010d}"
+                        email = safe_str(email) or f"legacy-{legacy_id}@example.com"
+                        referral_code = safe_str(referral_code) or None
+                        password = safe_str(password) or "changeme123"
 
-                # Avoid collisions on unique email/phone without touching model structure.
-                base_email = email
-                suffix = 1
-                while email in existing_emails:
-                    email = f"{legacy_id}-{suffix}-{base_email}"
-                    suffix += 1
-                existing_emails.add(email)
+                        account_status = map_member_type(member_type)
+                        mt = safe_str(member_type).lower()
 
-                base_phone = phone
-                suffix = 1
-                while phone in existing_phones:
-                    phone = f"{base_phone}-{suffix}"
-                    suffix += 1
-                existing_phones.add(phone)
+                        # Avoid collisions on unique email/phone without repeated DB queries.
+                        base_email = email
+                        suffix = 1
+                        while email in existing_emails:
+                            email = f"{legacy_id}-{suffix}-{base_email}"
+                            suffix += 1
+                        existing_emails.add(email)
 
-                user = User.objects.create_user(
-                    email=email,
-                    username=username,
-                    phone_number=phone,
-                    password=password,
-                )
-                user.account_status = account_status
-                user.save(update_fields=["account_status"])
+                        base_phone = phone
+                        suffix = 1
+                        while phone in existing_phones:
+                            phone = f"{base_phone}-{suffix}"
+                            suffix += 1
+                        existing_phones.add(phone)
 
-                # UserInfo: keep referral_code as own_refercode when present, else auto-generated.
-                info = UserInfo(user=user)
-                if referral_code:
-                    candidate = referral_code[:8]
-                    # own_refercode is unique and max_length=8. Avoid collisions; if it collides, let
-                    # UserInfo.save() auto-generate a fresh code for this user.
-                    if candidate and not UserInfo.objects.filter(own_refercode=candidate).exists():
-                        info.own_refercode = candidate
-
-                # Legacy membership mapping:
-                # - If member_type was "Active" => verified + Basic membership
-                # - Otherwise => not verified + "user" tier
-                if mt == "active":
-                    info.is_verified = True
-                    info.member_status = "Basic"
-                else:
-                    info.is_verified = False
-                    info.member_status = "user"
-
-                try:
-                    info.level = int(legacy_level) if legacy_level is not None else 0
-                except (TypeError, ValueError):
-                    info.level = 0
-                info.save()
-
-                # Also create active membership purchase so frontend "active_membership"
-                # immediately reflects Basic membership for legacy Active users.
-                if mt == "active":
-                    MembershipPurchase.objects.update_or_create(
-                        user=user,
-                        membership=basic_membership,
-                        defaults={
-                            "is_active": True,
-                            "purchased_at": timezone.now(),
-                        },
-                    )
-
-                # Wallet: set legacy wallet_balance
-                try:
-                    bal = Decimal(str(wallet_balance if wallet_balance is not None else "0"))
-                except Exception:
-                    bal = Decimal("0")
-
-                wallet, created = Wallet.objects.get_or_create(
-                    user=user,
-                    defaults={"balance": bal},
-                )
-                if not created and bal != wallet.balance:
-                    wallet.balance = bal
-                    wallet.save(update_fields=["balance"])
-                if created:
-                    created_wallets += 1
-
-                created_users += 1
-                id_to_user[legacy_id] = user
-                if referral_code:
-                    code_to_user[referral_code] = user
-
-                if created_users % 200 == 0:
-                    elapsed = time.time() - started
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"Progress: {created_users}/{len(rows)} users processed "
-                            f"({elapsed:.1f}s elapsed)..."
+                        user = User.objects.create_user(
+                            email=email,
+                            username=username,
+                            phone_number=phone,
+                            password=password,
                         )
-                    )
-                    try:
-                        self.stdout.flush()
-                    except Exception:
-                        pass
+                        user.account_status = account_status
+                        user.save(update_fields=["account_status"])
 
-            # Second pass: stitch referral chain using referred_by column
+                        # UserInfo: keep referral_code as own_refercode when present, else auto-generated.
+                        info = UserInfo(user=user)
+                        if referral_code:
+                            candidate = referral_code[:8]
+                            # own_refercode is unique and max_length=8.
+                            if candidate and candidate not in existing_ref_codes:
+                                info.own_refercode = candidate
+                                existing_ref_codes.add(candidate)
+
+                        if mt == "active":
+                            info.is_verified = True
+                            info.member_status = "Basic"
+                        else:
+                            info.is_verified = False
+                            info.member_status = "user"
+
+                        try:
+                            info.level = int(legacy_level) if legacy_level is not None else 0
+                        except (TypeError, ValueError):
+                            info.level = 0
+                        info.save()
+
+                        # Also create active membership purchase for legacy Active users.
+                        if mt == "active":
+                            if not basic_membership:
+                                raise ValueError(
+                                    "Membership 'Basic' not found. Create it in Admin first."
+                                )
+                            MembershipPurchase.objects.update_or_create(
+                                user=user,
+                                membership=basic_membership,
+                                defaults={
+                                    "is_active": True,
+                                    "purchased_at": timezone.now(),
+                                },
+                            )
+
+                        # Wallet: set legacy wallet_balance
+                        try:
+                            bal = Decimal(str(wallet_balance if wallet_balance is not None else "0"))
+                        except Exception:
+                            bal = Decimal("0")
+
+                        wallet, created = Wallet.objects.get_or_create(
+                            user=user,
+                            defaults={"balance": bal},
+                        )
+                        if not created and bal != wallet.balance:
+                            wallet.balance = bal
+                            wallet.save(update_fields=["balance"])
+                        if created:
+                            created_wallets += 1
+
+                        created_users += 1
+                        id_to_user[legacy_id] = user
+                        if referral_code:
+                            code_to_user[referral_code] = user
+
+                        if progress_every and (idx % progress_every == 0 or idx == total):
+                            self.stdout.write(
+                                self.style.WARNING(f"Imported {idx}/{total} legacy users...")
+                            )
+
+                if dry_run:
+                    # Roll back this batch on dry-run by raising inside the atomic block.
+                    raise transaction.TransactionManagementError("Dry run: rolling back.")
+
+            # Second pass: stitch referral chain (fast updates), also in batches.
             linked = 0
-            for (
-                legacy_id,
-                username,
-                phone,
-                email,
-                password,
-                referral_code,
-                referred_by_code,
-                legacy_level,
-                wallet_balance,
-                member_type,
-            ) in rows:
-                referred_by_code = safe_str(referred_by_code)
-                if not referred_by_code:
-                    continue
+            for start in range(0, total, batch_size):
+                chunk = rows[start : start + batch_size]
+                with transaction.atomic():
+                    for (
+                        legacy_id,
+                        username,
+                        phone,
+                        email,
+                        password,
+                        referral_code,
+                        referred_by_code,
+                        legacy_level,
+                        wallet_balance,
+                        member_type,
+                    ) in chunk:
+                        referred_by_code = safe_str(referred_by_code)
+                        if not referred_by_code:
+                            continue
 
-                user = id_to_user.get(legacy_id)
-                if not user:
-                    continue
+                        user = id_to_user.get(legacy_id)
+                        if not user:
+                            continue
 
-                parent = code_to_user.get(referred_by_code)
+                        parent = code_to_user.get(referred_by_code)
 
-                # Fallback: sometimes referred_by might be a numeric ID string
-                if not parent:
-                    try:
-                        legacy_parent_id = int(referred_by_code)
-                    except ValueError:
-                        legacy_parent_id = None
-                    if legacy_parent_id and legacy_parent_id in id_to_user:
-                        parent = id_to_user[legacy_parent_id]
+                        # Fallback: sometimes referred_by might be a numeric ID string
+                        if not parent:
+                            try:
+                                legacy_parent_id = int(referred_by_code)
+                            except ValueError:
+                                legacy_parent_id = None
+                            if legacy_parent_id and legacy_parent_id in id_to_user:
+                                parent = id_to_user[legacy_parent_id]
 
-                if parent and parent != user:
-                    user.referred_by = parent
-                    user.save(update_fields=["referred_by"])
-                    linked += 1
+                        if parent and parent != user and user.referred_by_id != parent.id:
+                            user.referred_by = parent
+                            user.save(update_fields=["referred_by"])
+                            linked += 1
 
             return created_users, created_wallets, linked
 
         if dry_run:
-            # Run inside an atomic block but roll back explicitly.
-            with transaction.atomic():
-                users_count, wallets_count, linked = import_batch()
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"[DRY RUN] Would create {users_count} users, {wallets_count} wallets, "
-                        f"and link {linked} referral relationships."
-                    )
+            try:
+                users_count, wallets_count, linked = import_all()
+            except transaction.TransactionManagementError:
+                # Expected: we force rollback batches during dry-run.
+                users_count = 0
+                wallets_count = 0
+                linked = 0
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "[DRY RUN] Completed parsing. No data was written (all batches rolled back)."
                 )
-                raise transaction.TransactionManagementError("Dry run: rolling back.")
+            )
         else:
-            users_count, wallets_count, linked = import_batch()
+            users_count, wallets_count, linked = import_all()
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Imported {users_count} users, created/updated {wallets_count} wallets, "
