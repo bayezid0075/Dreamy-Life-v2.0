@@ -101,7 +101,8 @@ MEMBER_STATUS_KEYS = ["user", "Basic", "Standard", "Smart", "VVIP"]
 
 DEFAULT_MEMBER_STATUS_ALLOWED = {
     "user": ["profile_edit", "membership"],
-    "Basic": ["shop", "profile_edit", "membership", "referrals"],
+    # Basic members get commission wallet in legacy data; allow wallet + withdrawals so UI/API match DB balances.
+    "Basic": ["wallet", "withdrawals", "shop", "profile_edit", "membership", "referrals"],
     "Standard": ["wallet", "shop", "profile_edit", "membership", "referrals"],
     "Smart": ["wallet", "withdrawals", "shop", "profile_edit", "membership", "referrals"],
     "VVIP": list(RESTRICTABLE_AREAS),
@@ -142,8 +143,19 @@ class AccountRestrictionConfig(models.Model):
         cfg = dict(obj.config)
         if "unverified_restricted_areas" not in cfg:
             cfg["unverified_restricted_areas"] = DEFAULT_UNVERIFIED_RESTRICTED.copy()
-        if "member_status_allowed_areas" not in cfg:
-            cfg["member_status_allowed_areas"] = dict(DEFAULT_MEMBER_STATUS_ALLOWED)
+        stored_ms = cfg.get("member_status_allowed_areas")
+        if not isinstance(stored_ms, dict):
+            stored_ms = {}
+        # Union with code defaults so new areas (e.g. wallet for Basic) apply on existing DB configs too.
+        merged_ms = {}
+        all_keys = set(MEMBER_STATUS_KEYS) | set(stored_ms.keys())
+        for key in all_keys:
+            default_areas = list(DEFAULT_MEMBER_STATUS_ALLOWED.get(key, []))
+            extra = stored_ms.get(key)
+            if not isinstance(extra, list):
+                extra = []
+            merged_ms[key] = list(dict.fromkeys(default_areas + [a for a in extra if a not in default_areas]))
+        cfg["member_status_allowed_areas"] = merged_ms
         return cfg
 
 
