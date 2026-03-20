@@ -192,7 +192,10 @@ class Command(BaseCommand):
                                 info.own_refercode = candidate
                                 existing_ref_codes.add(candidate)
 
-                        if mt == "active":
+                        # Legacy member_type mapping:
+                        # - "Active" and "Admin" should both be treated as verified Basic users,
+                        #   otherwise wallet/referrals APIs stay blocked by account restrictions.
+                        if mt in {"active", "admin"}:
                             info.is_verified = True
                             info.member_status = "Basic"
                         else:
@@ -205,8 +208,9 @@ class Command(BaseCommand):
                             info.level = 0
                         info.save()
 
-                        # Also create active membership purchase for legacy Active users.
-                        if mt == "active":
+                        # Also create membership purchase so the frontend "active_membership"
+                        # reflects Basic tier for legacy Active/Admin users.
+                        if mt in {"active", "admin"}:
                             if not basic_membership:
                                 raise ValueError(
                                     "Membership 'Basic' not found. Create it in Admin first."
