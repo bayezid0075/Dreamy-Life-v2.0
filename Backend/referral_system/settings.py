@@ -38,6 +38,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serve collected static files (e.g. Django admin CSS/JS) in production.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -112,6 +114,14 @@ except Exception:
 
 # Static
 STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# If you're behind a reverse proxy, tell Django the real scheme so admin pages
+# can behave correctly (and browsers won't think the origin is "untrustworthy").
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT", default="False") == "True"
 
 # Media files
 MEDIA_URL = "/media/"

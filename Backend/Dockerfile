@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8888
 
 # Use ASGI server to support Django Channels/WebSockets
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8888", "referral_system.asgi:application"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && daphne -b 0.0.0.0 -p 8888 referral_system.asgi:application"]
