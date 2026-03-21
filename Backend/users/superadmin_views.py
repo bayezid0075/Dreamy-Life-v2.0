@@ -40,7 +40,8 @@ class IsSuperadmin(permissions.BasePermission):
         allowed = get_superadmin_emails()
         if not allowed:
             return False
-        return request.user.email.lower() in allowed
+        email = (request.user.email or "").strip().lower()
+        return bool(email) and email in allowed
 
 
 @api_view(["GET"])
@@ -53,7 +54,8 @@ def superadmin_access(request):
     allowed_emails = get_superadmin_emails()
     if not allowed_emails:
         return Response({"allowed": False, "email": request.user.email, "reason": "No superadmin emails configured"})
-    allowed = request.user.email.lower() in allowed_emails
+    email = (request.user.email or "").strip().lower()
+    allowed = bool(email) and email in allowed_emails
     return Response({
         "allowed": allowed,
         "email": request.user.email,
@@ -348,7 +350,8 @@ def superadmin_stream(request):
         return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
 
     allowed = get_superadmin_emails()
-    if not allowed or user.email.lower() not in allowed:
+    uemail = (user.email or "").strip().lower()
+    if not allowed or not uemail or uemail not in allowed:
         return Response({"detail": "Not authorized for superadmin"}, status=status.HTTP_403_FORBIDDEN)
 
     def stream():

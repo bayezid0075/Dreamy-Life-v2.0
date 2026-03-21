@@ -15,7 +15,8 @@ class IsAdminOrSuperadmin(permissions.BasePermission):
         if request.user.is_staff or request.user.is_superuser:
             return True
         allowed = _get_superadmin_emails()
-        return bool(allowed) and request.user.email.lower() in allowed
+        email = (request.user.email or "").strip().lower()
+        return bool(allowed) and bool(email) and email in allowed
 
 
 class IsJobOwner(permissions.BasePermission):

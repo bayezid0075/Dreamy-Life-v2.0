@@ -4,13 +4,15 @@ import environ
 
 env = environ.Env(DEBUG=(bool, False))
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Always load a single env file from project root: <repo>/.env
-# Falls back to Backend/.env for backward compatibility.
+# Load both <repo>/.env and Backend/.env when present (overwrite=False: OS/Docker env wins).
+# Order: repo first, then Backend — second read only fills keys not already set, so Backend
+# can supply SUPERADMIN_* etc. when the root .env exists but omits them (common in monorepos).
 _repo_env = BASE_DIR.parent / ".env"
+_backend_env = BASE_DIR / ".env"
 if _repo_env.is_file():
-    environ.Env.read_env(str(_repo_env))
-else:
-    environ.Env.read_env(str(BASE_DIR / ".env"))
+    environ.Env.read_env(str(_repo_env), overwrite=False, parse_comments=True)
+if _backend_env.is_file():
+    environ.Env.read_env(str(_backend_env), overwrite=False, parse_comments=True)
 SECRET_KEY = env("SECRET_KEY", default="unsafe-secret")
 DEBUG = env("DEBUG", default="True") == "True"
 ALLOWED_HOSTS = ["*"]
