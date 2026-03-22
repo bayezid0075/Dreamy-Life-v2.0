@@ -19,6 +19,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
     active_membership = serializers.SerializerMethodField()
     referred_by_username = serializers.SerializerMethodField()
     referred_by_refercode = serializers.SerializerMethodField()
+    wallet_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -27,7 +28,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'is_active', 'is_staff', 'is_superuser', 'account_status', 'referred_by',
             'created_at', 'updated_at', 'last_login',
             'info', 'downlines_count', 'active_membership',
-            'referred_by_username', 'referred_by_refercode'
+            'referred_by_username', 'referred_by_refercode', 'wallet_balance'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'last_login']
     
@@ -68,6 +69,13 @@ class AdminUserSerializer(serializers.ModelSerializer):
             except UserInfo.DoesNotExist:
                 return None
         return None
+    
+    def get_wallet_balance(self, obj):
+        """Get the user's wallet balance"""
+        try:
+            return str(obj.wallet.balance)
+        except Exception:
+            return "0.00"
     
     def create(self, validated_data):
         """Create user with password"""

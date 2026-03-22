@@ -463,6 +463,7 @@ export interface SuperadminOverviewStats {
 export interface AdminUserListItem extends User {
   info: UserInfo;
   downlines_count: number;
+  wallet_balance: string;
   active_membership: ActiveMembership | null;
 }
 

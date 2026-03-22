@@ -9,6 +9,7 @@ import {
   Loader2,
   UserCheck,
   UserX,
+  Users,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -350,6 +351,20 @@ export function SuperadminUsersTab({
                         isLight ? "text-slate-600" : "text-slate-400"
                       }`}
                     >
+                      Wallet
+                    </th>
+                    <th
+                      className={`text-left py-3 px-4 font-semibold ${
+                        isLight ? "text-slate-600" : "text-slate-400"
+                      }`}
+                    >
+                      Referrals
+                    </th>
+                    <th
+                      className={`text-left py-3 px-4 font-semibold ${
+                        isLight ? "text-slate-600" : "text-slate-400"
+                      }`}
+                    >
                       Status
                     </th>
                     <th
@@ -372,7 +387,7 @@ export function SuperadminUsersTab({
                   {results.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={11}
                         className="py-12 text-center text-slate-500"
                       >
                         No users found
@@ -461,6 +476,27 @@ export function SuperadminUsersTab({
                               —
                             </span>
                           )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`font-mono text-sm font-medium ${
+                              isLight ? "text-slate-800" : "text-slate-200"
+                            }`}
+                          >
+                            ৳{u.wallet_balance || "0.00"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5">
+                            <Users className="w-4 h-4 text-slate-400" />
+                            <span
+                              className={`text-sm font-medium ${
+                                isLight ? "text-slate-800" : "text-slate-200"
+                              }`}
+                            >
+                              {u.downlines_count || 0}
+                            </span>
+                          </div>
                         </td>
                         <td className="py-3 px-4">
                           <span

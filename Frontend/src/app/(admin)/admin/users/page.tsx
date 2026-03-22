@@ -202,6 +202,7 @@ export default function AdminUsersPage() {
                     <TableHead>Contact</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Wallet</TableHead>
                     <TableHead>Downlines</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -248,6 +249,11 @@ export default function AdminUsersPage() {
                           {!user.is_staff && !user.is_superuser && (
                             <Badge variant="outline">User</Badge>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono font-medium">
+                          ৳{user.wallet_balance || "0.00"}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -389,6 +395,10 @@ export default function AdminUsersPage() {
                   <p className="font-medium">
                     {selectedUser.referred_by_username || 'None'}
                   </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Wallet Balance</p>
+                  <p className="font-medium font-mono">৳{selectedUser.wallet_balance || "0.00"}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Downlines</p>
