@@ -88,7 +88,8 @@ export default function MarketplaceAdminPage() {
                       <div>
                         <p className="font-medium">{job.title}</p>
                         <p className="text-sm text-muted-foreground">
-                          {job.user_username} · ৳{parseFloat(job.total_budget).toLocaleString()} reserved
+                          {job.user_username} · budget ৳{parseFloat(job.total_budget).toLocaleString()} · charges
+                          ৳{Math.round(parseFloat(job.total_budget) * 1.05 * 100) / 100} on approve (+5%)
                         </p>
                         <Badge variant="secondary" className="rounded-lg mt-1">
                           {statusLabels[job.status] ?? job.status}

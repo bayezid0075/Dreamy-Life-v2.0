@@ -36,11 +36,16 @@ class FundsTransactionSerializer(serializers.ModelSerializer):
 
 class FundsSerializer(serializers.ModelSerializer):
     transactions = FundsTransactionSerializer(many=True, read_only=True)
-    
+    available_balance = serializers.SerializerMethodField()
+
     class Meta:
         model = Funds
-        fields = ['id', 'balance', 'transactions']
-        read_only_fields = ['id', 'balance', 'transactions']
+        fields = ['id', 'balance', 'reserved_balance', 'available_balance', 'transactions']
+        read_only_fields = ['id', 'balance', 'reserved_balance', 'transactions']
+
+    def get_available_balance(self, obj):
+        available = (obj.balance - obj.reserved_balance).quantize(Decimal("0.01"))
+        return str(available)
 
 # Points Serializers
 class PointsTransactionSerializer(serializers.ModelSerializer):

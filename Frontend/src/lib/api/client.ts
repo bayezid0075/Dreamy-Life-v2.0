@@ -1,13 +1,29 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8888';
+/**
+ * When unset, use same-origin relative `/api/...` so Next.js rewrites can proxy to
+ * the backend (avoids baking `localhost` into the client bundle in production).
+ * Set `NEXT_PUBLIC_API_URL` only if the API is on a different public origin.
+ */
+export function getApiBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+}
+
+const API_BASE_URL = getApiBaseUrl();
+
+function refreshTokenUrl(): string {
+  return API_BASE_URL
+    ? `${API_BASE_URL}/api/token/refresh/`
+    : '/api/token/refresh/';
+}
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL || undefined,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: false,
+  timeout: 60_000,
 });
 
 // Request interceptor to add auth token
@@ -39,7 +55,7 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
+          const response = await axios.post(refreshTokenUrl(), {
             refresh: refreshToken,
           });
 
@@ -76,11 +92,12 @@ apiClient.interceptors.response.use(
 
 // Helper for multipart form data requests
 export const apiClientMultipart = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL || undefined,
   headers: {
     'Content-Type': 'multipart/form-data',
   },
-  withCredentials: true,
+  withCredentials: false,
+  timeout: 120_000,
 });
 
 apiClientMultipart.interceptors.request.use(
@@ -109,7 +126,7 @@ apiClientMultipart.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
+          const response = await axios.post(refreshTokenUrl(), {
             refresh: refreshToken,
           });
 

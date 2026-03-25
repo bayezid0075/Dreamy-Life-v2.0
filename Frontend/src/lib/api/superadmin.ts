@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, getApiBaseUrl } from "./client";
 import type {
   SuperadminAccessResponse,
   SuperadminOverviewStats,
@@ -182,7 +182,7 @@ export const superadminApi = {
 };
 
 export function getSuperadminStreamUrl(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8888";
+  const base = getApiBaseUrl() || (typeof window !== "undefined" ? window.location.origin : "");
   const token =
     typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   if (!token) return "";

@@ -275,10 +275,7 @@ export default function WalletPage() {
     {
       id: "wallet",
       title: "Wallet",
-      description:
-        parseAmount(wallet?.reserved_balance) > 0
-          ? `Commission & referral · ৳${parseAmount(wallet?.reserved_balance).toLocaleString()} reserved`
-          : "Commission & referral earnings",
+      description: "Commission & referral earnings",
       icon: Wallet,
       balance: wallet?.balance || "0",
       income: wallet?.income || "0",

@@ -6,7 +6,9 @@ RUN npm ci
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
+ARG BACKEND_INTERNAL_URL=http://backend:8888
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

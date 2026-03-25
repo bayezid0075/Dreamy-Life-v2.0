@@ -59,8 +59,8 @@ class RechargeCreateView(APIView):
 
         with transaction.atomic():
             funds, _ = Funds.objects.select_for_update().get_or_create(user=request.user)
-            if funds.balance < amount:
-                available = funds.balance.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            available = funds.balance.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            if available < amount:
                 return Response(
                     {"detail": f"Insufficient funds. Available: ৳{available}."},
                     status=status.HTTP_400_BAD_REQUEST,

@@ -19,7 +19,7 @@ class WalletTransactionAdmin(admin.ModelAdmin):
 
 @admin.register(Funds)
 class FundsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'balance')
+    list_display = ('user', 'balance', 'reserved_balance')
     search_fields = ('user__username', 'user__phone_number')
 
 @admin.register(FundsTransaction)

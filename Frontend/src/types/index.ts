@@ -111,7 +111,7 @@ export interface RegisterData {
   email: string;
   phone_number: string;
   password: string;
-  referred_by?: string;
+  referred_by: string;
 }
 
 export interface AuthTokens {

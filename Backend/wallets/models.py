@@ -28,9 +28,15 @@ class WalletTransaction(models.Model):
 class Funds(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="funds")
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Locked for marketplace job budgets until completion or admin rejection
+    reserved_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.user.username} - Funds: {self.balance}"
+
+    @property
+    def available_balance(self):
+        return self.balance - self.reserved_balance
 
 class FundsTransaction(models.Model):
     funds = models.ForeignKey(Funds, on_delete=models.CASCADE, related_name="transactions")

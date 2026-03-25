@@ -5,10 +5,20 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const getWsUrl = () => {
   if (typeof window === "undefined") return null;
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8888";
-  const wsProtocol = api.startsWith("https") ? "wss" : "ws";
-  const host = api.replace(/^https?:\/\//, "");
-  return `${wsProtocol}://${host}/ws/marketplace/`;
+  const explicit = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  if (explicit) {
+    const wsProtocol = explicit.startsWith("https") ? "wss" : "ws";
+    const host = explicit.replace(/^https?:\/\//, "");
+    return `${wsProtocol}://${host}/ws/marketplace/`;
+  }
+  const proto = window.location.protocol === "https:" ? "wss" : "ws";
+  const p = window.location.port;
+  const useBackendPort =
+    p === "3333" || p === "3000" || p === "3001";
+  const hostPort = useBackendPort
+    ? `${window.location.hostname}:8888`
+    : window.location.host;
+  return `${proto}://${hostPort}/ws/marketplace/`;
 };
 
 /**

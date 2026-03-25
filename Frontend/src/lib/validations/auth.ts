@@ -11,7 +11,10 @@ export const registerSchema = z.object({
   phone_number: z.string().min(1, 'Phone number is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirm_password: z.string().min(1, 'Please confirm your password'),
-  referred_by: z.string().optional(),
+  referred_by: z
+    .string()
+    .trim()
+    .min(1, 'Referral code is required'),
 }).refine((data) => data.password === data.confirm_password, {
   message: "Passwords don't match",
   path: ['confirm_password'],

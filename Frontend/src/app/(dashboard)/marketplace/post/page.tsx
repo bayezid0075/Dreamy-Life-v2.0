@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   Loader2,
   Briefcase,
-  Wallet,
   ImagePlus,
   Plus,
   Trash2,
@@ -25,6 +24,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function PostJobPage() {
   const router = useRouter();
@@ -44,12 +44,16 @@ export default function PostJobPage() {
     queryFn: () => marketplaceApi.walletCheck(),
   });
 
-  const totalBudget =
+  const unitsForBudget =
     workType === "single"
-      ? parseFloat(price) || 0
-      : (parseFloat(price) || 0) * (parseInt(totalQuantity, 10) || 0);
+      ? 1
+      : Math.max(1, Number.parseInt(totalQuantity, 10) || 1);
+  const totalBudget = (parseFloat(price) || 0) * unitsForBudget;
   const available = walletCheck ? parseFloat(walletCheck.available_balance) : 0;
-  const canPost = totalBudget > 0 && totalBudget <= available;
+  /** Debited from funds when an admin approves the job (budget + 5%). */
+  const chargeOnApproval = Math.round(totalBudget * 1.05 * 100) / 100;
+  const mayFailApproval = totalBudget > 0 && chargeOnApproval > available;
+  const canPost = totalBudget > 0;
 
   const addImageUrl = () => setImageUrls((prev) => [...prev, ""]);
   const setImageUrl = (i: number, v: string) =>
@@ -89,7 +93,7 @@ export default function PostJobPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canPost) {
-      toast.error("Insufficient wallet balance or invalid amount");
+      toast.error("Enter a valid job budget (total price).");
       return;
     }
     setLoading(true);
@@ -98,12 +102,15 @@ export default function PostJobPage() {
         .map((url) => url.trim())
         .filter(Boolean)
         .map((url, order) => ({ image_url: url, order }));
+      const parsedQty = Number.parseInt(totalQuantity, 10);
+      const totalQty =
+        workType === "single" ? 1 : Math.max(1, Number.isFinite(parsedQty) ? parsedQty : 1);
       await marketplaceApi.createJob({
         title: title.trim(),
         description: description.trim(),
         work_type: workType,
         price: parseFloat(price),
-        total_quantity: workType === "single" ? 1 : Math.max(1, parseInt(totalQuantity, 10)),
+        total_quantity: totalQty,
         images: images.length ? images : undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["marketplace-my-jobs"] });
@@ -138,28 +145,28 @@ export default function PostJobPage() {
             Post a Job
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base max-w-xl">
-            Budget will be reserved from your wallet until the job is completed or rejected.
+            Nothing is charged when you submit. When an admin approves your listing, your <strong className="text-foreground font-medium">funds</strong> are debited for the job budget plus a 5% fee.
           </p>
         </div>
       </header>
 
-      {/* Wallet summary - always visible, compact on mobile */}
+      {/* Funds summary — jobs debit funds only */}
       <Card className="rounded-2xl border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 shadow-sm overflow-hidden">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Wallet className="h-5 w-5" />
+                <Coins className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Available balance</p>
+                <p className="text-sm font-medium text-muted-foreground">Available funds</p>
                 <p className="text-xl sm:text-2xl font-bold tabular-nums">
                   ৳{available.toLocaleString()}
                 </p>
               </div>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground border-t sm:border-t-0 sm:border-l pt-3 sm:pt-0 sm:pl-4">
-              Total budget will be locked when you submit.
+              Ensure you can cover budget + 5% when the job is approved.
             </p>
           </div>
         </CardContent>
@@ -320,34 +327,51 @@ export default function PostJobPage() {
                 onValueChange={(v) => setWorkType(v as "single" | "multi")}
                 className="grid grid-cols-1 sm:grid-cols-2 gap-3"
               >
-                <label
-                  htmlFor="single"
-                  className={`flex items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-colors ${
+                {/* Div (not label): Radix RadioGroupItem renders a <button>; interactive-in-label breaks taps on mobile */}
+                <div
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-colors select-none",
                     workType === "single"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted/50"
-                  }`}
+                      : "border-border hover:bg-muted/50",
+                  )}
+                  onClick={() => setWorkType("single")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setWorkType("single");
+                    }
+                  }}
+                  role="presentation"
                 >
-                  <RadioGroupItem value="single" id="single" className="shrink-0" />
-                  <div>
+                  <RadioGroupItem value="single" id="marketplace-worktype-single" className="shrink-0" />
+                  <div className="min-w-0">
                     <span className="font-medium block">Single unit</span>
                     <span className="text-xs text-muted-foreground">One task, fixed price</span>
                   </div>
-                </label>
-                <label
-                  htmlFor="multi"
-                  className={`flex items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-colors ${
+                </div>
+                <div
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-colors select-none",
                     workType === "multi"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted/50"
-                  }`}
+                      : "border-border hover:bg-muted/50",
+                  )}
+                  onClick={() => setWorkType("multi")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setWorkType("multi");
+                    }
+                  }}
+                  role="presentation"
                 >
-                  <RadioGroupItem value="multi" id="multi" className="shrink-0" />
-                  <div>
+                  <RadioGroupItem value="multi" id="marketplace-worktype-multi" className="shrink-0" />
+                  <div className="min-w-0">
                     <span className="font-medium block">Multi unit</span>
                     <span className="text-xs text-muted-foreground">Price per unit, multiple quantity</span>
                   </div>
-                </label>
+                </div>
               </RadioGroup>
             </div>
 
@@ -391,16 +415,24 @@ export default function PostJobPage() {
             {/* Budget summary */}
             <div
               className={`rounded-xl p-4 sm:p-5 text-sm ${
-                totalBudget > available
-                  ? "bg-destructive/10 text-destructive border border-destructive/20"
+                mayFailApproval
+                  ? "bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/25"
                   : "bg-muted/50 border border-border/50"
               }`}
             >
               <p className="font-medium">
-                Total budget to reserve: <strong className="tabular-nums">৳{totalBudget.toLocaleString()}</strong>
+                Job budget (paid to workers):{" "}
+                <strong className="tabular-nums">৳{totalBudget.toLocaleString()}</strong>
               </p>
-              {totalBudget > available && totalBudget > 0 && (
-                <p className="mt-1.5">Insufficient balance. Add funds to your wallet first.</p>
+              <p className="mt-1 text-muted-foreground">
+                On admin approval your funds will be charged:{" "}
+                <strong className="tabular-nums text-foreground">৳{chargeOnApproval.toLocaleString()}</strong>{" "}
+                (budget + 5%)
+              </p>
+              {mayFailApproval && (
+                <p className="mt-1.5">
+                  Your current funds may be too low for approval. Add funds before an admin approves, or the job will be rejected at that step.
+                </p>
               )}
             </div>
 

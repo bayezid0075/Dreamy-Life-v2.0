@@ -60,15 +60,46 @@ export default function RegisterPage() {
       toast.success('Account created successfully! Please login.');
       router.push('/login');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string; email?: string[]; phone_number?: string[] } } };
-      const errorData = err.response?.data;
+      const err = error as {
+        response?: {
+          data?: Record<string, unknown>;
+        };
+      };
+      const errorData = err.response?.data ?? {};
 
-      if (errorData?.email) {
-        form.setError('email', { message: errorData.email[0] });
-      } else if (errorData?.phone_number) {
-        form.setError('phone_number', { message: errorData.phone_number[0] });
-      } else {
-        toast.error(errorData?.detail || 'Registration failed');
+      const toMessage = (v: unknown): string | undefined => {
+        if (Array.isArray(v)) return typeof v[0] === 'string' ? v[0] : undefined;
+        if (typeof v === 'string') return v;
+        return undefined;
+      };
+
+      const fields: Array<keyof RegisterFormData> = [
+        'username',
+        'email',
+        'phone_number',
+        'password',
+        'confirm_password',
+        'referred_by',
+      ];
+
+      let hasFieldError = false;
+      for (const name of fields) {
+        const msg = toMessage(errorData[name]);
+        if (msg) {
+          form.setError(name, { message: msg });
+          hasFieldError = true;
+        }
+      }
+
+      const nonField =
+        toMessage(errorData.non_field_errors) ||
+        toMessage(errorData.detail) ||
+        toMessage(errorData.error);
+
+      if (nonField) {
+        toast.error(nonField);
+      } else if (!hasFieldError) {
+        toast.error('Registration failed');
       }
     } finally {
       setIsLoading(false);
@@ -221,14 +252,21 @@ export default function RegisterPage() {
               name="referred_by"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Referral Code (Optional)</FormLabel>
+                  <FormLabel>
+                    Referral code <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter referral code"
+                      placeholder="Enter your referrer's code"
+                      autoComplete="off"
                       {...field}
                       disabled={isLoading}
+                      required
                     />
                   </FormControl>
+                  <p className="text-[11px] text-muted-foreground">
+                    You must be referred by an existing member.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

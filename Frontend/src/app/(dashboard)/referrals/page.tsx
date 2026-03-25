@@ -532,27 +532,27 @@ export default function ReferralsPage() {
         </CardHeader>
         <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           <Tabs defaultValue="all">
-            <TabsList className="mb-3 sm:mb-4 bg-violet-100/50 dark:bg-violet-900/20 p-0.5 sm:p-1 rounded-lg sm:rounded-xl w-full grid grid-cols-3 h-auto">
+            <TabsList className="mb-3 sm:mb-4 bg-violet-100/50 dark:bg-violet-900/20 p-1 sm:p-1 rounded-lg sm:rounded-xl w-full grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-0 h-auto min-h-0">
               <TabsTrigger
                 value="all"
-                className="rounded-md sm:rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+                className="rounded-md sm:rounded-lg px-3 py-2.5 sm:px-3 sm:py-2 text-xs sm:text-xs md:text-sm font-medium whitespace-normal sm:whitespace-nowrap justify-center text-center data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-md"
               >
-                <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-                All ({stats.recent.length})
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 sm:mr-1.5" />
+                <span className="leading-tight">All ({stats.recent.length})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="verified"
-                className="rounded-md sm:rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                className="rounded-md sm:rounded-lg px-3 py-2.5 sm:px-3 sm:py-2 text-xs sm:text-xs md:text-sm font-medium whitespace-normal sm:whitespace-nowrap justify-center text-center data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow-md"
               >
-                <BadgeCheck className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-                Verified ({stats.recentVerified.length})
+                <BadgeCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 sm:mr-1.5" />
+                <span className="leading-tight">Verified ({stats.recentVerified.length})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="unverified"
-                className="rounded-md sm:rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs md:text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                className="rounded-md sm:rounded-lg px-3 py-2.5 sm:px-3 sm:py-2 text-xs sm:text-xs md:text-sm font-medium whitespace-normal sm:whitespace-nowrap justify-center text-center data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-md"
               >
-                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-                Unverified ({stats.recentUnverified.length})
+                <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 sm:mr-1.5" />
+                <span className="leading-tight">Unverified ({stats.recentUnverified.length})</span>
               </TabsTrigger>
             </TabsList>
 

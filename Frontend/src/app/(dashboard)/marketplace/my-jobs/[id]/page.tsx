@@ -78,7 +78,7 @@ export default function MyJobDetailPage() {
               : `৳${parseFloat(job.price).toLocaleString()} fixed`}
           </p>
           <p className="text-sm text-muted-foreground">
-            Reserved: ৳{parseFloat(job.reserved_amount || "0").toLocaleString()}
+            Remaining worker payouts: ৳{parseFloat(job.reserved_amount || "0").toLocaleString()}
           </p>
         </CardHeader>
         <CardContent>

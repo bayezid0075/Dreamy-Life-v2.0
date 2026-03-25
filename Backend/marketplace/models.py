@@ -1,6 +1,6 @@
 """
 Marketplace Job models.
-Uses existing User and Wallet; reserves/releases wallet balance for job budgets.
+Poster is charged from Funds when admin approves (budget + 5% fee). Worker payouts credit Wallet.
 """
 from django.db import models
 from django.conf import settings
@@ -28,7 +28,7 @@ SUBMISSION_STATUS_CHOICES = [
 
 
 class Job(models.Model):
-    """A job/task posted by a user. Budget is reserved from wallet until completion/cancellation."""
+    """A job/task posted by a user. Funds are debited when admin approves (budget + 5%). `reserved_amount` tracks remaining worker payout pool."""
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="marketplace_jobs"
@@ -42,9 +42,9 @@ class Job(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     total_quantity = models.PositiveIntegerField(default=1)
     remaining_quantity = models.PositiveIntegerField(default=1)
-    # Total budget (price * total_quantity for multi; price for single). Reserved from wallet.
+    # Total budget (price * total_quantity for multi; price for single). Charged (+5%) when admin approves.
     total_budget = models.DecimalField(max_digits=12, decimal_places=2)
-    # Amount still locked (reduced as submissions are approved)
+    # Remaining amount to pay workers (reduced as submissions are approved)
     reserved_amount = models.DecimalField(
         max_digits=12, decimal_places=2, default=0
     )

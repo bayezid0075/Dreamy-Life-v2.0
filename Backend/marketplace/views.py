@@ -25,11 +25,7 @@ from .serializers import (
     JobSubmissionCreateSerializer,
 )
 from .permissions import IsJobOwner, IsAdminOrReadOnly, IsAdminOrSuperadmin
-from .services import (
-    reserve_budget_for_job,
-    release_reserved_on_job_reject,
-    release_payment_to_worker,
-)
+from .services import charge_poster_on_admin_job_approve, credit_worker_for_submission
 from .signals import broadcast_marketplace_event
 
 try:
@@ -41,7 +37,7 @@ except ImportError:
 
 class JobViewSet(viewsets.ModelViewSet):
     """
-    List: my jobs (filter by status). Create: post job (reserves wallet). Retrieve: detail.
+    List: my jobs (filter by status). Create: post job (no funds hold; admin approval charges funds + 5%).
     Update/destroy: only owner, only if pending/rejected or no submissions.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -71,20 +67,7 @@ class JobViewSet(viewsets.ModelViewSet):
             return forbidden
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        work_type = serializer.validated_data["work_type"]
-        price = serializer.validated_data["price"]
-        total_quantity = serializer.validated_data["total_quantity"]
-        total_budget = (price * total_quantity) if work_type == "multi" else price
-        total_budget = Decimal(str(total_budget)).quantize(Decimal("0.01"))
-
-        with transaction.atomic():
-            ok, err = reserve_budget_for_job(request.user.id, total_budget, 0)
-            if not ok:
-                return Response(
-                    {"detail": err},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            job = serializer.save(user=request.user)
+        job = serializer.save(user=request.user)
         return Response(
             JobDetailSerializer(job, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
@@ -223,9 +206,14 @@ class JobSubmissionReviewView(APIView):
                     {"detail": "You can only review submissions for your own jobs."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
+            job = Job.objects.select_for_update().get(pk=sub.job_id)
             if action_type == "approve":
-                ok, err = release_payment_to_worker(
-                    sub.job.user_id,
+                if job.reserved_amount < sub.amount:
+                    return Response(
+                        {"detail": "Job payout budget exceeded."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                ok, err = credit_worker_for_submission(
                     sub.user_id,
                     sub.amount,
                     sub.job_id,
@@ -235,21 +223,20 @@ class JobSubmissionReviewView(APIView):
                 if not ok:
                     return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
                 sub.status = "approved"
+                job.reserved_amount = max(
+                    Decimal("0"),
+                    job.reserved_amount - sub.amount,
+                )
+                job.save(update_fields=["reserved_amount"])
             else:
                 sub.status = "rejected"
-                sub.job.remaining_quantity += sub.quantity
-                sub.job.save(update_fields=["remaining_quantity"])
+                job.remaining_quantity += sub.quantity
+                job.save(update_fields=["remaining_quantity"])
             sub.reviewed_at = timezone.now()
             sub.save(update_fields=["status", "reviewed_at"])
-            job = sub.job
             if job.remaining_quantity == 0:
                 job.status = "completed"
                 job.save(update_fields=["status"])
-            job.reserved_amount = max(
-                Decimal("0"),
-                job.reserved_amount - (sub.amount if action_type == "approve" else Decimal("0")),
-            )
-            job.save(update_fields=["reserved_amount"])
             broadcast_marketplace_event(
                 "submission_reviewed",
                 submission_id=sub.id,
@@ -279,49 +266,62 @@ class AdminJobViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
-        job = self.get_object()
         action_type = request.data.get("action")
         if action_type not in ("approve", "reject"):
             return Response(
                 {"detail": "action must be 'approve' or 'reject'."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if job.status != "pending":
-            return Response(
-                {"detail": "Job is not pending."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         with transaction.atomic():
+            job = Job.objects.select_for_update().get(pk=pk)
+            if job.status != "pending":
+                return Response(
+                    {"detail": "Job is not pending."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             if action_type == "reject":
-                release_reserved_on_job_reject(job.user_id, job.total_budget)
                 job.status = "rejected"
+                job.approved_by = None
+                job.approved_at = None
+                job.save(update_fields=["status", "approved_by", "approved_at"])
             else:
+                ok, err = charge_poster_on_admin_job_approve(
+                    job.user_id, job.total_budget, job.id
+                )
+                if not ok:
+                    return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
                 job.status = "approved"
                 job.approved_by = request.user
                 job.approved_at = timezone.now()
-            job.save(update_fields=["status", "approved_by", "approved_at"])
+                job.save(update_fields=["status", "approved_by", "approved_at"])
             broadcast_marketplace_event(
                 "job_reviewed",
                 job_id=job.id,
                 action=action_type,
             )
-        return Response(JobDetailSerializer(job, context={"request": request}).data)
+        job.refresh_from_db()
+        return Response(
+            JobDetailSerializer(job, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 class MarketplaceWalletCheckView(APIView):
-    """Return wallet balance and available (balance - reserved) for marketplace posting."""
+    """Return **Funds** balance for marketplace (no reservation; admin approval debits budget + 5%)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        from wallets.models import Wallet
+        from wallets.models import Funds
         forbidden, is_forbidden = check_area_allowed(request.user, "wallet")
         if is_forbidden:
             return forbidden
-        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        funds, _ = Funds.objects.get_or_create(user=request.user)
+        bal = funds.balance.quantize(Decimal("0.01"))
         return Response({
-            "balance": str(wallet.balance),
-            "reserved_balance": str(wallet.reserved_balance),
-            "available_balance": str(wallet.balance - wallet.reserved_balance),
+            "balance": str(bal),
+            "reserved_balance": "0",
+            "available_balance": str(bal),
+            "approval_fee_rate": "0.05",
         })
 
 

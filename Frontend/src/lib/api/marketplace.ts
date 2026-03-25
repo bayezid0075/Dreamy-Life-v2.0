@@ -60,6 +60,8 @@ export interface WalletCheck {
   balance: string;
   reserved_balance: string;
   available_balance: string;
+  /** e.g. "0.05" — fee on top of job budget when admin approves */
+  approval_fee_rate?: string;
 }
 
 export interface JobCreatePayload {
