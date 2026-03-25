@@ -120,16 +120,35 @@ export default function ProfilePage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (updateMutation.isPending) {
+        toast.error('Please wait, profile update is in progress');
+        e.target.value = '';
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Image size should be less than 5MB');
+        e.target.value = '';
         return;
       }
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result as string);
+        const nextImage = reader.result as string;
+        const previousImage = profileImage;
+
+        // Optimistic preview so users see the selected image instantly.
+        setProfileImage(nextImage);
+        updateMutation.mutate(
+          { profile_picture: nextImage },
+          {
+            onError: () => {
+              setProfileImage(previousImage);
+            },
+          }
+        );
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
   };
 
