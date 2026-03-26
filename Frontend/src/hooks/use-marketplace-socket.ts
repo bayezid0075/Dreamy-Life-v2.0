@@ -5,7 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const getWsUrl = () => {
   if (typeof window === "undefined") return null;
-  const explicit = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  let explicit = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  if (window.location.protocol === "https:" && explicit?.startsWith("http://")) {
+    explicit = explicit.replace(/^http:\/\//, "https://");
+  }
   if (explicit) {
     const wsProtocol = explicit.startsWith("https") ? "wss" : "ws";
     const host = explicit.replace(/^https?:\/\//, "");

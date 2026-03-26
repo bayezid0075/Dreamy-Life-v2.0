@@ -6,7 +6,12 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
  * Set `NEXT_PUBLIC_API_URL` only if the API is on a different public origin.
  */
 export function getApiBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+  const raw = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+  if (!raw) return '';
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && raw.startsWith('http://')) {
+    return raw.replace(/^http:\/\//, 'https://');
+  }
+  return raw;
 }
 
 const API_BASE_URL = getApiBaseUrl();

@@ -23,8 +23,8 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       DB_HOST: postgres
       DB_PORT: "5432"
-      BACKEND_URL: ${BACKEND_URL:-http://localhost:8888}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3333}
+      BACKEND_URL: ${BACKEND_URL:-https://dreamy-life.com}
+      FRONTEND_URL: ${FRONTEND_URL:-https://dreamy-life.com}
       USE_REDIS_CHANNELS: ${USE_REDIS_CHANNELS:-false}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/1}
     ports:
@@ -36,15 +36,14 @@ services:
     build:
       context: ./Frontend
       args:
-        # Omit or leave empty so the browser uses same-origin /api/* (proxied by Next to backend).
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://dreamy-life.com}
         BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:8888}
     restart: always
     depends_on:
       - backend
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://dreamy-life.com}
     ports:
       - "3333:3333"
 
