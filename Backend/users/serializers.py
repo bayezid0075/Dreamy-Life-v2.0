@@ -132,12 +132,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     
     def validate_email(self, value):
-        """Validate that email exists in the system"""
-        from .models import User
-        if not User.objects.filter(email=value).exists():
-            # Don't reveal if email exists for security
-            pass
-        return value
+        """Normalize email for consistent lookup."""
+        return value.strip().lower()
 
 class PasswordResetVerifySerializer(serializers.Serializer):
     """Serializer for verifying reset token"""

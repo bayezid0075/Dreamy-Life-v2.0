@@ -157,8 +157,20 @@ export const superadminApi = {
     message: string;
     image?: string;
     link?: string;
-  }): Promise<{ detail: string; count: number }> => {
-    const response = await apiClient.post<{ detail: string; count: number }>(
+  }): Promise<{
+    detail: string;
+    count: number;
+    android_push_success?: number;
+    android_push_failure?: number;
+    android_push_status?: Record<string, unknown>;
+  }> => {
+    const response = await apiClient.post<{
+      detail: string;
+      count: number;
+      android_push_success?: number;
+      android_push_failure?: number;
+      android_push_status?: Record<string, unknown>;
+    }>(
       "/api/superadmin/push-notification/",
       payload
     );

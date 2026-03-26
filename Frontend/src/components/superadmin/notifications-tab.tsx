@@ -33,7 +33,11 @@ export function SuperadminNotificationsTab({
         link: link.trim() || undefined,
       }),
     onSuccess: (data) => {
-      toast.success(data.detail);
+      const pushInfo =
+        data.android_push_success !== undefined
+          ? ` Android push success: ${data.android_push_success}, failed: ${data.android_push_failure}.`
+          : "";
+      toast.success(`${data.detail}${pushInfo}`);
       setTitle("");
       setMessage("");
       setImage("");

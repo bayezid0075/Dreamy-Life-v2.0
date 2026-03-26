@@ -202,6 +202,10 @@ BACKEND_URL = env("BACKEND_URL", default="http://localhost:8888")
 # Superadmin: comma-separated list of emails allowed to access the superadmin panel
 SUPERADMIN_ALLOWED_EMAILS = [e.strip().lower() for e in env("SUPERADMIN_ALLOWED_EMAILS", default="").split(",") if e.strip()]
 
+# Firebase (FCM) credentials for mobile push notifications
+FIREBASE_SERVICE_ACCOUNT_PATH = (env("FIREBASE_SERVICE_ACCOUNT_PATH", default="") or "").strip()
+FIREBASE_SERVICE_ACCOUNT_JSON = env("FIREBASE_SERVICE_ACCOUNT_JSON", default="")
+
 # UddoktaPay (membership payments) — no spaces; sandbox key with sandbox URL
 UDDOKTAPAY_API_KEY = (env("UDDOKTAPAY_API_KEY", default="") or "").strip()
 UDDOKTAPAY_BASE_URL = (env("UDDOKTAPAY_BASE_URL", default="https://sandbox.uddoktapay.com") or "").strip().rstrip("/") or "https://sandbox.uddoktapay.com"

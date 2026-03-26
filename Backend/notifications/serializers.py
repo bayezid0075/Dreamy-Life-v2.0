@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Notification
+from .models import Notification, DeviceToken
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -16,3 +16,18 @@ class NotificationSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+
+class DeviceTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceToken
+        fields = ["token", "platform"]
+        extra_kwargs = {
+            "platform": {"required": False},
+        }
+
+    def validate_token(self, value):
+        token = (value or "").strip()
+        if not token:
+            raise serializers.ValidationError("Token is required.")
+        return token

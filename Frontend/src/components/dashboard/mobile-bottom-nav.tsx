@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, User, Wallet, ShoppingBag, Store } from 'lucide-react';
+import { Home, User, Wallet, Users, Store } from 'lucide-react';
 
 const leftItems = [
   { title: 'Home', href: '/dashboard', icon: Home },
@@ -10,7 +10,7 @@ const leftItems = [
 ];
 
 const rightItems = [
-  { title: 'Orders', href: '/orders', icon: ShoppingBag },
+  { title: 'Referrals', href: '/referrals', icon: Users },
   { title: 'Profile', href: '/profile', icon: User },
 ];
 

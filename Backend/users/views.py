@@ -151,11 +151,11 @@ class PasswordResetRequestView(APIView):
         email = serializer.validated_data['email']
         
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-            # Tell user that account doesn't exist
+            # Tell user that account does not exist.
             return Response({
-                'detail': 'Account not exist under the email',
+                'detail': 'Email does not exist',
                 'account_exists': False
             }, status=status.HTTP_404_NOT_FOUND)
         

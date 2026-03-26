@@ -28,10 +28,19 @@ import {
 
 import { authApi } from '@/lib/api';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validations';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const [isEmailNotFoundModalOpen, setIsEmailNotFoundModalOpen] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -49,11 +58,20 @@ export default function ForgotPasswordPage() {
         setIsEmailSent(true);
         toast.success('Password reset link sent to your email');
       } else {
-        toast.error('No account found with this email');
+        setIsEmailNotFoundModalOpen(true);
       }
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || 'Failed to send reset email');
+      const err = error as {
+        response?: { status?: number; data?: { detail?: string; account_exists?: boolean } };
+      };
+      const isEmailNotFound =
+        err.response?.status === 404 || err.response?.data?.account_exists === false;
+
+      if (isEmailNotFound) {
+        setIsEmailNotFoundModalOpen(true);
+      } else {
+        toast.error(err.response?.data?.detail || 'Failed to send reset email');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -85,52 +103,66 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
-        <CardDescription>
-          Enter your email address and we&apos;ll send you a link to reset your
-          password.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      {...field}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <>
+      <Card className="shadow-lg">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
+          <CardDescription>
+            Enter your email address and we&apos;ll send you a link to reset your
+            password.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Enter your email"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Send Reset Link
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Link
-          href="/login"
-          className="text-sm text-muted-foreground hover:text-primary"
-        >
-          <ArrowLeft className="mr-2 inline h-4 w-4" />
-          Back to Login
-        </Link>
-      </CardFooter>
-    </Card>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Send Reset Link
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Link
+            href="/login"
+            className="text-sm text-muted-foreground hover:text-primary"
+          >
+            <ArrowLeft className="mr-2 inline h-4 w-4" />
+            Back to Login
+          </Link>
+        </CardFooter>
+      </Card>
+
+      <Dialog open={isEmailNotFoundModalOpen} onOpenChange={setIsEmailNotFoundModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email does not exist</DialogTitle>
+            <DialogDescription>
+              No user account was found with this email address.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter showCloseButton />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

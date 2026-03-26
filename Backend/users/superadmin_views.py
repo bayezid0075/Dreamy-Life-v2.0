@@ -25,6 +25,8 @@ from .models import (
 )
 from .admin_serializers import AdminUserSerializer, AdminUserCreateSerializer, AdminUserInfoSerializer
 from .admin_views import AdminUserDetailView
+from notifications.models import DeviceToken
+from notifications.firebase import send_fcm_push
 
 
 def get_superadmin_emails():
@@ -434,4 +436,29 @@ def superadmin_push_notification(request):
             source="admin",
         )
         created += 1
-    return Response({"detail": f"Notification sent to {created} users.", "count": created})
+
+    android_tokens = list(
+        DeviceToken.objects.filter(
+            user__in=users,
+            is_active=True,
+            platform="android",
+        )
+        .values_list("token", flat=True)
+        .distinct()
+    )
+    push_result = send_fcm_push(
+        tokens=android_tokens,
+        title=title.strip(),
+        message=message.strip(),
+        image=image,
+        link=link,
+    )
+    return Response(
+        {
+            "detail": f"Notification sent to {created} users.",
+            "count": created,
+            "android_push_success": push_result.get("success", 0),
+            "android_push_failure": push_result.get("failure", 0),
+            "android_push_status": push_result,
+        }
+    )

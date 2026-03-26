@@ -23,4 +23,22 @@ export const notificationsApi = {
     const res = await apiClient.post<{ marked: number }>(`${BASE}/mark-all-read/`);
     return res.data;
   },
+
+  registerDeviceToken: async (payload: {
+    token: string;
+    platform?: "android" | "ios" | "web";
+  }): Promise<{ detail: string; token: string; platform: string }> => {
+    const res = await apiClient.post<{ detail: string; token: string; platform: string }>(
+      `${BASE}/device-tokens/`,
+      payload
+    );
+    return res.data;
+  },
+
+  unregisterDeviceToken: async (payload: { token: string; platform?: "android" | "ios" | "web" }): Promise<{ detail: string; count: number }> => {
+    const res = await apiClient.delete<{ detail: string; count: number }>(`${BASE}/device-tokens/`, {
+      data: payload,
+    });
+    return res.data;
+  },
 };
