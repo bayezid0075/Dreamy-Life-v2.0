@@ -26,7 +26,10 @@ function getBackendBaseUrl(): string {
 
 function buildTargetUrl(req: NextRequest, path: string[]): string {
   const backendBase = getBackendBaseUrl();
-  const target = new URL(`${backendBase}/api/${path.join("/")}/`);
+  const joinedPath = path.join("/");
+  // Prevent double trailing slash if the original request didn't have it, or 
+  // uniformly append exactly one slash if Django requires it. Let's just append one slash properly.
+  const target = new URL(`${backendBase}/api/${joinedPath}/`.replace(/(?<!:)\/+/g, "/"));
   const incoming = new URL(req.url);
 
   // Preserve query params exactly.
@@ -45,6 +48,15 @@ function toForwardHeaders(req: NextRequest): Headers {
       headers.set(key, value);
     }
   });
+  
+  // Explicitly forward the original Host from the frontend so the backend knows where it came from.
+  // Set X-Forwarded-Proto so Django generates HTTPS absolute URLs.
+  const host = req.headers.get("host");
+  if (host) {
+    headers.set("X-Forwarded-Host", host);
+  }
+  headers.set("X-Forwarded-Proto", "https");
+
   return headers;
 }
 
