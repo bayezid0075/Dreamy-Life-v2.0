@@ -81,6 +81,7 @@ Deploy is handled by [.github/workflows/deploy.yml](.github/workflows/deploy.yml
 
    - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
    - `BACKEND_URL`, `FRONTEND_URL`, `NEXT_PUBLIC_API_URL` (your domain URLs)
+   - `BACKEND_INTERNAL_URL=http://backend:8888` (container-to-container API routing)
    - Django `SECRET_KEY`, email, and any payment/API keys
 
 4. **First run** (optional; CI/CD will also do this on first deploy):
@@ -103,13 +104,32 @@ In repo **Settings → Secrets and variables → Actions**, add:
 
 After that, **pushing to `master`** will automatically deploy (pull, build, migrate).
 
-### Optional: domain & HTTPS
+### Domain & HTTPS (Nginx required for production)
 
-- Expose ports 80/443 with **Nginx** (or Caddy) as reverse proxy.
-- Point domain to VPS, then proxy:
-  - Frontend → `http://127.0.0.1:3333`
-  - Backend/API → `http://127.0.0.1:8888`
-- Use **Let’s Encrypt** (e.g. certbot) for SSL.
+Use the provided config at `nginx/dreamy-life.conf` as your site config.
+
+Important routing:
+- `/` → `http://127.0.0.1:3333` (Next.js frontend)
+- `/api/` → `http://127.0.0.1:8888` (Django API)
+- `/ws/` → `http://127.0.0.1:8888` (Django Channels WebSocket)
+
+Example setup on VPS:
+
+```bash
+sudo cp nginx/dreamy-life.conf /etc/nginx/sites-available/dreamy-life.conf
+sudo ln -s /etc/nginx/sites-available/dreamy-life.conf /etc/nginx/sites-enabled/dreamy-life.conf
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Then validate:
+
+```bash
+curl -I https://dreamy-life.com
+curl -i -X POST https://dreamy-life.com/api/users/login/ -H "Content-Type: application/json" -d '{"email":"x","password":"y"}'
+```
+
+If the second command returns Django JSON (even 400/401), routing is correct. If it returns HTML 404, Nginx is still not proxying `/api/` to backend.
 
 ---
 

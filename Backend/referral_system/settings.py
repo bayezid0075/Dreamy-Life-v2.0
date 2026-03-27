@@ -140,13 +140,18 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
     "http://localhost:3333",
+    "https://localhost:3333",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
     "http://127.0.0.1:3333",
+    "https://127.0.0.1:3333",
     "http://192.168.0.214:3000",
     "http://192.168.0.214:3333",
+    "https://dreamy-life.com",
+    "https://www.dreamy-life.com",
     "http://107.167.94.254:8888",
     "http://107.167.94.254:3333",
+    "https://107.167.94.254",
 ]
 # Allow dev servers on any port for these hosts (useful for Next.js, Vite, etc.)
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -157,6 +162,19 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ALLOWED_HOSTS = ["*"]
 # Allow credentials (cookies, authorization headers, etc.)
 CORS_ALLOW_CREDENTIALS = True
+
+# HTTPS reverse-proxy safe defaults (override by env for strict production policies).
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[
+        "https://dreamy-life.com",
+        "https://www.dreamy-life.com",
+        "http://localhost:3333",
+        "http://127.0.0.1:3333",
+    ],
+)
+SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE", default="False") == "True"
+CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE", default="False") == "True"
 
 # Allow all headers
 CORS_ALLOW_HEADERS = [
