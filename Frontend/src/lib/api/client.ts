@@ -8,8 +8,31 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 export function getApiBaseUrl(): string {
   const raw = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
   if (!raw) return '';
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && raw.startsWith('http://')) {
-    return raw.replace(/^http:\/\//, 'https://');
+  if (typeof window !== 'undefined') {
+    try {
+      const parsed = new URL(raw);
+      const isIpHost = /^(\d{1,3}\.){3}\d{1,3}$/.test(parsed.hostname);
+      const pageHost = window.location.hostname;
+      const pageOrigin = window.location.origin;
+
+      // Never allow mixed-content API calls from HTTPS pages.
+      if (window.location.protocol === 'https:' && parsed.protocol === 'http:') {
+        return '';
+      }
+
+      // If an IP-based API URL doesn't match the current site host, fall back
+      // to same-origin /api to prevent stale/dead deployment IPs from breaking auth.
+      if (isIpHost && parsed.hostname !== pageHost) {
+        return '';
+      }
+
+      // If env points to same host as current page, prefer same-origin route.
+      if (parsed.origin === pageOrigin) {
+        return '';
+      }
+    } catch {
+      return '';
+    }
   }
   return raw;
 }
@@ -28,7 +51,7 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: false,
-  timeout: 60_000,
+  timeout: 20_000,
 });
 
 // Request interceptor to add auth token
@@ -102,7 +125,7 @@ export const apiClientMultipart = axios.create({
     'Content-Type': 'multipart/form-data',
   },
   withCredentials: false,
-  timeout: 120_000,
+  timeout: 30_000,
 });
 
 apiClientMultipart.interceptors.request.use(

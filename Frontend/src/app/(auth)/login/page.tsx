@@ -63,7 +63,12 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || 'Invalid credentials');
+      const message =
+        err.response?.data?.detail ||
+        (error instanceof Error && /timeout/i.test(error.message)
+          ? 'Request timed out. Please check your connection and try again.'
+          : 'Invalid credentials');
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
