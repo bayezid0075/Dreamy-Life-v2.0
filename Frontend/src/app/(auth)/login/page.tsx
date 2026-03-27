@@ -46,6 +46,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       const isEmail = data.identifier.includes('@');

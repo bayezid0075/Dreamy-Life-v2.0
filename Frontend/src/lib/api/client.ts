@@ -1,40 +1,17 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 /**
- * When unset, use same-origin relative `/api/...` so Next.js rewrites can proxy to
- * the backend (avoids baking `localhost` into the client bundle in production).
+ * Default to same-origin internal proxy route so frontend can forward API calls
+ * to backend without depending on edge `/api` routing.
  * Set `NEXT_PUBLIC_API_URL` only if the API is on a different public origin.
  */
 export function getApiBaseUrl(): string {
   const raw = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
-  if (!raw) return '';
-  if (typeof window !== 'undefined') {
-    try {
-      const parsed = new URL(raw);
-      const isIpHost = /^(\d{1,3}\.){3}\d{1,3}$/.test(parsed.hostname);
-      const pageHost = window.location.hostname;
-      const pageOrigin = window.location.origin;
-
-      // Never allow mixed-content API calls from HTTPS pages.
-      if (window.location.protocol === 'https:' && parsed.protocol === 'http:') {
-        return '';
-      }
-
-      // If an IP-based API URL doesn't match the current site host, fall back
-      // to same-origin /api to prevent stale/dead deployment IPs from breaking auth.
-      if (isIpHost && parsed.hostname !== pageHost) {
-        return '';
-      }
-
-      // If env points to same host as current page, prefer same-origin route.
-      if (parsed.origin === pageOrigin) {
-        return '';
-      }
-    } catch {
-      return '';
-    }
-  }
-  return raw;
+  const internalProxyBase = '/internal-api';
+  // In browser always use the app's internal proxy route. This prevents mixed
+  // content, stale domain/IP env values, and edge-routing mismatches.
+  if (typeof window !== 'undefined') return internalProxyBase;
+  return raw || internalProxyBase;
 }
 
 const API_BASE_URL = getApiBaseUrl();
