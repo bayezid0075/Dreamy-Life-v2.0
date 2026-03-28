@@ -7,10 +7,9 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
  */
 export function getApiBaseUrl(): string {
   const raw = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
-  const internalProxyBase = '';
-  // In browser always use the app's relative paths so Nginx proxies them
-  // natively to the Django backend. This prevents mixed content and preserves
-  // original Host headers over HTTPS.
+  const internalProxyBase = '/internal-api';
+  // In browser always use the app's internal proxy route. This prevents mixed
+  // content, stale env values, and edge `/api` routing mismatches.
   if (typeof window !== 'undefined') return internalProxyBase;
   return raw || internalProxyBase;
 }
