@@ -10,15 +10,6 @@ const backendInternalUrl =
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  async rewrites() {
-    const base = backendInternalUrl.replace(/\/$/, "");
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${base}/api/:path*`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
