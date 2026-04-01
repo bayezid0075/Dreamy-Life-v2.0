@@ -26,7 +26,9 @@ function getBackendBaseUrl(): string {
 
 function buildTargetUrl(req: NextRequest, path: string[]): string {
   const backendBase = getBackendBaseUrl();
-  const target = new URL(`${backendBase}/${path.join("/")}`);
+  const joinedPath = path.join("/");
+  // Append trailing slash to mirror Next.js [...path] stripping
+  const target = new URL(`${backendBase}/${joinedPath}/`.replace(/(?<!:)\/+/g, "/"));
   const incoming = new URL(req.url);
   incoming.searchParams.forEach((value, key) => {
     target.searchParams.append(key, value);
