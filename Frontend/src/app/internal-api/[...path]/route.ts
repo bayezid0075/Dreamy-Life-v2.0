@@ -43,6 +43,13 @@ function toForwardHeaders(req: NextRequest): Headers {
       headers.set(key, value);
     }
   });
+
+  const host = req.headers.get("host");
+  if (host) {
+    headers.set("X-Forwarded-Host", host);
+  }
+  headers.set("X-Forwarded-Proto", "https");
+
   return headers;
 }
 

@@ -38,9 +38,22 @@ export function useMarketplaceSocket(enabled = true) {
     const url = getWsUrl();
     if (!url) return;
 
+    let isIntentionalClose = false;
+
     const connect = () => {
       try {
         const ws = new WebSocket(url);
+        let pingInterval: ReturnType<typeof setInterval>;
+
+        ws.onopen = () => {
+          // Send a ping every 30 seconds to keep the connection alive (e.g., through Nginx proxies)
+          pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: "ping" }));
+            }
+          }, 30000);
+        };
+
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
@@ -58,21 +71,37 @@ export function useMarketplaceSocket(enabled = true) {
             // ignore parse errors
           }
         };
+
         ws.onclose = () => {
+          clearInterval(pingInterval);
           wsRef.current = null;
-          reconnectRef.current = setTimeout(connect, 5000);
+          if (!isIntentionalClose) {
+            reconnectRef.current = setTimeout(connect, 5000);
+          }
         };
-        ws.onerror = () => ws.close();
+
+        ws.onerror = () => {
+          // Don't call close here if it will be called anyway, but safely closing is fine.
+          // Let onclose handle the reconnection.
+          ws.close();
+        };
+
         wsRef.current = ws;
       } catch {
-        reconnectRef.current = setTimeout(connect, 5000);
+        if (!isIntentionalClose) {
+          reconnectRef.current = setTimeout(connect, 5000);
+        }
       }
     };
 
     connect();
+
     return () => {
+      isIntentionalClose = true;
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
       if (wsRef.current) {
+        // Remove onclose to prevent any late-firing events from executing
+        wsRef.current.onclose = null;
         wsRef.current.close();
         wsRef.current = null;
       }

@@ -81,7 +81,14 @@ export default function VendorPage() {
 // ==================== MULTI-STEP CREATION FLOW ====================
 
 function VendorCreationFlow() {
-  const [step, setStep] = useState<Step>('payment');
+  const [step, setStep] = useState<Step>('details');
+  const flowSteps: Step[] = ['details', 'payment', 'success'];
+  const labels: Record<Step, string> = {
+    details: 'Shop Details',
+    payment: 'Payment',
+    success: 'Complete',
+  };
+  const currentStepIndex = flowSteps.indexOf(step);
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 px-4 md:px-0">
@@ -97,12 +104,9 @@ function VendorCreationFlow() {
 
       {/* Step Indicator */}
       <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-        {(['payment', 'details', 'success'] as Step[]).map((s, i) => {
-          const labels = ['Payment', 'Shop Details', 'Complete'];
+        {flowSteps.map((s, i) => {
           const isActive = s === step;
-          const isPast =
-            (step === 'details' && s === 'payment') ||
-            (step === 'success' && (s === 'payment' || s === 'details'));
+          const isPast = i < currentStepIndex;
 
           return (
             <div key={s} className="flex items-center gap-1.5 sm:gap-2">
@@ -136,7 +140,7 @@ function VendorCreationFlow() {
                         : 'text-muted-foreground'
                   }`}
                 >
-                  {labels[i]}
+                  {labels[s]}
                 </span>
               </div>
             </div>
@@ -144,13 +148,15 @@ function VendorCreationFlow() {
         })}
       </div>
 
-      {step === 'payment' && (
-        <PaymentStep onSuccess={() => setStep('details')} />
-      )}
       {step === 'details' && (
         <DetailsStep
+          onSuccess={() => setStep('payment')}
+        />
+      )}
+      {step === 'payment' && (
+        <PaymentStep
           onSuccess={() => setStep('success')}
-          onBack={() => setStep('payment')}
+          onBack={() => setStep('details')}
         />
       )}
       {step === 'success' && <SuccessStep />}
@@ -160,7 +166,13 @@ function VendorCreationFlow() {
 
 // ==================== PAYMENT STEP ====================
 
-function PaymentStep({ onSuccess }: { onSuccess: () => void }) {
+function PaymentStep({
+  onSuccess,
+  onBack,
+}: {
+  onSuccess: () => void;
+  onBack: () => void;
+}) {
   const [paymentResult, setPaymentResult] = useState<string>('');
 
   const handleProceed = () => {
@@ -241,8 +253,17 @@ function PaymentStep({ onSuccess }: { onSuccess: () => void }) {
           disabled={!paymentResult}
           className="w-full h-12 text-base bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 shadow-lg shadow-fuchsia-500/25 hover:shadow-fuchsia-500/40 transition-all"
         >
-          Proceed to Payment
+          Complete Payment
           <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          className="w-full h-12"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Shop Details
         </Button>
       </CardContent>
     </Card>
@@ -253,10 +274,8 @@ function PaymentStep({ onSuccess }: { onSuccess: () => void }) {
 
 function DetailsStep({
   onSuccess,
-  onBack,
 }: {
   onSuccess: () => void;
-  onBack: () => void;
 }) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -404,28 +423,18 @@ function DetailsStep({
               )}
             />
 
-            <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onBack}
-                disabled={createMutation.isPending}
-                className="flex-1 h-12"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
+            <div className="pt-2">
               <Button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="flex-1 h-12 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 shadow-lg shadow-fuchsia-500/25"
+                className="w-full h-12 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 shadow-lg shadow-fuchsia-500/25"
               >
                 {createMutation.isPending ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (
                   <Zap className="mr-2 h-5 w-5" />
                 )}
-                Create Shop
+                Continue to Payment
               </Button>
             </div>
           </form>
