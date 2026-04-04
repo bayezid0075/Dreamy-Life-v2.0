@@ -89,7 +89,12 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle","rest_framework.throttling.UserRateThrottle"],
-    "DEFAULT_THROTTLE_RATES": {"anon": "20/minute","user": "2000/day"}
+    "DEFAULT_THROTTLE_RATES": {"anon": "20/minute","user": "2000/day"},
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.QueryParameterVersioning",
+    "DEFAULT_VERSION": "v1",
+    "ALLOWED_VERSIONS": ("v1",),
 }
 
 # JWT Token Settings - Extended lifetime to prevent automatic logout
@@ -262,4 +267,17 @@ if _use_redis_channels and _redis_url:
 else:
     CHANNEL_LAYERS = {
         "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+    }
+
+# Cache (Redis when available; local memory fallback)
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+        }
+    }
+else:
+    CACHES = {
+        "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
     }

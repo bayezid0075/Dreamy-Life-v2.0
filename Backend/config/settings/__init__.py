@@ -1,0 +1,2 @@
+"""Settings entrypoint package."""
+

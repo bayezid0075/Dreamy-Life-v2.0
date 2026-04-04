@@ -9,14 +9,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+
   backend:
     build:
       context: ./Backend
+      dockerfile: Dockerfile.prod
     restart: always
     depends_on:
       - postgres
+      - redis
     environment:
       DEBUG: "False"
+      DJANGO_SETTINGS_MODULE: config.settings.prod
       DB_ENGINE: django.db.backends.postgresql
       DB_NAME: ${POSTGRES_DB:-dreamy_life}
       DB_USER: ${POSTGRES_USER:-postgres}
@@ -25,10 +32,32 @@ services:
       DB_PORT: "5432"
       BACKEND_URL: ${BACKEND_URL:-https://dreamy-life.com}
       FRONTEND_URL: ${FRONTEND_URL:-https://dreamy-life.com}
-      USE_REDIS_CHANNELS: ${USE_REDIS_CHANNELS:-false}
+      USE_REDIS_CHANNELS: ${USE_REDIS_CHANNELS:-true}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/1}
     ports:
       - "8888:8888"
+    volumes:
+      - ${ENV_FILE:-./.env}:/app/.env
+
+  celery_worker:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile.prod
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    command: celery -A config worker -l info
+    environment:
+      DEBUG: "False"
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: ${POSTGRES_DB:-dreamy_life}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/1}
     volumes:
       - ${ENV_FILE:-./.env}:/app/.env
 

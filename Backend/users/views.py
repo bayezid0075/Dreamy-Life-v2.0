@@ -1,44 +1,28 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.utils import timezone
 from django.core.mail import send_mail
-from django.urls import reverse
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserInfoSerializer,
     PasswordResetRequestSerializer, PasswordResetVerifySerializer, PasswordResetSerializer
 )
 from .models import UserInfo, User, PasswordResetToken
 from .account_restriction import get_account_status_response
-import threading
 import secrets
 from datetime import timedelta
+from core.services.user_service import register_user
+from core.selectors.user_selector import get_user_by_identifier
+from core.tasks.notification_tasks import notify_uplines_on_register_async
 
-# Import celery task only if available
-try:
-    from referral.tasks import task_notify_uplines_on_register
-    CELERY_AVAILABLE = True
-except Exception:
-    CELERY_AVAILABLE = False
 
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     def post(self, request):
-        s = RegisterSerializer(data=request.data)
-        s.is_valid(raise_exception=True)
-        user = s.save()
-        # Notify uplines via celery task (if available)
-        if CELERY_AVAILABLE:
-            def call_delay():
-                try:
-                    task_notify_uplines_on_register.delay(user.id)
-                except Exception as e:
-                    print(f"Celery task failed: {e}")
-            thread = threading.Thread(target=call_delay)
-            thread.start()
+        user = register_user(request.data)
+        notify_uplines_on_register_async(user.id)
         return Response({
             "detail": "registered",
             "user_id": user.id,
@@ -59,7 +43,7 @@ class LoginView(APIView):
         password = s.validated_data["password"]
         
         # Try to find user by email or phone number
-        user = User.objects.filter(email=identifier).first() or User.objects.filter(phone_number=identifier).first()
+        user = get_user_by_identifier(identifier)
         
         # Check if user exists and password is correct
         # Return generic error for both cases to prevent user enumeration

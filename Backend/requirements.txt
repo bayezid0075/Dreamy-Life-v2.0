@@ -12,6 +12,7 @@ requests
 channels
 channels-redis
 daphne
+gunicorn
 whitenoise
 firebase-admin
 
