@@ -1,0 +1,8 @@
+# Coolify Configuration
+# This file is used by Coolify for zero-downtime deployment.
+# Detailed configuration will be managed in the Coolify Dashboard.
+
+service: dreamy-life-backend
+environment: production
+deploy_strategy: rolling-update
+health_check: /health

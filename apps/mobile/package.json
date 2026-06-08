@@ -1,0 +1,14 @@
+{
+  "name": "mobile",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "expo": "~50.0.0",
+    "expo-router": "~3.0.0",
+    "nativewind": "^2.0.0",
+    "zustand": "^4.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "@dreamy-life/api-client": "workspace:*",
+    "@dreamy-life/shared-types": "workspace:*"
+  }
+}

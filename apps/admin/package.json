@@ -1,0 +1,12 @@
+{
+  "name": "admin",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "@dreamy-life/api-client": "workspace:*",
+    "@dreamy-life/shared-types": "workspace:*"
+  }
+}
