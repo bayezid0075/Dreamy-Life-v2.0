@@ -1,24 +1,56 @@
-import { z } from 'zod';
+// ---------- Entity Exports ----------
+export type {
+  User,
+  UserInfo,
+  UserProfile,
+  MemberStatus,
+} from './entities/user';
 
-export const RegisterSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters').regex(/[A-Z]/, 'Must contain one uppercase letter').regex(/[0-9]/, 'Must contain one number').regex(/[^A-Za-z0-9]/, 'Must contain one special character'),
-  fullName: z.string().min(2, 'Full name is required'),
-});
+export type {
+  Post,
+  PostCreateInput,
+  PostLike,
+} from './entities/post';
 
-export const LoginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
+export type {
+  Referral,
+  ReferralEarning,
+  ReferralNode,
+  ReferralTree,
+  MembershipPlan,
+  MembershipPurchase,
+  CommissionDistribution,
+} from './entities/referral';
 
-export type RegisterInput = z.infer<typeof RegisterSchema>;
-export type LoginInput = z.infer<typeof LoginSchema>;
+// ---------- DTO Exports ----------
+export type {
+  RegisterInput,
+  LoginInput,
+  AuthResponse,
+  RefreshTokenInput,
+  RefreshTokenResponse,
+  UserProfileResponse,
+} from './dtos/auth.dto';
 
-export interface AuthResponse {
-  accessToken: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-  };
-}
+export type {
+  MembershipPlanDto,
+  PurchaseMembershipInput,
+  PurchaseMembershipResponse,
+  CommissionHistoryDto,
+  MembershipResponse,
+} from './dtos/membership.dto';
+
+export type {
+  CreatePostDto,
+  UpdatePostDto,
+  PostResponseDto,
+  PostListResponseDto,
+} from './dtos/post.dto';
+
+export type {
+  ReferralStatsDto,
+  ReferralLinkDto,
+  ReferralEarningDto,
+  DownlineMemberDto,
+  DownlineResponseDto,
+} from './dtos/referral.dto';

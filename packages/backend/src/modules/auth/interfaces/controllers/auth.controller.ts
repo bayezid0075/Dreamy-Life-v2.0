@@ -1,36 +1,133 @@
-import { Controller, Post, Body, Res, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../../application/services/auth.service';
+import { RegisterDto } from '../dto/register.dto';
+import { LoginDto } from '../dto/login.dto';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { Response, Request } from 'express';
-import { UserProps } from '../../users/domain/entities/user.entity';
 
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Post('register')
-  async register(@Body() props: UserProps) {
-    return this.authService.register(props);
-  }
+  @ApiOperation({ summary: 'Register a new user (with optional referral code)' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 409, description: 'Username already taken, phone number already registered, or invalid referral code' })
+  async register(
+    @Body() body: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.register(body);
 
-  @Post('login')
-  async login(@Body() body: any, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken } = await this.authService.login(body.email, body.password);
-
-    res.cookie('refresh_token', refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { accessToken };
+    return {
+      success: true,
+      data: {
+        accessToken: result.accessToken,
+        user: result.user,
+      },
+    };
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: 'Login with username/phone and password' })
+  @ApiResponse({ status: 200, description: 'Logged in successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async login(
+    @Body() body: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(body.username, body.password);
+
+    res.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      success: true,
+      data: {
+        accessToken: result.accessToken,
+        user: result.user,
+      },
+    };
   }
 
   @Post('refresh')
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const token = req.cookies?.refreshToken;
-    if (!token) throw new UnauthorizedException('Refresh token missing');
+  @ApiOperation({ summary: 'Refresh access token using refresh token (cookie or body)' })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Refresh token missing or invalid' })
+  async refresh(@Req() req: Request) {
+    const token = req.cookies?.refresh_token || req.body?.refreshToken;
+    if (!token) {
+      throw new UnauthorizedException('Refresh token missing');
+    }
 
-    return this.authService.refresh(token);
+    const result = await this.authService.refresh(token);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Get('profile')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get current user profile with referral stats' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getProfile(@Req() req: Request) {
+    const userId = this.extractUserId(req);
+    const result = await this.authService.getProfile(userId);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: 'Logout — clears the refresh token cookie' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('refresh_token');
+    return {
+      success: true,
+      message: 'Logged out successfully',
+    };
+  }
+
+  private extractUserId(req: Request): string {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) throw new UnauthorizedException('Authorization header missing');
+    const token = authHeader.replace('Bearer ', '');
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET || 'super_secret_jwt_key',
+      });
+      return payload.userId;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
   }
 }

@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Dreamy Life",
+    "slug": "dreamy-life",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fcf9f8"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dreamylife.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#fcf9f8"
+      },
+      "package": "com.dreamylife.app"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "dreamy-life"
+  }
+}

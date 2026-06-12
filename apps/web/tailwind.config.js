@@ -1,0 +1,53 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/features/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/shared/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app.tsx',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        surface: '#fcf9f8',
+        outline: '#76777b',
+        'on-error': '#ffffff',
+        'on-tertiary-container': '#437b81',
+        'on-error-container': '#93000a',
+        'tertiary-container': '#e9fdff',
+        'secondary-container': '#ffd1dc',
+        'on-surface-variant': '#45474b',
+        'on-surface': '#1c1b1b',
+        'on-primary': '#ffffff',
+        'primary-container': '#f8f8ff',
+        error: '#ba1a1a',
+        primary: '#5d5e64',
+        'surface-tint': '#5d5e64',
+        'error-container': '#ffdad6',
+        background: '#fcf9f8',
+        'surface-container-lowest': '#ffffff',
+        tertiary: '#2d666d',
+        'surface-container-low': '#f6f3f2',
+        'surface-container': '#f0eded',
+        'surface-container-high': '#eae7e7',
+        'surface-container-highest': '#e5e2e1',
+        'surface-dim': '#dcd9d9',
+        'surface-bright': '#fcf9f8',
+        'on-background': '#1c1b1b',
+        'outline-variant': '#c6c6cb',
+        'inverse-surface': '#313030',
+        'inverse-on-surface': '#f3f0ef',
+        'inverse-primary': '#c5c6cd',
+      },
+      borderRadius: {
+        DEFAULT: '1rem',
+        lg: '2rem',
+        xl: '3rem',
+      },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+};

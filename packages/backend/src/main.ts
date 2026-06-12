@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import * as Sentry from '@sentry/nestjs';
-import { nodeEnv } from 'process';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   Sentry.init({
@@ -13,6 +14,43 @@ async function bootstrap() {
   });
 
   const app = await NestFactory.create(AppModule);
+
+  // CORS
+  app.enableCors({
+    origin: (['http://localhost:3000', 'http://localhost:3001', process.env.FRONTEND_URL].filter(Boolean) as string[]),
+    credentials: true,
+  });
+
+  // Cookie parser
+  app.use(cookieParser());
+
+  // ─── Swagger / OpenAPI ──────────────────────────────────────────────
+  const config = new DocumentBuilder()
+    .setTitle('Dreamy Life API')
+    .setDescription('Dreamy Life backend API — membership & referral platform')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT access token',
+        in: 'header',
+      },
+      'access-token',
+    )
+    .addCookieAuth('refresh_token')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+  });
 
   // Global Validation Pipe
   app.useGlobalPipes(new ValidationPipe({
@@ -24,8 +62,10 @@ async function bootstrap() {
   // Global Exception Filter
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  await app.listen(3000);
-  console.log('Backend is running on: http://localhost:3000');
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`Backend is running on: http://localhost:${port}`);
+  console.log(`Swagger docs: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();
