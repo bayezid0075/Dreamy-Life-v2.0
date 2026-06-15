@@ -54,3 +54,16 @@ export type {
   DownlineMemberDto,
   DownlineResponseDto,
 } from './dtos/referral.dto';
+
+export type {
+  Wallet,
+  Transaction,
+  TransactionType,
+} from './entities/wallet';
+
+export type {
+  WalletBalanceResponse,
+  TransactionListResponse,
+  AddFundsInput,
+  GetTransactionsQuery,
+} from './dtos/wallet.dto';

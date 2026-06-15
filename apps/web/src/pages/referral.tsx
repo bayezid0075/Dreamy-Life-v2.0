@@ -118,16 +118,29 @@ export default function ReferralPage() {
           backgroundColor: '#f8f8ff',
         }}
       >
-        {/* Top Bar */}
-        <header className="fixed top-0 left-0 w-full z-50 bg-white/40 backdrop-blur-xl border-b border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] px-6 py-4 flex justify-between items-center">
-          <Link href="/dashboard" className="flex items-center gap-2 text-[#45474b] hover:text-[#1c1b1b]">
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
-          <h1 className="text-lg font-extrabold">Referral</h1>
+        {/* TopAppBar - Desktop */}
+        <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-[30px] border-b border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.06)] px-6 py-4 hidden md:flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
+              <span className="material-symbols-outlined">arrow_back</span>
+            </Link>
+          </div>
+          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">
+            Referral
+          </div>
           <div className="w-10"></div>
         </header>
 
-        <main className="max-w-[1280px] mx-auto px-6 pt-24 pb-24 space-y-6 relative z-10">
+        {/* Mobile Top Bar */}
+        <header className="md:hidden flex justify-between items-center px-6 py-5 sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-white/30">
+          <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
+            <span className="material-symbols-outlined">arrow_back</span>
+          </Link>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Referral</h1>
+          <div className="w-10"></div>
+        </header>
+
+        <main className="max-w-[1280px] mx-auto px-6 pt-20 md:pt-28 pb-24 space-y-6 relative z-10">
           {/* Referral Link Card */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <h2 className="text-lg font-bold mb-3">Your Referral Link</h2>

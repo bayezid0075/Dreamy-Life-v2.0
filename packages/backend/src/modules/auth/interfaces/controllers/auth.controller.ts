@@ -13,6 +13,13 @@ import { AuthService } from '../../application/services/auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import {
+  RegisterResponse,
+  LoginResponse,
+  RefreshResponse,
+  ProfileResponse,
+  LogoutResponse,
+} from '../../../../common/dto/api-response.dto';
 import { Response, Request } from 'express';
 
 @ApiTags('Authentication')
@@ -25,7 +32,7 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user (with optional referral code)' })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 201, description: 'User registered successfully', type: RegisterResponse })
   @ApiResponse({ status: 409, description: 'Username already taken, phone number already registered, or invalid referral code' })
   async register(
     @Body() body: RegisterDto,
@@ -51,7 +58,7 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login with username/phone and password' })
-  @ApiResponse({ status: 200, description: 'Logged in successfully' })
+  @ApiResponse({ status: 200, description: 'Logged in successfully', type: LoginResponse })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body() body: LoginDto,
@@ -77,7 +84,7 @@ export class AuthController {
 
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token using refresh token (cookie or body)' })
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully', type: RefreshResponse })
   @ApiResponse({ status: 401, description: 'Refresh token missing or invalid' })
   async refresh(@Req() req: Request) {
     const token = req.cookies?.refresh_token || req.body?.refreshToken;
@@ -95,7 +102,7 @@ export class AuthController {
   @Get('profile')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get current user profile with referral stats' })
-  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully', type: ProfileResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@Req() req: Request) {
     const userId = this.extractUserId(req);
@@ -108,7 +115,7 @@ export class AuthController {
 
   @Post('logout')
   @ApiOperation({ summary: 'Logout — clears the refresh token cookie' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully', type: LogoutResponse })
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token');
     return {

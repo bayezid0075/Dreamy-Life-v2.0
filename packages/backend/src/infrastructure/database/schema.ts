@@ -78,6 +78,26 @@ export const commissions = pgTable('commissions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// ─── Wallets Table (one per user, tracks all 3 balances) ──────────────────
+export const wallets = pgTable('wallets', {
+  userId: uuid('user_id').references(() => users.id).primaryKey(),
+  walletBalance: decimal('wallet_balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  fundsBalance: decimal('funds_balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  pointsBalance: decimal('points_balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Transactions Table (all financial movements) ─────────────────────────
+export const transactions = pgTable('transactions', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  type: varchar('type', { length: 20 }).notNull(), // wallet_credit, wallet_debit, fund_credit, fund_debit, point_earned, point_spent
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  description: text('description').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // ─── Old Tables (kept for reference, to be removed after migration) ──────
 export const sessions = pgTable('sessions', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),

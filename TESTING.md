@@ -9,15 +9,16 @@ A comprehensive guide to test all features across the Dreamy Life application �
 - [1. Prerequisites](#1-prerequisites)
 - [2. Setting Up the Application](#2-setting-up-the-application)
 - [3. Running the Services](#3-running-the-services)
-- [4. Testing the Backend API](#4-testing-the-backend-api)
-- [5. Testing User Registration & Login](#5-testing-user-registration--login)
-- [6. Testing the Referral System](#6-testing-the-referral-system)
-- [7. Testing the Membership System](#7-testing-the-membership-system)
-- [8. Testing the Web Frontend](#8-testing-the-web-frontend)
-- [9. Testing the Mobile App](#9-testing-the-mobile-app)
-- [10. Full Test Scenarios](#10-full-test-scenarios)
-- [11. Testing with Docker](#11-testing-with-docker)
-- [12. Troubleshooting](#12-troubleshooting)
+- [4. API Documentation (Swagger)](#4-api-documentation-swagger)
+- [5. Testing the Backend API](#5-testing-the-backend-api)
+- [6. Testing User Registration & Login](#6-testing-user-registration--login)
+- [7. Testing the Referral System](#7-testing-the-referral-system)
+- [8. Testing the Membership System](#8-testing-the-membership-system)
+- [9. Testing the Web Frontend](#9-testing-the-web-frontend)
+- [10. Testing the Mobile App](#10-testing-the-mobile-app)
+- [11. Full Test Scenarios](#11-full-test-scenarios)
+- [12. Testing with Docker](#12-testing-with-docker)
+- [13. Troubleshooting](#13-troubleshooting)
 
 ---
 
@@ -135,6 +136,7 @@ pnpm --filter @dreamy-life/backend dev
 Expected output:
 ```
 Backend is running on: http://localhost:3000
+Swagger docs: http://localhost:3000/api/docs
 ```
 
 > ⚠️ **Important:** On startup, the backend will auto-seed membership plans (basic, standard, smart, vvip). You should see: `Membership plans seeded successfully`
@@ -177,11 +179,95 @@ Expected output:
 
 ---
 
-## 4. Testing the Backend API
+## 4. API Documentation (Swagger)
+
+### 4.1 Accessing Swagger UI
+
+Once the backend is running, open Swagger UI at:
+
+```
+http://localhost:3000/api/docs
+```
+
+Or via Docker:
+
+```
+http://localhost:4000/api/docs
+```
+
+### 4.2 What You See
+
+Swagger UI is organized by tags:
+
+| Tag | Description | Auth |
+|-----|-------------|------|
+| **Health** | Backend health check (`GET /`) | None |
+| **Authentication** | Register, Login, Refresh, Profile, Logout | Bearer (profile) |
+| **Membership** | Plans, My Membership, Purchase | Bearer |
+| **Wallet** | Wallet balance, Transactions, Add Funds | Bearer |
+| **Referral** | Stats, Downline, Downline Tree, Upline | Bearer |
+| **Admin** | Dashboard, Users CRUD, Referral stats/tree | Bearer + AdminGuard |
+
+### 4.3 Authentication in Swagger
+
+1. Click the **"Authorize"** button at the top right of Swagger UI
+2. In the "access-token" field, paste your JWT token: `Bearer <your-token>`
+3. Click **"Authorize"** to apply globally
+4. All subsequent requests will include the token automatically
+
+> **Tip:** First hit `POST /auth/login` with valid credentials, copy the `accessToken` from the response, then use the Authorize button.
+
+### 4.4 Exploring Endpoints
+
+Each endpoint shows:
+- HTTP method and full path
+- Short summary description
+- Request parameters (path, query, header)
+- Request body schema (for POST/PATCH) — with property descriptions, types, and examples
+- Response status codes with full response schemas
+- "Try it out" button to test endpoints directly from the browser
+
+### 4.5 Error Responses
+
+Swagger documents the standard error format:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Description of the error",
+    "detail": null
+  }
+}
+```
+
+Common error codes:
+- `400` — Validation errors (missing fields, wrong types)
+- `401` — Unauthorized (missing/invalid token, wrong credentials)
+- `403` — Forbidden (non-admin accessing admin endpoints)
+- `404` — Not Found (resource doesn't exist)
+- `409` — Conflict (duplicate username/phone, already have membership)
+- `500` — Internal Server Error
+
+### 4.6 Swagger Configuration
+
+| Aspect | Value |
+|--------|-------|
+| **Title** | Dreamy Life API |
+| **Version** | 1.0 |
+| **Auth Scheme** | JWT Bearer Token (`access-token`) |
+| **Cookie Auth** | `refresh_token` httpOnly cookie |
+| **UI Framework** | swagger-ui-express |
+| **Schema Generation** | @nestjs/swagger plugin (auto-detects DTO decorators) |
+
+---
+
+## 5. Testing the Backend API
 
 All API endpoints are served at `http://localhost:3000` (locally) or `http://localhost:4000` (Docker).
 
-### 4.1 Health Check
+### 5.1 Health Check
 
 ```bash
 curl http://localhost:3000/
@@ -197,7 +283,7 @@ curl http://localhost:3000/
 }
 ```
 
-### 4.2 API Response Format
+### 5.2 API Response Format
 
 All successful API responses follow a standard format:
 
@@ -223,7 +309,7 @@ All error responses follow a standard format:
 
 ---
 
-## 5. Testing User Registration & Login
+## 6. Testing User Registration & Login
 
 ### 5.1 User Registration (without referral)
 
@@ -412,7 +498,7 @@ curl -X POST http://localhost:3000/auth/login \
 
 ---
 
-## 6. Testing the Referral System
+## 7. Testing the Referral System
 
 ### 6.1 Referral Stats
 
@@ -546,7 +632,7 @@ curl -X POST ...  # Register user 2 → note refercode
 
 ---
 
-## 7. Testing the Membership System
+## 8. Testing the Membership System
 
 ### 7.1 View Membership Plans
 
@@ -696,7 +782,7 @@ curl http://localhost:3000/membership/my \
 
 ---
 
-## 8. Testing the Web Frontend
+## 9. Testing the Web Frontend
 
 The user web app is built with Next.js (pages router). Key pages:
 
@@ -709,7 +795,7 @@ The user web app is built with Next.js (pages router). Key pages:
 | `/referral` | Referral Detail | Downline tree visualization, stats, member table |
 | `/membership` | Membership | Plan cards with purchase, commission history |
 
-### 8.0 Auth Flow Overview
+### 9.0 Auth Flow Overview
 
 The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts`) to manage authentication state globally. The flow works as follows:
 
@@ -721,7 +807,7 @@ The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts
 6. If `isAuthenticated` is true on `/`, `/login`, or `/register`, the user is automatically **redirected to `/dashboard`**
 7. Logout calls `clearAuth()` → removes token from localStorage + zustand → redirects to `/login`
 
-### 8.1 Home / Landing Page (`/`)
+### 9.1 Home / Landing Page (`/`)
 
 **What to verify:**
 
@@ -737,7 +823,7 @@ The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts
 | **Authenticated Redirect** | Visit `/` while logged in | Auto-redirects to `/dashboard` within a second |
 | **Card Animation** | Refresh the page | Card fades in and slides up |
 
-### 8.2 Login Page (`/login`)
+### 9.2 Login Page (`/login`)
 
 **What to verify:**
 
@@ -757,7 +843,7 @@ The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts
 | **Card Animation** | Refresh the page | Card fades in and slides up |
 | **Authenticated Redirect** | Visit `/login` while logged in | Auto-redirects to `/dashboard` (uses zustand auth store hydration) |
 
-### 8.3 Register Page (`/register`)
+### 9.3 Register Page (`/register`)
 
 **What to verify:**
 
@@ -779,7 +865,7 @@ The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts
 | **Sign In Link** | Bottom of card | Navigates to `/login` |
 | **Authenticated Redirect** | Visit `/register` while logged in | Auto-redirects to `/dashboard` |
 
-### 8.4 Dashboard Page (`/dashboard`)
+### 9.4 Dashboard Page (`/dashboard`)
 
 **What to verify:**
 
@@ -794,7 +880,7 @@ The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts
 | **Logout** | Click logout | Clears token, redirects to `/login` |
 | **Responsive** | Resize browser | Desktop: fixed top bar; Mobile: sticky header + bottom nav |
 
-### 8.5 Referral Page (`/referral`)
+### 9.5 Referral Page (`/referral`)
 
 **What to verify:**
 
@@ -806,7 +892,7 @@ The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts
 | **Member Table** | Full list table | Username, phone, level badge, status badge, downline count |
 | **Empty State** | User with no referrals | "No referrals yet" message with group icon |
 
-### 8.6 Membership Page (`/membership`)
+### 9.6 Membership Page (`/membership`)
 
 **What to verify:**
 
@@ -821,11 +907,11 @@ The web frontend uses a **Zustand auth store** (`apps/web/src/store/authStore.ts
 
 ---
 
-## 9. Testing the Mobile App
+## 10. Testing the Mobile App
 
 Open the Expo Go app on your device and scan the QR code from the Metro bundler.
 
-### 9.1 Screen Structure
+### 10.1 Screen Structure
 
 | Screen | File | Description |
 |--------|------|-------------|
@@ -834,7 +920,7 @@ Open the Expo Go app on your device and scan the QR code from the Metro bundler.
 | Dashboard | `apps/mobile/src/screens/DashboardScreen.tsx` | User dashboard with stats & actions |
 | Referral | `apps/mobile/src/screens/ReferralScreen.tsx` | Referral code, stats, downline list |
 
-### 9.2 Login Screen
+### 10.2 Login Screen
 
 **What to verify:**
 
@@ -849,7 +935,7 @@ Open the Expo Go app on your device and scan the QR code from the Metro bundler.
 | **Error** | Wrong credentials | Alert: "Invalid credentials" |
 | **Sign Up Link** | Bottom | Navigates to Register screen |
 
-### 9.3 Register Screen
+### 10.3 Register Screen
 
 **What to verify:**
 
@@ -862,7 +948,7 @@ Open the Expo Go app on your device and scan the QR code from the Metro bundler.
 | **Error** | Duplicate username | Alert with error message |
 | **Sign In Link** | Bottom | Navigates to Login |
 
-### 9.4 Dashboard Screen
+### 10.4 Dashboard Screen
 
 **What to verify:**
 
@@ -876,7 +962,7 @@ Open the Expo Go app on your device and scan the QR code from the Metro bundler.
 | **Logout** | Bottom button | Clears token, navigates to Login |
 | **Pull to Refresh** | Swipe down | Reloads data |
 
-### 9.5 Referral Screen
+### 10.5 Referral Screen
 
 **What to verify:**
 
@@ -889,7 +975,7 @@ Open the Expo Go app on your device and scan the QR code from the Metro bundler.
 
 ---
 
-## 10. Full Test Scenarios
+## 11. Full Test Scenarios
 
 ### Scenario 1: Complete User Lifecycle
 
@@ -1005,9 +1091,9 @@ curl http://localhost:3000/membership/my -H "Authorization: Bearer <parent-token
 
 ---
 
-## 11. Testing with Docker
+## 12. Testing with Docker
 
-### 11.1 Full Stack Docker Setup
+### 12.1 Full Stack Docker Setup
 
 Build and run all services:
 
@@ -1015,7 +1101,7 @@ Build and run all services:
 docker-compose up -d --build
 ```
 
-### 11.2 Verify All Containers
+### 12.2 Verify All Containers
 
 ```bash
 docker ps
@@ -1030,7 +1116,7 @@ Expected containers:
 | `dreamy-life-web` | Next.js User Web | 3000 |
 | `dreamy-life-admin` | Next.js Admin | 3001 |
 
-### 11.3 Test Docker Services
+### 12.3 Test Docker Services
 
 ```bash
 # Backend API (port 4000 in Docker)
@@ -1043,7 +1129,7 @@ curl http://localhost:3000/
 curl http://localhost:3001/
 ```
 
-### 11.4 Docker Logs
+### 12.4 Docker Logs
 
 ```bash
 docker logs dreamy-life-backend -f
@@ -1054,7 +1140,7 @@ docker logs dreamy-life-db -f
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### Backend won't start
 

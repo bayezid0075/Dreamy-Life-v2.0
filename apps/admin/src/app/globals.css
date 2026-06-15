@@ -14,6 +14,79 @@
   }
 }
 
+/* Aurora Background */
+.aurora-bg {
+  background: linear-gradient(120deg, #e0f2fe, #fce7f3, #e0e7ff, #ccfbf1);
+  background-size: 300% 300%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glass Panel */
+.glass-panel {
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Neon Text */
+.neon-text {
+  text-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+}
+
+/* Glow Ring Effect */
+.glow-ring-effect {
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
+}
+
+/* Input Glass */
+.input-glass {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.input-glass:focus-within {
+  border-color: #006b5f;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 4px rgba(0, 107, 95, 0.1);
+}
+
+/* Primary Gradient Button */
+.primary-gradient {
+  background: linear-gradient(135deg, #006b5f 0%, #674bb5 100%);
+  transition: all 0.3s ease;
+}
+
+.primary-gradient:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 107, 95, 0.3);
+}
+
+/* Floating Animation */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Material Symbols setup */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;
@@ -30,9 +103,4 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(118, 119, 123, 0.5);
-}
-
-/* Material Symbols setup */
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }

@@ -3,6 +3,11 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { JwtService } from '@nestjs/jwt';
 import { MembershipService } from '../../application/services/membership.service';
 import { PurchaseMembershipDto } from '../dto/purchase-membership.dto';
+import {
+  PlansListResponse,
+  MyMembershipResponse,
+  PurchaseMembershipResponse,
+} from '../../../../common/dto/api-response.dto';
 
 @ApiTags('Membership')
 @ApiBearerAuth('access-token')
@@ -15,7 +20,7 @@ export class MembershipController {
 
   @Get('plans')
   @ApiOperation({ summary: 'Get all available membership plans' })
-  @ApiResponse({ status: 200, description: 'List of membership plans' })
+  @ApiResponse({ status: 200, description: 'List of membership plans', type: PlansListResponse })
   async getPlans() {
     const plans = await this.membershipService.getPlans();
     return { success: true, data: plans };
@@ -23,7 +28,7 @@ export class MembershipController {
 
   @Get('my')
   @ApiOperation({ summary: 'Get current user membership info, commission history & purchases' })
-  @ApiResponse({ status: 200, description: 'Membership details' })
+  @ApiResponse({ status: 200, description: 'Membership details', type: MyMembershipResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMyMembership(@Req() req: any) {
     const userId = this.extractUserId(req);
@@ -33,7 +38,7 @@ export class MembershipController {
 
   @Post('purchase')
   @ApiOperation({ summary: 'Purchase a membership plan (distributes commissions to upline)' })
-  @ApiResponse({ status: 201, description: 'Membership purchased successfully' })
+  @ApiResponse({ status: 201, description: 'Membership purchased successfully', type: PurchaseMembershipResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
   @ApiResponse({ status: 409, description: 'Already have this or a higher membership' })

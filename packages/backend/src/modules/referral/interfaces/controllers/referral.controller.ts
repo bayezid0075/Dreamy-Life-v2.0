@@ -2,6 +2,12 @@ import { Controller, Get, Req, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
 import { ReferralService } from '../../application/services/referral.service';
+import {
+  ReferralStatsResponse,
+  DownlineResponse,
+  DownlineTreeResponse,
+  UplineResponse,
+} from '../../../../common/dto/api-response.dto';
 
 @ApiTags('Referral')
 @ApiBearerAuth('access-token')
@@ -14,7 +20,7 @@ export class ReferralController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Get referral statistics (counts per level)' })
-  @ApiResponse({ status: 200, description: 'Referral stats' })
+  @ApiResponse({ status: 200, description: 'Referral stats', type: ReferralStatsResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getStats(@Req() req: any) {
     const userId = this.extractUserId(req);
@@ -24,7 +30,7 @@ export class ReferralController {
 
   @Get('downline')
   @ApiOperation({ summary: 'Get flat list of downline members' })
-  @ApiResponse({ status: 200, description: 'Downline members list' })
+  @ApiResponse({ status: 200, description: 'Downline members list', type: DownlineResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getDownline(@Req() req: any) {
     const userId = this.extractUserId(req);
@@ -34,7 +40,7 @@ export class ReferralController {
 
   @Get('downline/tree')
   @ApiOperation({ summary: 'Get full downline tree (nested structure up to 10 levels)' })
-  @ApiResponse({ status: 200, description: 'Downline tree' })
+  @ApiResponse({ status: 200, description: 'Downline tree', type: DownlineTreeResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getDownlineTree(@Req() req: any) {
     const userId = this.extractUserId(req);
@@ -44,7 +50,7 @@ export class ReferralController {
 
   @Get('upline')
   @ApiOperation({ summary: 'Get upline chain (who referred you, up to 10 levels)' })
-  @ApiResponse({ status: 200, description: 'Upline chain' })
+  @ApiResponse({ status: 200, description: 'Upline chain', type: UplineResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getUpline(@Req() req: any) {
     const userId = this.extractUserId(req);

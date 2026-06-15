@@ -11,12 +11,26 @@ export interface StandardErrorResponse {
   };
 }
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:8081',
+];
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+
+    const origin = request.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      response.setHeader('Access-Control-Allow-Origin', origin);
+      response.setHeader('Access-Control-Allow-Credentials', 'true');
+      response.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+      response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Requested-With');
+    }
 
     const status =
       exception instanceof HttpException
@@ -41,7 +55,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       },
     };
 
-    // Log internal errors and capture in Sentry
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
       console.error(`[Error] ${request.method} ${request.url}`, exception);
       Sentry.captureException(exception);

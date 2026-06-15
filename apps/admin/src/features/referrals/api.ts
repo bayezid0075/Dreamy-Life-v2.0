@@ -1,20 +1,33 @@
 import api from '@dreamy-life/api-client';
 
-export interface ReferralNode {
-  userId: string;
-  name: string;
-  email: string;
+export interface ReferralStat {
   level: number;
-  earnings: number;
-  children: ReferralNode[];
+  count: number;
 }
 
-export const getReferralTree = async (): Promise<ReferralNode[]> => {
-  const response = await api.get('/admin/referrals/tree');
-  return response.data;
+export interface ReferralStatsResponse {
+  totalReferrals: number;
+  totalCommissions: number;
+  levelBreakdown: ReferralStat[];
+}
+
+export interface ReferralTreeItem {
+  id: string;
+  referrerId: string;
+  referredId: string;
+  level: number;
+  commissionRate: string;
+  createdAt: string;
+  referredUsername: string;
+  referredStatus: string;
+}
+
+export const getReferralStats = async (): Promise<ReferralStatsResponse> => {
+  const response = await api.get('/admin/referrals/stats');
+  return response.data.data;
 };
 
-export const getReferralStats = async () => {
-  const response = await api.get('/admin/referrals/stats');
-  return response.data;
+export const getReferralTree = async (): Promise<ReferralTreeItem[]> => {
+  const response = await api.get('/admin/referrals/tree');
+  return response.data.data;
 };

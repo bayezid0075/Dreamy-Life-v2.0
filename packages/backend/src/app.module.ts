@@ -8,6 +8,8 @@ import { ReferralModule } from './modules/referral/referral.module';
 import { MediaModule } from './modules/media/media.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MembershipModule } from './modules/membership/membership.module';
+import { WalletModule } from './modules/wallet/wallet.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { HealthController } from './common/controllers/health.controller';
 
 @Module({
@@ -23,6 +25,8 @@ import { HealthController } from './common/controllers/health.controller';
     ReferralModule,
     MediaModule,
     MembershipModule,
+    WalletModule,
+    AdminModule,
   ],
   controllers: [HealthController],
   providers: [],

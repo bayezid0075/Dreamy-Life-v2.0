@@ -17,7 +17,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
         <link
@@ -25,7 +25,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body-lg">{children}</body>
+      <body className="font-body-md text-on-background selection:bg-primary-container selection:text-on-primary-container">
+        {children}
+      </body>
     </html>
   );
 }

@@ -7,391 +7,272 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Dimensions,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
+import AuroraBackground from '@/shared/components/AuroraBackground';
+import TopBar from '@/shared/components/TopBar';
+import BottomNav from '@/shared/components/BottomNav';
+import GlassPanel from '@/shared/components/GlassPanel';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const { width } = Dimensions.get('window');
 
-export default function DashboardScreen({ navigation }: any) {
+const PRIMARY_ACTIONS = [
+  { icon: '📦', label: 'Add Parcel', bg: '#e9fdff', activeBg: '#2d666d' },
+  { icon: '🚚', label: 'Pickup Request', bg: '#ffd1dc', activeBg: '#78555e' },
+  { icon: '⚡', label: 'Express Delivery', bg: '#e2e2e9', activeBg: '#5d5e64' },
+  { icon: '🔄', label: 'Pick & Drop', bg: '#ffdad6', activeBg: '#ba1a1a' },
+];
+
+const SECONDARY_ACTIONS = [
+  { icon: '📋', label: 'Parcels' },
+  { icon: '📊', label: 'Summary' },
+  { icon: '💳', label: 'Payments' },
+  { icon: '💰', label: 'Add Balance' },
+  { icon: '📈', label: 'Latest RTNs' },
+  { icon: '❌', label: 'Cancellation' },
+  { icon: '🛡', label: 'Fraud Check' },
+  { icon: '🎫', label: 'Tickets' },
+];
+
+const SUPPORT_ACTIONS = [
+  { icon: '🎧', label: 'Support', color: '#2d666d' },
+  { icon: '📍', label: 'Pickup Points', color: '#78555e' },
+  { icon: '🗺', label: 'Coverage', color: '#5d5e64' },
+  { icon: '🧮', label: 'Pricing', color: '#5d5e64' },
+];
+
+export default function DashboardScreen() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [stats, setStats] = useState({ totalReferrals: 0, directReferrals: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerAnim = React.useRef(new Animated.Value(-320)).current;
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { navigation?.replace('Login'); return; }
-
+    if (!token) { router.replace('/login'); return; }
     try {
-      const [profileRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/referral/stats`, { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-
-      if (profileRes.ok) {
-        const data = await profileRes.json();
+      const res = await fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401) { await AsyncStorage.removeItem('accessToken'); router.replace('/login'); return; }
+      if (res.ok) {
+        const data = await res.json();
         setUser(data.data.user);
-        setStats(data.data.stats);
       }
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats(data.data);
-      }
-    } catch (err) {
-      console.error('Failed to load', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } catch (err) { console.error('Failed to load', err); }
+    finally { setLoading(false); setRefreshing(false); }
   };
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    loadData();
-  }, []);
+  const onRefresh = useCallback(() => { setRefreshing(true); loadData(); }, []);
+
+  const toggleDrawer = () => {
+    const toValue = drawerOpen ? -320 : 0;
+    Animated.spring(drawerAnim, { toValue, useNativeDriver: true, tension: 65, friction: 11 }).start();
+    setDrawerOpen(!drawerOpen);
+  };
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('accessToken');
-    navigation?.replace('Login');
-  };
-
-  const copyReferCode = () => {
-    if (user?.ownRefercode) {
-      // In production, use Clipboard from expo-clipboard
-    }
+    router.replace('/login');
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
+        <AuroraBackground />
         <ActivityIndicator size="large" color="#5d5e64" />
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5d5e64" />}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>🌸</Text>
-          </View>
-          <View style={styles.headerInfo}>
-            <Text style={styles.username}>{user?.username || 'User'}</Text>
-            <View style={styles.badgeRow}>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>{user?.memberStatus}</Text>
-              </View>
-              <Text style={styles.phoneText}>{user?.phoneNumber}</Text>
+    <View style={styles.container}>
+      <AuroraBackground />
+      <TopBar showMenu onMenuPress={toggleDrawer} avatarUrl={user?.info?.avatarUrl} />
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5d5e64" />}
+      >
+        {/* Hero Banner */}
+        <GlassPanel borderRadius={16} style={styles.heroBanner}>
+          <View style={styles.heroOverlay}>
+            <View style={styles.heroTextWrap}>
+              <Text style={styles.heroTitle}>Seamless Delivery</Text>
+              <Text style={styles.heroSubtitle}>Manage all your shipments in one elegant space.</Text>
             </View>
           </View>
-        </View>
-        <View style={styles.referCard}>
-          <Text style={styles.referLabel}>Referral Code</Text>
-          <View style={styles.referCodeRow}>
-            <Text style={styles.referCode}>{user?.ownRefercode}</Text>
-            <TouchableOpacity onPress={copyReferCode}>
-              <Text style={styles.copyBtn}>📋</Text>
+        </GlassPanel>
+
+        {/* Primary Actions */}
+        <View style={styles.primaryGrid}>
+          {PRIMARY_ACTIONS.map((item) => (
+            <TouchableOpacity key={item.label} style={styles.primaryCard} activeOpacity={0.7}>
+              <View style={[styles.primaryIcon, { backgroundColor: item.bg }]}>
+                <Text style={styles.primaryEmoji}>{item.icon}</Text>
+              </View>
+              <Text style={styles.primaryLabel}>{item.label}</Text>
             </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      </View>
 
-      {/* Stats */}
-      <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>👥</Text>
-          <Text style={styles.statValue}>{stats.totalReferrals}</Text>
-          <Text style={styles.statLabel}>Total</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>➕</Text>
-          <Text style={styles.statValue}>{stats.directReferrals}</Text>
-          <Text style={styles.statLabel}>Direct</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>⭐</Text>
-          <Text style={styles.statValue} numberOfLines={1}>{user?.memberStatus}</Text>
-          <Text style={styles.statLabel}>Status</Text>
-        </View>
-      </View>
-
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <View style={styles.actionsGrid}>
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => navigation?.navigate('Referral')}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: '#e9fdff' }]}>
-            <Text style={styles.actionEmoji}>👥</Text>
+        {/* Secondary Features */}
+        <GlassPanel borderRadius={16} style={styles.secondarySection}>
+          <View style={styles.secondaryGrid}>
+            {SECONDARY_ACTIONS.map((item) => (
+              <TouchableOpacity key={item.label} style={styles.secondaryItem} activeOpacity={0.7}>
+                <View style={styles.secondaryIcon}>
+                  <Text style={styles.secondaryEmoji}>{item.icon}</Text>
+                </View>
+                <Text style={styles.secondaryLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <Text style={styles.actionLabel}>Referral Team</Text>
+        </GlassPanel>
+
+        {/* Support Row */}
+        <GlassPanel borderRadius={16} style={styles.supportSection}>
+          <View style={styles.secondaryGrid}>
+            {SUPPORT_ACTIONS.map((item) => (
+              <TouchableOpacity key={item.label} style={styles.secondaryItem} activeOpacity={0.7}>
+                <View style={[styles.secondaryIcon, { backgroundColor: item.color + '15' }]}>
+                  <Text style={styles.secondaryEmoji}>{item.icon}</Text>
+                </View>
+                <Text style={styles.secondaryLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </GlassPanel>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Side Drawer */}
+      {drawerOpen && (
+        <TouchableOpacity style={styles.drawerBackdrop} activeOpacity={1} onPress={toggleDrawer}>
+          <Animated.View style={[styles.drawer, { transform: [{ translateX: drawerAnim }] }]}>
+            <BlurView intensity={40} tint="light" style={styles.drawerBlur}>
+              <View style={styles.drawerOverlay} />
+              <View style={styles.drawerContent}>
+                <View style={styles.drawerHeader}>
+                  <Text style={styles.drawerTitle}>Dreamy Life</Text>
+                  <TouchableOpacity onPress={toggleDrawer}>
+                    <Text style={styles.drawerClose}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <GlassPanel borderRadius={16} style={styles.userCard}>
+                  <View style={styles.userRow}>
+                    <View style={styles.userAvatar}>
+                      {user?.info?.avatarUrl ? (
+                        <Text style={styles.userAvatarText}>👤</Text>
+                      ) : (
+                        <Text style={styles.userAvatarText}>👤</Text>
+                      )}
+                    </View>
+                    <View>
+                      <Text style={styles.userName}>{user?.username}</Text>
+                      <View style={styles.statusBadge}>
+                        <Text style={styles.statusText}>⭐ {user?.memberStatus}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.referRow}>
+                    <Text style={styles.referLabel}>Refer: <Text style={styles.referCode}>{user?.ownRefercode}</Text></Text>
+                  </View>
+                </GlassPanel>
+
+                <View style={styles.drawerNav}>
+                  <Text style={styles.drawerSectionTitle}>Main</Text>
+                  <TouchableOpacity style={[styles.drawerItem, styles.drawerItemActive]} onPress={() => { toggleDrawer(); }}>
+                    <Text style={styles.drawerItemIcon}>🏠</Text>
+                    <Text style={styles.drawerItemTextActive}>Dashboard</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/referral'); }}>
+                    <Text style={styles.drawerItemIcon}>🔗</Text>
+                    <Text style={styles.drawerItemText}>Referral</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/membership'); }}>
+                    <Text style={styles.drawerItemIcon}>💳</Text>
+                    <Text style={styles.drawerItemText}>Membership</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/wallet'); }}>
+                    <Text style={styles.drawerItemIcon}>👛</Text>
+                    <Text style={styles.drawerItemText}>Wallet</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                  <Text style={styles.logoutText}>🚪 Log Out</Text>
+                </TouchableOpacity>
+                <Text style={styles.version}>v1.0.0</Text>
+              </View>
+            </BlurView>
+          </Animated.View>
         </TouchableOpacity>
+      )}
 
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => navigation?.navigate('Membership')}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: '#ffd1dc' }]}>
-            <Text style={styles.actionEmoji}>💎</Text>
-          </View>
-          <Text style={styles.actionLabel}>Membership</Text>
-        </TouchableOpacity>
-
-        <View style={styles.actionCard}>
-          <View style={[styles.actionIcon, { backgroundColor: '#f8f8ff' }]}>
-            <Text style={styles.actionEmoji}>👛</Text>
-          </View>
-          <Text style={styles.actionLabel}>Wallet</Text>
-        </View>
-
-        <View style={styles.actionCard}>
-          <View style={[styles.actionIcon, { backgroundColor: '#ffdad6' }]}>
-            <Text style={styles.actionEmoji}>🎫</Text>
-          </View>
-          <Text style={styles.actionLabel}>Support</Text>
-        </View>
-      </View>
-
-      {/* Menu Items */}
-      <View style={styles.menuSection}>
-        {[
-          { icon: '📦', label: 'Parcels' },
-          { icon: '🧾', label: 'Summary' },
-          { icon: '💳', label: 'Payments' },
-          { icon: '🎟', label: 'Tickets' },
-        ].map((item) => (
-          <TouchableOpacity key={item.label} style={styles.menuItem}>
-            <Text style={styles.menuIcon}>{item.icon}</Text>
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>🚪 Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <BottomNav />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f8ff',
-  },
-  content: {
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f8ff',
-  },
-  header: {
-    marginBottom: 24,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#f8f8ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  avatarText: {
-    fontSize: 28,
-  },
-  headerInfo: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  username: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1c1b1b',
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 20,
-    backgroundColor: '#f8f8ff',
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#5d5e64',
-    textTransform: 'capitalize',
-  },
-  phoneText: {
-    fontSize: 12,
-    color: '#45474b',
-  },
-  referCard: {
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  referLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#45474b',
-    marginBottom: 8,
-  },
-  referCodeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  referCode: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#5d5e64',
-    letterSpacing: 2,
-  },
-  copyBtn: {
-    fontSize: 20,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1c1b1b',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#45474b',
-    marginTop: 2,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1c1b1b',
-    marginBottom: 12,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
-  },
-  actionCard: {
-    width: '47%',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  actionEmoji: {
-    fontSize: 22,
-  },
-  actionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1c1b1b',
-    textAlign: 'center',
-  },
-  menuSection: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    marginBottom: 24,
-    overflow: 'hidden',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.3)',
-  },
-  menuIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  menuLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1c1b1b',
-  },
-  menuArrow: {
-    fontSize: 22,
-    color: '#45474b',
-  },
-  logoutBtn: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 218, 214, 0.5)',
-    borderWidth: 1,
-    borderColor: 'rgba(186, 26, 26, 0.1)',
-    alignItems: 'center',
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ba1a1a',
-  },
+  container: { flex: 1, backgroundColor: '#f8f8ff' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f8ff' },
+  scroll: { flex: 1 },
+  content: { paddingTop: 100, paddingHorizontal: 24, paddingBottom: 40 },
+  heroBanner: { marginBottom: 24, height: 160, padding: 0 },
+  heroOverlay: { flex: 1, justifyContent: 'flex-end', padding: 24 },
+  heroTextWrap: {},
+  heroTitle: { fontSize: 28, fontWeight: '700', color: '#1c1b1b', marginBottom: 4 },
+  heroSubtitle: { fontSize: 14, color: '#45474b' },
+  primaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+  primaryCard: { width: (width - 60) / 4, alignItems: 'center', gap: 12 },
+  primaryIcon: { width: 56, height: 72, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  primaryEmoji: { fontSize: 24 },
+  primaryLabel: { fontSize: 11, fontWeight: '600', color: '#1c1b1b', textAlign: 'center' },
+  secondarySection: { marginBottom: 16, padding: 16 },
+  secondaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  secondaryItem: { width: '22%', alignItems: 'center', marginBottom: 20 },
+  secondaryIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#e5e2e1', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  secondaryEmoji: { fontSize: 18 },
+  secondaryLabel: { fontSize: 10, color: '#45474b', textAlign: 'center' },
+  supportSection: { marginBottom: 16, padding: 16 },
+  drawerBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 60 },
+  drawer: { position: 'absolute', top: 0, left: 0, bottom: 0, width: 320, zIndex: 61 },
+  drawerBlur: { flex: 1, overflow: 'hidden' },
+  drawerOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.7)' },
+  drawerContent: { flex: 1, padding: 24, paddingTop: 56 },
+  drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  drawerTitle: { fontSize: 18, fontWeight: '700', color: '#5d5e64' },
+  drawerClose: { fontSize: 18, color: '#45474b' },
+  userCard: { marginBottom: 32, padding: 20 },
+  userRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
+  userAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#f8f8ff', borderWidth: 2, borderColor: 'white', alignItems: 'center', justifyContent: 'center' },
+  userAvatarText: { fontSize: 24 },
+  userName: { fontSize: 18, fontWeight: '700', color: '#1c1b1b' },
+  statusBadge: { marginTop: 4 },
+  statusText: { fontSize: 11, fontWeight: '600', color: '#5d5e64' },
+  referRow: { backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 12, padding: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
+  referLabel: { fontSize: 12, fontWeight: '600', color: '#45474b' },
+  referCode: { color: '#5d5e64', letterSpacing: 2 },
+  drawerNav: { flex: 1 },
+  drawerSectionTitle: { fontSize: 11, fontWeight: '700', color: 'rgba(69,71,75,0.5)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12, paddingHorizontal: 16 },
+  drawerItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginBottom: 4, gap: 16 },
+  drawerItemActive: { backgroundColor: '#f8f8ff' },
+  drawerItemIcon: { fontSize: 18 },
+  drawerItemText: { fontSize: 15, fontWeight: '600', color: '#45474b' },
+  drawerItemTextActive: { fontSize: 15, fontWeight: '600', color: '#5d5e64' },
+  logoutBtn: { padding: 16, borderRadius: 16, backgroundColor: 'rgba(255,218,214,0.5)', borderWidth: 1, borderColor: 'rgba(186,26,26,0.1)', alignItems: 'center', marginTop: 8 },
+  logoutText: { fontSize: 16, fontWeight: '600', color: '#ba1a1a' },
+  version: { textAlign: 'center', fontSize: 10, color: 'rgba(69,71,75,0.4)', marginTop: 16 },
 });
