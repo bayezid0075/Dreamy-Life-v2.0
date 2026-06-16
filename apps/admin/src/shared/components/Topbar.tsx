@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -13,6 +13,7 @@ interface MobileNavItem {
 const mobileNavItems: MobileNavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
   { label: 'Users', href: '/dashboard/users', icon: 'group' },
+  { label: 'Notifications', href: '/dashboard/notifications', icon: 'notifications' },
   { label: 'Analytics', href: '/dashboard/analytics', icon: 'monitoring' },
   { label: 'Settings', href: '/dashboard/settings', icon: 'settings' },
   { label: 'Support', href: '/dashboard/support', icon: 'help' },
@@ -20,7 +21,20 @@ const mobileNavItems: MobileNavItem[] = [
 
 export default function Topbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [draftCount, setDraftCount] = useState(0);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/admin/notifications?status=draft&limit=1`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.total) setDraftCount(data.total); })
+        .catch(() => {});
+    }
+  }, []);
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -60,9 +74,14 @@ export default function Topbar() {
           </div>
         </div>
         <div className="flex items-center gap-md">
-          <button className="text-on-surface-variant hover:text-primary transition-opacity">
+          <Link href="/dashboard/notifications" className="text-on-surface-variant hover:text-primary transition-opacity relative">
             <span className="material-symbols-outlined">notifications</span>
-          </button>
+            {draftCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-error text-on-error text-[10px] font-bold flex items-center justify-center">
+                {draftCount}
+              </span>
+            )}
+          </Link>
           <button className="text-on-surface-variant hover:text-primary transition-opacity hidden sm:block">
             <span className="material-symbols-outlined">light_mode</span>
           </button>

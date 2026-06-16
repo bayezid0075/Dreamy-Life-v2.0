@@ -67,3 +67,15 @@ export type {
   AddFundsInput,
   GetTransactionsQuery,
 } from './dtos/wallet.dto';
+
+export type {
+  Notification,
+  NotificationRecipient,
+  PushToken,
+  NotificationTemplate,
+  UserNotification,
+  NotificationListResponse,
+  UserNotificationListResponse,
+  NotificationStats,
+  DeliveryStats,
+} from './entities/notification';

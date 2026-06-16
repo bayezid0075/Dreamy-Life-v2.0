@@ -12,6 +12,18 @@ export default function DashboardPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+        .catch(() => {});
+    }
+  }, [isAuthenticated, accessToken]);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -101,9 +113,14 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => router.push('/notifications')}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b] relative"
           >
             <span className="material-symbols-outlined">notifications</span>
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#ba1a1a] text-white text-[11px] font-bold flex items-center justify-center">
+                {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+              </span>
+            )}
           </button>
         </header>
 
@@ -128,9 +145,14 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => router.push('/notifications')}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b] relative"
             >
               <span className="material-symbols-outlined">notifications</span>
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#ba1a1a] text-white text-[11px] font-bold flex items-center justify-center">
+                  {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                </span>
+              )}
             </button>
           </div>
         </header>
@@ -163,7 +185,7 @@ export default function DashboardPage() {
           </section>
 
           {/* Primary Actions Grid */}
-          <section className="grid grid-cols-4 gap-4">
+          <section className="grid grid-cols-5 gap-4">
             <button className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#e9fdff] text-[#437b81] flex items-center justify-center group-hover:bg-[#2d666d] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">add_box</span>
@@ -182,6 +204,12 @@ export default function DashboardPage() {
               </div>
               <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Express Delivery</span>
             </button>
+            <Link href="/feed" className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
+              <div className="w-12 h-12 rounded-full bg-[#e0f7fa] text-[#00838f] flex items-center justify-center group-hover:bg-[#00838f] group-hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-2xl">public</span>
+              </div>
+              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Social Feed</span>
+            </Link>
             <button className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#ffdad6] text-[#93000a] flex items-center justify-center group-hover:bg-[#ba1a1a] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">sync_alt</span>
@@ -206,6 +234,7 @@ export default function DashboardPage() {
                   { icon: 'chat', label: 'WhatsApp Sell', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
                   { icon: 'star', label: 'Premium Apps', bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
                   { icon: 'task_alt', label: 'Micro Jobs', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                  { icon: 'share', label: 'Social Media', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/feed' },
                   { icon: 'work', label: 'Job Post', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
                   { icon: 'keyboard', label: 'Typing Work', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
                   { icon: 'quiz', label: 'Quiz Work', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
@@ -214,7 +243,6 @@ export default function DashboardPage() {
                   { icon: 'videocam', label: 'Video Ads', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
                   { icon: 'sports_soccer', label: 'Football Game', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
                   { icon: 'sports', label: 'Carrom Game', bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
-                  { icon: 'share', label: 'Social Media', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
                   { icon: 'card_giftcard', label: 'Welcome Bonus', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
                   { icon: 'my_location', label: 'Target Bonus', bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
                   { icon: 'date_range', label: 'Weekly Bonus', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
@@ -226,14 +254,28 @@ export default function DashboardPage() {
                   { icon: 'store', label: 'Outlet', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
                 ];
                 const visible = showAll ? features : features.slice(0, 12);
-                return visible.map((item) => (
-                  <button key={item.label} className="flex flex-col items-center justify-start gap-3 hover:scale-105 transition-transform duration-200">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${item.bg} ${item.text}`}>
-                      <span className="material-symbols-outlined text-xl">{item.icon}</span>
-                    </div>
-                    <span className="text-xs font-semibold text-center text-[#45474b] leading-tight">{item.label}</span>
-                  </button>
-                ));
+                return visible.map((item) => {
+                  const content = (
+                    <>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${item.bg} ${item.text}`}>
+                        <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                      </div>
+                      <span className="text-xs font-semibold text-center text-[#45474b] leading-tight">{item.label}</span>
+                    </>
+                  );
+                  if ('href' in item && item.href) {
+                    return (
+                      <Link key={item.label} href={item.href} className="flex flex-col items-center justify-start gap-3 hover:scale-105 transition-transform duration-200">
+                        {content}
+                      </Link>
+                    );
+                  }
+                  return (
+                    <button key={item.label} className="flex flex-col items-center justify-start gap-3 hover:scale-105 transition-transform duration-200">
+                      {content}
+                    </button>
+                  );
+                });
               })()}
             </div>
             {!showAll && (
@@ -291,6 +333,7 @@ export default function DashboardPage() {
         <nav className="md:hidden bg-white/60 backdrop-blur-[20px] fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full shadow-[0_20px_40px_rgba(0,0,0,0.04)] z-50 flex justify-around items-center py-2 px-4 border border-white/30">
           {[
             { icon: 'home', active: true, href: '/dashboard', isButton: false },
+            { icon: 'public', active: false, href: '/feed', isButton: false },
             { icon: 'search', active: false, href: '#', isButton: true },
             { icon: 'shopping_cart', active: false, href: '#', isButton: false },
             { icon: 'person', active: false, href: '/profile', isButton: false },
@@ -483,6 +526,10 @@ export default function DashboardPage() {
                       <Link href="/dashboard" className="flex items-center gap-4 px-4 py-3 rounded-xl bg-[#f8f8ff] text-[#5d5e64] transition-all">
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
                         <span className="font-semibold">Dashboard</span>
+                      </Link>
+                      <Link href="/feed" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
+                        <span className="material-symbols-outlined">public</span>
+                        <span>Social Feed</span>
                       </Link>
                       <Link href="/referral" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                         <span className="material-symbols-outlined">share</span>

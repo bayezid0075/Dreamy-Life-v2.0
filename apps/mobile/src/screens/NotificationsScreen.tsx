@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,44 +12,144 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { registerForPushNotifications, sendPushTokenToServer, setupNotificationListeners } from '@/shared/utils/push';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
-interface Notification {
+interface UserNotification {
   id: string;
   title: string;
-  message: string;
-  time: string;
-  icon: string;
-  iconBg: string;
-  unread: boolean;
+  body: string;
+  icon?: string;
+  type: string;
+  sentAt?: string;
+  createdAt: string;
+  read: boolean;
+  readAt?: string;
+  recipientId: string;
 }
 
-const initialNotifications: Notification[] = [
-  { id: '1', title: 'Order Confirmed', message: 'Your dreamy sleep set has been packaged and is ready to ship.', time: '2m', icon: '🚚', iconBg: '#e9fdff', unread: true },
-  { id: '2', title: 'New Message', message: 'Support replied to your inquiry regarding the Silk Pillowcase sizing options.', time: '1h', icon: '💬', iconBg: '#ffd1dc', unread: true },
-  { id: '3', title: 'Flash Sale Ending Soon', message: 'Only 2 hours left to get 20% off the Ethereal Comfort Collection.', time: 'Yesterday', icon: '🏷', iconBg: '#ffdad6', unread: true },
-  { id: '4', title: 'Leave a Review', message: 'How are you enjoying your recent purchase? Leave a review.', time: 'Oct 12', icon: '⭐', iconBg: '#e5e2e1', unread: false },
-  { id: '5', title: 'Profile Updated', message: 'Your shipping address has been successfully updated in your profile.', time: 'Oct 05', icon: '👤', iconBg: '#e5e2e1', unread: false },
-];
+const iconMap: Record<string, { emoji: string; bg: string }> = {
+  local_shipping: { emoji: '🚚', bg: '#e9fdff' },
+  chat_bubble: { emoji: '💬', bg: '#ffd1dc' },
+  percent: { emoji: '🏷', bg: '#ffdad6' },
+  star: { emoji: '⭐', bg: '#fffde7' },
+  account_circle: { emoji: '👤', bg: '#e5e2e1' },
+  notifications: { emoji: '🔔', bg: '#e8eaf6' },
+  card_giftcard: { emoji: '🎁', bg: '#f3e5f5' },
+  campaign: { emoji: '📢', bg: '#e3f2fd' },
+  default: { emoji: '🔔', bg: '#e5e2e1' },
+};
+
+function getTimeAgo(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m`;
+  if (diffHr < 24) return `${diffHr}h`;
+  if (diffDay < 7) return `${diffDay}d`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  const fetchNotifications = useCallback(async (pageNum: number, append = false) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}/notifications?page=${pageNum}&limit=20`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (append) {
+          setNotifications((prev) => [...prev, ...data.items]);
+        } else {
+          setNotifications(data.items);
+        }
+        setUnreadCount(data.unreadCount);
+        setHasMore(data.items.length === 20);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('accessToken');
-      if (!token) { router.replace('/login'); return; }
+      if (!token) {
+        router.replace('/login');
+        return;
+      }
+
+      // Register for push notifications
+      const pushToken = await registerForPushNotifications();
+      if (pushToken) {
+        await sendPushTokenToServer(pushToken);
+      }
+
+      // Set up foreground notification listener
+      setupNotificationListeners((notification) => {
+        // Refresh notifications when one is received in foreground
+        fetchNotifications(1);
+      });
+
+      await fetchNotifications(1);
       setLoading(false);
     })();
   }, []);
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const handleMarkAsRead = async (recipientId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return;
 
-  const handleClearAll = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+      await fetch(`${API_URL}/notifications/${recipientId}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications((prev) =>
+        prev.map((n) => (n.recipientId === recipientId ? { ...n, read: true } : n)),
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark as read', err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return;
+
+      await fetch(`${API_URL}/notifications/read-all`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to mark all as read', err);
+    }
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchNotifications(nextPage, true);
   };
 
   if (loading) {
@@ -68,36 +168,64 @@ export default function NotificationsScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
-          <Text style={styles.headerText}>You have {unreadCount} unread messages.</Text>
-          <TouchableOpacity onPress={handleClearAll}>
-            <Text style={styles.clearBtn}>CLEAR ALL</Text>
-          </TouchableOpacity>
+          <Text style={styles.headerText}>
+            {unreadCount > 0 ? `You have ${unreadCount} unread notifications.` : 'All caught up!'}
+          </Text>
+          {unreadCount > 0 && (
+            <TouchableOpacity onPress={handleMarkAllAsRead}>
+              <Text style={styles.clearBtn}>MARK ALL READ</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.list}>
-          {notifications.map((n) => (
-            <GlassPanel
-              key={n.id}
-              borderRadius={12}
-              style={[styles.notifCard, !n.unread && { opacity: 0.7 }]}
-            >
-              <View style={styles.notifInner}>
-                {n.unread && <View style={styles.unreadBar} />}
-
-                <View style={[styles.notifIcon, { backgroundColor: n.iconBg }]}>
-                  <Text style={styles.notifEmoji}>{n.icon}</Text>
-                </View>
-
-                <View style={styles.notifContent}>
-                  <View style={styles.notifTop}>
-                    <Text style={styles.notifTitle} numberOfLines={1}>{n.title}</Text>
-                    <Text style={styles.notifTime}>{n.time}</Text>
-                  </View>
-                  <Text style={styles.notifMessage} numberOfLines={1}>{n.message}</Text>
-                </View>
-              </View>
+          {notifications.length === 0 && (
+            <GlassPanel borderRadius={12} style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No notifications yet</Text>
             </GlassPanel>
-          ))}
+          )}
+
+          {notifications.map((n) => {
+            const iconData = iconMap[n.icon || ''] || iconMap.default;
+            return (
+              <TouchableOpacity
+                key={n.recipientId}
+                onPress={() => !n.read && handleMarkAsRead(n.recipientId)}
+                activeOpacity={0.7}
+              >
+                <GlassPanel
+                  borderRadius={12}
+                  style={[styles.notifCard, !n.read && { opacity: 1 }, n.read && { opacity: 0.7 }]}
+                >
+                  <View style={styles.notifInner}>
+                    {!n.read && <View style={styles.unreadBar} />}
+
+                    <View style={[styles.notifIcon, { backgroundColor: iconData.bg }]}>
+                      <Text style={styles.notifEmoji}>{iconData.emoji}</Text>
+                    </View>
+
+                    <View style={styles.notifContent}>
+                      <View style={styles.notifTop}>
+                        <Text style={styles.notifTitle} numberOfLines={1}>{n.title}</Text>
+                        <Text style={styles.notifTime}>
+                          {n.sentAt ? getTimeAgo(n.sentAt) : getTimeAgo(n.createdAt)}
+                        </Text>
+                      </View>
+                      <Text style={styles.notifMessage} numberOfLines={1}>{n.body}</Text>
+                    </View>
+                  </View>
+                </GlassPanel>
+              </TouchableOpacity>
+            );
+          })}
+
+          {hasMore && notifications.length > 0 && (
+            <TouchableOpacity onPress={handleLoadMore} style={styles.loadMoreBtn}>
+              <GlassPanel borderRadius={12} style={styles.loadMoreCard}>
+                <Text style={styles.loadMoreText}>Load more</Text>
+              </GlassPanel>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -113,6 +241,8 @@ const styles = StyleSheet.create({
   headerText: { fontSize: 16, color: '#45474b', flex: 1 },
   clearBtn: { fontSize: 14, fontWeight: '600', color: '#2d666d', letterSpacing: 1 },
   list: { gap: 12 },
+  emptyCard: { padding: 48, alignItems: 'center' },
+  emptyText: { fontSize: 16, color: '#45474b' },
   notifCard: { padding: 0 },
   notifInner: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12, position: 'relative' },
   unreadBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: '#2d666d', borderRadius: 2 },
@@ -123,4 +253,7 @@ const styles = StyleSheet.create({
   notifTitle: { fontSize: 16, fontWeight: '700', color: '#1c1b1b', flex: 1 },
   notifTime: { fontSize: 12, fontWeight: '600', color: '#76777b', marginLeft: 8, flexShrink: 0 },
   notifMessage: { fontSize: 14, color: '#45474b' },
+  loadMoreBtn: { marginTop: 4 },
+  loadMoreCard: { paddingVertical: 12, alignItems: 'center' },
+  loadMoreText: { fontSize: 14, fontWeight: '600', color: '#2d666d' },
 });

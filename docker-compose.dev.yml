@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -60,6 +58,8 @@ services:
       - ./packages/backend/nest-cli.json:/app/packages/backend/nest-cli.json
       - ./packages/backend/tsconfig.json:/app/packages/backend/tsconfig.json
       - ./packages/backend/tsconfig.build.json:/app/packages/backend/tsconfig.build.json
+      - ./packages/backend/firebase-private-key.pem:/app/packages/backend/firebase-private-key.pem
+      - uploads_data:/app/packages/backend/uploads
       - ./packages/shared-types/src:/app/packages/shared-types/src
       - ./packages/shared-types/tsconfig.json:/app/packages/shared-types/tsconfig.json
       - ./packages/api-client/src:/app/packages/api-client/src
@@ -136,3 +136,4 @@ volumes:
   pgadmin_data:
   web_next:
   admin_next:
+  uploads_data:

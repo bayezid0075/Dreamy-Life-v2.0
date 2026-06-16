@@ -1,6 +1,6 @@
 'use client';
 
-import PostList from '@/features/moderation/PostList';
+import PostList from '@/features/social/PostList';
 
 export default function ModerationPage() {
   return <PostList />;

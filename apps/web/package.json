@@ -14,6 +14,7 @@
     "@dreamy-life/shared-types": "*",
     "@dreamy-life/utils": "*",
     "@tanstack/react-query": "^5.0.0",
+    "firebase": "^12.14.0",
     "next": "^14.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

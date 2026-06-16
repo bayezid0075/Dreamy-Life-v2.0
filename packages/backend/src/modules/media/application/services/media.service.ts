@@ -1,6 +1,35 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class MediaService {
-  // TODO: implement media upload, processing, storage
+  private readonly logger = new Logger(MediaService.name);
+  private uploadDir: string;
+
+  constructor() {
+    this.uploadDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(this.uploadDir)) {
+      fs.mkdirSync(this.uploadDir, { recursive: true });
+    }
+  }
+
+  async saveFile(file: Express.Multer.File) {
+    const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+    const filepath = path.join(this.uploadDir, filename);
+
+    fs.writeFileSync(filepath, file.buffer);
+
+    return {
+      url: `/uploads/${filename}`,
+      filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    };
+  }
+
+  getFilePath(filename: string) {
+    return path.join(this.uploadDir, filename);
+  }
 }

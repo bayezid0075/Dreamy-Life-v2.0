@@ -6,6 +6,10 @@ export default function RootLayout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="dashboard" />
+      <Stack.Screen name="feed" />
+      <Stack.Screen name="posts/create" />
+      <Stack.Screen name="posts/[id]" />
+      <Stack.Screen name="users/[id]" />
       <Stack.Screen name="referral" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="profile" />

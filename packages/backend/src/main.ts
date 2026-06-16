@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import * as Sentry from '@sentry/nestjs';
@@ -13,7 +15,7 @@ async function bootstrap() {
     tracesSampleRate: 1.0,
   });
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // CORS
   app.enableCors({
@@ -23,6 +25,9 @@ async function bootstrap() {
 
   // Cookie parser
   app.use(cookieParser());
+
+  // Serve uploaded files
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   // ─── Swagger / OpenAPI ──────────────────────────────────────────────
   const config = new DocumentBuilder()

@@ -125,9 +125,35 @@ cd ../..
 
 ## 3. Running the Services
 
+### Option A: Docker (Recommended)
+
+Run all services with a single command:
+
+```bash
+pnpm dev:docker
+```
+
+This runs `docker-compose -f docker-compose.dev.yml up --build` — builds all images and starts:
+
+| Service | Container | Port |
+|---------|-----------|------|
+| PostgreSQL 15 | dreamy-life-db | 5432 |
+| Redis 7 | dreamy-life-redis | 6379 |
+| pgAdmin | dreamy-life-pgadmin | 5433 |
+| Backend API | dreamy-life-backend | 4000 |
+| Web App | dreamy-life-web | 3000 |
+| Admin Panel | dreamy-life-admin | 3001 |
+
+Stop all services:
+```bash
+pnpm dev:docker:down
+```
+
+### Option B: Local (Without Docker)
+
 You need **four terminals** to run all services locally.
 
-### Terminal 1: Backend API (NestJS)
+#### Terminal 1: Backend API (NestJS)
 
 ```bash
 pnpm --filter @dreamy-life/backend dev
@@ -1095,10 +1121,24 @@ curl http://localhost:3000/membership/my -H "Authorization: Bearer <parent-token
 
 ### 12.1 Full Stack Docker Setup
 
-Build and run all services:
+Build and run all services with one command:
 
 ```bash
-docker-compose up -d --build
+pnpm dev:docker
+```
+
+This runs `docker-compose -f docker-compose.dev.yml up --build` — builds all images and starts all services with hot-reload volume mounts.
+
+Or use docker-compose directly:
+
+```bash
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+Stop all services:
+
+```bash
+pnpm dev:docker:down
 ```
 
 ### 12.2 Verify All Containers
@@ -1112,6 +1152,7 @@ Expected containers:
 |----------------|---------|------|
 | `dreamy-life-db` | PostgreSQL 15 | 5432 |
 | `dreamy-life-redis` | Redis 7 | 6379 |
+| `dreamy-life-pgadmin` | pgAdmin | 5433 |
 | `dreamy-life-backend` | NestJS API | **4000** |
 | `dreamy-life-web` | Next.js User Web | 3000 |
 | `dreamy-life-admin` | Next.js Admin | 3001 |

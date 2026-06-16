@@ -98,6 +98,96 @@ export const transactions = pgTable('transactions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// ─── Notifications Table ────────────────────────────────────────────────
+export const notifications = pgTable('notifications', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  body: text('body').notNull(),
+  icon: varchar('icon', { length: 50 }),
+  type: varchar('type', { length: 20 }).notNull().default('broadcast'), // broadcast, targeted
+  status: varchar('status', { length: 20 }).notNull().default('draft'), // draft, scheduled, sent
+  scheduledAt: timestamp('scheduled_at'),
+  sentAt: timestamp('sent_at'),
+  totalRecipients: integer('total_recipients').notNull().default(0),
+  totalSent: integer('total_sent').notNull().default(0),
+  totalRead: integer('total_read').notNull().default(0),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Notification Recipients Table ──────────────────────────────────────
+export const notificationRecipients = pgTable('notification_recipients', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  notificationId: uuid('notification_id').references(() => notifications.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  sent: boolean('sent').notNull().default(false),
+  read: boolean('read').notNull().default(false),
+  sentAt: timestamp('sent_at'),
+  readAt: timestamp('read_at'),
+});
+
+// ─── Push Tokens Table ──────────────────────────────────────────────────
+export const pushTokens = pgTable('push_tokens', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  token: text('token').notNull().unique(),
+  platform: varchar('platform', { length: 10 }).notNull(), // web, android, ios
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Notification Templates Table ───────────────────────────────────────
+export const notificationTemplates = pgTable('notification_templates', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  body: text('body').notNull(),
+  icon: varchar('icon', { length: 50 }),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Posts Table ──────────────────────────────────────────────────────
+export const posts = pgTable('posts', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  authorId: uuid('author_id').references(() => users.id).notNull(),
+  content: text('content').notNull(),
+  mediaUrls: text('media_urls').array().default([]),
+  likesCount: integer('likes_count').notNull().default(0),
+  commentsCount: integer('comments_count').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Post Likes Table ────────────────────────────────────────────────
+export const postLikes = pgTable('post_likes', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  postId: uuid('post_id').references(() => posts.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  postUserIdx: uniqueIndex('post_user_idx').on(table.postId, table.userId),
+}));
+
+// ─── Comments Table ──────────────────────────────────────────────────
+export const comments = pgTable('comments', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  postId: uuid('post_id').references(() => posts.id).notNull(),
+  authorId: uuid('author_id').references(() => users.id).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Follows Table ───────────────────────────────────────────────────
+export const follows = pgTable('follows', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  followerId: uuid('follower_id').references(() => users.id).notNull(),
+  followingId: uuid('following_id').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  followerFollowingIdx: uniqueIndex('follower_following_idx').on(table.followerId, table.followingId),
+}));
+
 // ─── Old Tables (kept for reference, to be removed after migration) ──────
 export const sessions = pgTable('sessions', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),

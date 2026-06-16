@@ -25,7 +25,7 @@ const PRIMARY_ACTIONS = [
   { icon: '📦', label: 'Add Parcel', bg: '#e9fdff', activeBg: '#2d666d' },
   { icon: '🚚', label: 'Pickup Request', bg: '#ffd1dc', activeBg: '#78555e' },
   { icon: '⚡', label: 'Express Delivery', bg: '#e2e2e9', activeBg: '#5d5e64' },
-  { icon: '🔄', label: 'Pick & Drop', bg: '#ffdad6', activeBg: '#ba1a1a' },
+  { icon: '📰', label: 'Social Feed', bg: '#ffd1dc', activeBg: '#78555e' },
 ];
 
 const SECONDARY_ACTIONS = [
@@ -115,7 +115,14 @@ export default function DashboardScreen() {
         {/* Primary Actions */}
         <View style={styles.primaryGrid}>
           {PRIMARY_ACTIONS.map((item) => (
-            <TouchableOpacity key={item.label} style={styles.primaryCard} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={item.label}
+              style={styles.primaryCard}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (item.label === 'Social Feed') router.push('/feed');
+              }}
+            >
               <View style={[styles.primaryIcon, { backgroundColor: item.bg }]}>
                 <Text style={styles.primaryEmoji}>{item.icon}</Text>
               </View>
@@ -207,6 +214,12 @@ export default function DashboardScreen() {
                   <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/wallet'); }}>
                     <Text style={styles.drawerItemIcon}>👛</Text>
                     <Text style={styles.drawerItemText}>Wallet</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.drawerSectionTitle}>Social</Text>
+                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/feed'); }}>
+                    <Text style={styles.drawerItemIcon}>📰</Text>
+                    <Text style={styles.drawerItemText}>Social Feed</Text>
                   </TouchableOpacity>
                 </View>
 
