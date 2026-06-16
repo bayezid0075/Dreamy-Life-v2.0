@@ -35,6 +35,7 @@ WORKDIR /app
 
 # Copy built admin app and production dependencies
 COPY --from=builder /app/apps/admin/.next ./.next
+COPY --from=builder /app/apps/admin/public ./public
 COPY --from=builder /app/apps/admin/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 

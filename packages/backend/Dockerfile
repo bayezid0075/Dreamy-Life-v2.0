@@ -37,5 +37,5 @@ COPY --from=builder /app/packages/backend/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/backend/package.json ./package.json
 
-EXPOSE 3000
+EXPOSE 4000
 CMD ["node", "dist/main"]

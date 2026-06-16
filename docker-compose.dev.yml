@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: dreamy-life-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: dreamy-life-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dreamy-life-pgadmin
+    restart: always
+    ports:
+      - "5433:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@dreamy-life.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/boot.sh:/pgadmin4/boot.sh
+    entrypoint: ["/bin/bash", "/pgadmin4/boot.sh"]
+
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile.dev
+    container_name: dreamy-life-backend
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./packages/backend/src:/app/packages/backend/src
+      - ./packages/backend/nest-cli.json:/app/packages/backend/nest-cli.json
+      - ./packages/backend/tsconfig.json:/app/packages/backend/tsconfig.json
+      - ./packages/backend/tsconfig.build.json:/app/packages/backend/tsconfig.build.json
+      - ./packages/shared-types/src:/app/packages/shared-types/src
+      - ./packages/shared-types/tsconfig.json:/app/packages/shared-types/tsconfig.json
+      - ./packages/api-client/src:/app/packages/api-client/src
+      - ./packages/api-client/tsconfig.json:/app/packages/api-client/tsconfig.json
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - packages/backend/.env
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    container_name: dreamy-life-web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - ./apps/web/next.config.js:/app/apps/web/next.config.js
+      - ./apps/web/tailwind.config.js:/app/apps/web/tailwind.config.js
+      - ./apps/web/postcss.config.js:/app/apps/web/postcss.config.js
+      - ./apps/web/tsconfig.json:/app/apps/web/tsconfig.json
+      - ./packages/shared-types/src:/app/packages/shared-types/src
+      - ./packages/shared-types/tsconfig.json:/app/packages/shared-types/tsconfig.json
+      - ./packages/api-client/src:/app/packages/api-client/src
+      - ./packages/api-client/tsconfig.json:/app/packages/api-client/tsconfig.json
+      - ./packages/utils/src:/app/packages/utils/src
+      - web_next:/app/apps/web/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    depends_on:
+      - backend
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile.dev
+    container_name: dreamy-life-admin
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./apps/admin/src:/app/apps/admin/src
+      - ./apps/admin/public:/app/apps/admin/public
+      - ./apps/admin/next.config.js:/app/apps/admin/next.config.js
+      - ./apps/admin/tailwind.config.js:/app/apps/admin/tailwind.config.js
+      - ./apps/admin/postcss.config.js:/app/apps/admin/postcss.config.js
+      - ./apps/admin/tsconfig.json:/app/apps/admin/tsconfig.json
+      - ./packages/shared-types/src:/app/packages/shared-types/src
+      - ./packages/shared-types/tsconfig.json:/app/packages/shared-types/tsconfig.json
+      - ./packages/api-client/src:/app/packages/api-client/src
+      - ./packages/api-client/tsconfig.json:/app/packages/api-client/tsconfig.json
+      - admin_next:/app/apps/admin/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  pgadmin_data:
+  web_next:
+  admin_next:

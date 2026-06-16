@@ -72,6 +72,7 @@ module.exports = {
         xs: '4px',
         'margin-mobile': '16px',
         sm: '12px',
+        'sidebar-width': '260px',
       },
       fontFamily: {
         'headline-lg': ['Inter', 'sans-serif'],

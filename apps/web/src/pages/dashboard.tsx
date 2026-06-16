@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -64,8 +65,6 @@ export default function DashboardPage() {
     <>
       <Head>
         <title>Dreamy Life - Dashboard</title>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </Head>
       <style>{`
         body {
@@ -191,31 +190,70 @@ export default function DashboardPage() {
             </button>
           </section>
 
-          {/* Secondary Features Grid */}
+          {/* Features Grid */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-4 gap-y-8 gap-x-4">
-              {[
-                { icon: 'inventory_2', label: 'Parcels', color: 'primary' },
-                { icon: 'receipt_long', label: 'Summary', color: 'primary' },
-                { icon: 'payments', label: 'Payments', color: 'primary' },
-                { icon: 'account_balance_wallet', label: 'Add Balance', color: 'primary' },
-                { icon: 'move_up', label: 'Latest RTNs', color: 'primary' },
-                { icon: 'cancel', label: 'Cancellation', color: 'error' },
-                { icon: 'gpp_maybe', label: 'Fraud Check', color: 'primary' },
-                { icon: 'confirmation_number', label: 'Tickets', color: 'primary' },
-              ].map((item) => (
-                <button key={item.label} className="flex flex-col items-center justify-start gap-3 hover:opacity-80 transition-opacity">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    item.color === 'error'
-                      ? 'bg-[#ffdad6] text-[#93000a]'
-                      : 'bg-[#e5e2e1] text-[#5d5e64]'
-                  }`}>
-                    <span className="material-symbols-outlined">{item.icon}</span>
-                  </div>
-                  <span className="text-sm text-center text-[#45474b]">{item.label}</span>
-                </button>
-              ))}
+              {(() => {
+                const features = [
+                  { icon: 'phone_iphone', label: 'Mobile Recharge', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                  { icon: 'directions_car', label: 'Easy Drive', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
+                  { icon: 'storefront', label: 'Reselling', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
+                  { icon: 'business', label: 'Vendorship', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
+                  { icon: 'groups', label: 'Drive Pack', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
+                  { icon: 'receipt_long', label: 'Pay Bill', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
+                  { icon: 'send', label: 'Telegram Sell', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
+                  { icon: 'mail', label: 'Gmail Sell', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'chat', label: 'WhatsApp Sell', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
+                  { icon: 'star', label: 'Premium Apps', bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
+                  { icon: 'task_alt', label: 'Micro Jobs', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                  { icon: 'work', label: 'Job Post', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
+                  { icon: 'keyboard', label: 'Typing Work', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
+                  { icon: 'quiz', label: 'Quiz Work', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
+                  { icon: 'calculate', label: 'Math Work', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
+                  { icon: 'code', label: 'Code Entry', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
+                  { icon: 'videocam', label: 'Video Ads', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'sports_soccer', label: 'Football Game', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
+                  { icon: 'sports', label: 'Carrom Game', bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
+                  { icon: 'share', label: 'Social Media', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
+                  { icon: 'card_giftcard', label: 'Welcome Bonus', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
+                  { icon: 'my_location', label: 'Target Bonus', bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
+                  { icon: 'date_range', label: 'Weekly Bonus', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
+                  { icon: 'today', label: 'Daily Bonus', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                  { icon: 'calendar_month', label: 'Monthly Bonus', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
+                  { icon: 'redeem', label: 'Gift Code', bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
+                  { icon: 'health_and_safety', label: 'Daily Service', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'bloodtype', label: 'Blood', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'store', label: 'Outlet', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                ];
+                const visible = showAll ? features : features.slice(0, 12);
+                return visible.map((item) => (
+                  <button key={item.label} className="flex flex-col items-center justify-start gap-3 hover:scale-105 transition-transform duration-200">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${item.bg} ${item.text}`}>
+                      <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-center text-[#45474b] leading-tight">{item.label}</span>
+                  </button>
+                ));
+              })()}
             </div>
+            {!showAll && (
+              <button
+                onClick={() => setShowAll(true)}
+                className="mt-8 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/60 backdrop-blur-[20px] border border-white/40 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:bg-white/70 transition-all duration-300"
+              >
+                <span className="text-sm font-semibold text-[#45474b]">See More</span>
+                <span className="material-symbols-outlined text-[#45474b] text-lg">expand_more</span>
+              </button>
+            )}
+            {showAll && (
+              <button
+                onClick={() => setShowAll(false)}
+                className="mt-8 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/60 backdrop-blur-[20px] border border-white/40 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:bg-white/70 transition-all duration-300"
+              >
+                <span className="text-sm font-semibold text-[#45474b]">Show Less</span>
+                <span className="material-symbols-outlined text-[#45474b] text-lg">expand_less</span>
+              </button>
+            )}
           </section>
 
           {/* Bottom Grid (Support) */}
