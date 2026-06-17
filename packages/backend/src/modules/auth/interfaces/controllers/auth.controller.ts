@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Req,
   Res,
@@ -121,6 +122,27 @@ export class AuthController {
     return {
       success: true,
       message: 'Logged out successfully',
+    };
+  }
+
+  @Patch('profile')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(@Req() req: Request, @Body() body: Record<string, any>) {
+    const userId = this.extractUserId(req);
+    const allowedFields = ['fullName', 'bio', 'avatarUrl', 'coverImage', 'email', 'address', 'city', 'country'];
+    const updateData: Record<string, any> = {};
+    for (const key of allowedFields) {
+      if (body[key] !== undefined) {
+        updateData[key] = body[key];
+      }
+    }
+    const result = await this.authService.updateProfile(userId, updateData);
+    return {
+      success: true,
+      data: result,
     };
   }
 

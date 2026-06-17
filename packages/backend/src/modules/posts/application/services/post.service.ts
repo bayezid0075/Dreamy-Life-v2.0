@@ -141,10 +141,10 @@ export class PostService {
       .offset(offset);
   }
 
-  async addComment(postId: string, authorId: string, content: string) {
+  async addComment(postId: string, authorId: string, content: string, parentCommentId?: string) {
     const [comment] = await this.db
       .insert(schema.comments)
-      .values({ postId, authorId, content })
+      .values({ postId, authorId, content, parentCommentId: parentCommentId || null })
       .returning();
 
     await this.db
@@ -156,6 +156,8 @@ export class PostService {
       .select({
         id: schema.comments.id,
         content: schema.comments.content,
+        parentCommentId: schema.comments.parentCommentId,
+        likesCount: schema.comments.likesCount,
         createdAt: schema.comments.createdAt,
         authorId: schema.users.id,
         authorName: schema.users.username,
@@ -170,12 +172,14 @@ export class PostService {
     return results[0];
   }
 
-  async getComments(postId: string, page = 1, limit = 20) {
+  async getComments(postId: string, page = 1, limit = 50) {
     const offset = (page - 1) * limit;
     return this.db
       .select({
         id: schema.comments.id,
         content: schema.comments.content,
+        parentCommentId: schema.comments.parentCommentId,
+        likesCount: schema.comments.likesCount,
         createdAt: schema.comments.createdAt,
         authorId: schema.users.id,
         authorName: schema.users.username,
@@ -188,6 +192,43 @@ export class PostService {
       .orderBy(desc(schema.comments.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  async toggleCommentLike(commentId: string, userId: string) {
+    const existing = await this.db.query.commentLikes.findFirst({
+      where: and(
+        eq(schema.commentLikes.commentId, commentId),
+        eq(schema.commentLikes.userId, userId),
+      ),
+    });
+
+    if (existing) {
+      await this.db
+        .delete(schema.commentLikes)
+        .where(eq(schema.commentLikes.id, existing.id));
+      await this.db
+        .update(schema.comments)
+        .set({ likesCount: sql`${schema.comments.likesCount} - 1` })
+        .where(eq(schema.comments.id, commentId));
+      return { liked: false };
+    } else {
+      await this.db.insert(schema.commentLikes).values({ commentId, userId });
+      await this.db
+        .update(schema.comments)
+        .set({ likesCount: sql`${schema.comments.likesCount} + 1` })
+        .where(eq(schema.comments.id, commentId));
+      return { liked: true };
+    }
+  }
+
+  async hasLikedComment(commentId: string, userId: string) {
+    const existing = await this.db.query.commentLikes.findFirst({
+      where: and(
+        eq(schema.commentLikes.commentId, commentId),
+        eq(schema.commentLikes.userId, userId),
+      ),
+    });
+    return !!existing;
   }
 
   async removeComment(commentId: string, postId: string) {
@@ -235,6 +276,32 @@ export class PostService {
       total: totalResult[0]?.count || 0,
       page,
       limit,
+    };
+  }
+
+  async getUserProfile(userId: string) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+    if (!user) return null;
+
+    const info = await this.db.query.userInfo.findFirst({
+      where: eq(schema.userInfo.userId, userId),
+    });
+
+    return {
+      id: user.id,
+      username: user.username,
+      memberStatus: user.memberStatus,
+      createdAt: user.createdAt,
+      info: info
+        ? {
+            fullName: info.fullName,
+            avatarUrl: info.avatarUrl,
+            bio: info.bio,
+            coverImage: info.coverImage,
+          }
+        : null,
     };
   }
 

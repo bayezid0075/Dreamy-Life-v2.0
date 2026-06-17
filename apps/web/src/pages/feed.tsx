@@ -190,7 +190,7 @@ export default function FeedPage() {
             <button className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
               <span className="material-symbols-outlined">search</span>
             </button>
-            <Link href="/notifications" className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
+            <Link href="/chat" className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
               <span className="material-symbols-outlined">chat</span>
             </Link>
           </div>
@@ -400,7 +400,7 @@ export default function FeedPage() {
           <Link href="/notifications" className="flex flex-col items-center justify-center text-[#45474b]/70 hover:bg-[#e5e2e1]/40 transition-colors px-5 py-2 rounded-xl">
             <span className="material-symbols-outlined">auto_awesome</span>
           </Link>
-          <Link href="/profile" className="flex flex-col items-center justify-center hover:opacity-80 transition-opacity px-3 py-2 rounded-xl">
+          <Link href="/social/profile" className="flex flex-col items-center justify-center hover:opacity-80 transition-opacity px-3 py-2 rounded-xl">
             <div className="w-7 h-7 rounded-full bg-[#e5e2e1] flex items-center justify-center border border-[#c6c6cb]">
               <span className="material-symbols-outlined text-sm text-[#5d5e64]">person</span>
             </div>

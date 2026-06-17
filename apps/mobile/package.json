@@ -15,19 +15,25 @@
     "@dreamy-life/shared-types": "*",
     "@expo/metro-runtime": "~3.2.3",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "@react-native-community/cli-server-api": "^13.0.0",
     "@tanstack/react-query": "^5.0.0",
     "expo": "~51.0.0",
     "expo-blur": "~13.0.3",
-    "expo-device": "^56.0.4",
+    "expo-constants": "~16.0.0",
+    "expo-device": "~5.9.0",
+    "expo-image-picker": "~15.0.7",
     "expo-linear-gradient": "~13.0.2",
-    "expo-notifications": "^56.0.18",
+    "expo-linking": "~6.3.0",
+    "expo-notifications": "~0.28.0",
     "expo-router": "~3.5.0",
     "nativewind": "^2.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.74.5",
     "react-native-web": "~0.19.10",
+    "socket.io-client": "^4.0.0",
     "zustand": "^4.0.0"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "~11.0.0"
   }
 }

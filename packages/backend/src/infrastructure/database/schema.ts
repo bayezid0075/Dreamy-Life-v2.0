@@ -28,6 +28,8 @@ export const userInfo = pgTable('user_info', {
   fullName: varchar('full_name', { length: 255 }),
   email: varchar('email', { length: 255 }),
   avatarUrl: text('avatar_url'),
+  bio: text('bio'),
+  coverImage: text('cover_image'),
   address: text('address'),
   city: varchar('city', { length: 100 }),
   country: varchar('country', { length: 100 }),
@@ -174,9 +176,21 @@ export const comments = pgTable('comments', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
   postId: uuid('post_id').references(() => posts.id).notNull(),
   authorId: uuid('author_id').references(() => users.id).notNull(),
+  parentCommentId: uuid('parent_comment_id'),
   content: text('content').notNull(),
+  likesCount: integer('likes_count').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// ─── Comment Likes Table ────────────────────────────────────────────
+export const commentLikes = pgTable('comment_likes', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  commentId: uuid('comment_id').references(() => comments.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  commentUserIdx: uniqueIndex('comment_user_idx').on(table.commentId, table.userId),
+}));
 
 // ─── Follows Table ───────────────────────────────────────────────────
 export const follows = pgTable('follows', {
@@ -186,6 +200,54 @@ export const follows = pgTable('follows', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   followerFollowingIdx: uniqueIndex('follower_following_idx').on(table.followerId, table.followingId),
+}));
+
+// ─── Conversations Table ─────────────────────────────────────────────
+export const conversations = pgTable('conversations', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  type: varchar('type', { length: 20 }).notNull().default('direct'),
+  name: varchar('name', { length: 255 }),
+  avatarUrl: text('avatar_url'),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Conversation Members Table ──────────────────────────────────────
+export const conversationMembers = pgTable('conversation_members', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  conversationId: uuid('conversation_id').references(() => conversations.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  role: varchar('role', { length: 20 }).notNull().default('member'),
+  lastReadAt: timestamp('last_read_at').defaultNow(),
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+}, (table) => ({
+  convUserIdx: uniqueIndex('conv_user_idx').on(table.conversationId, table.userId),
+}));
+
+// ─── Messages Table ──────────────────────────────────────────────────
+export const messages = pgTable('messages', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  conversationId: uuid('conversation_id').references(() => conversations.id).notNull(),
+  senderId: uuid('sender_id').references(() => users.id).notNull(),
+  content: text('content'),
+  mediaUrl: text('media_url'),
+  mediaType: varchar('media_type', { length: 50 }),
+  replyTo: uuid('reply_to'),
+  isEdited: boolean('is_edited').notNull().default(false),
+  isDeleted: boolean('is_deleted').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Message Reads Table ────────────────────────────────────────────
+export const messageReads = pgTable('message_reads', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  messageId: uuid('message_id').references(() => messages.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  readAt: timestamp('read_at').defaultNow().notNull(),
+}, (table) => ({
+  msgUserIdx: uniqueIndex('msg_user_idx').on(table.messageId, table.userId),
 }));
 
 // ─── Old Tables (kept for reference, to be removed after migration) ──────

@@ -199,6 +199,39 @@ export class AuthService {
     };
   }
 
+  async updateProfile(userId: string, data: {
+    fullName?: string;
+    bio?: string;
+    avatarUrl?: string;
+    coverImage?: string;
+    email?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  }) {
+    const existing = await this.db.query.userInfo.findFirst({
+      where: eq(schema.userInfo.userId, userId),
+    });
+
+    if (existing) {
+      await this.db
+        .update(schema.userInfo)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(schema.userInfo.userId, userId));
+    } else {
+      await this.db.insert(schema.userInfo).values({
+        userId,
+        ...data,
+      });
+    }
+
+    const updated = await this.db.query.userInfo.findFirst({
+      where: eq(schema.userInfo.userId, userId),
+    });
+
+    return updated;
+  }
+
   private async generateUniqueReferCode(): Promise<string> {
     while (true) {
       const code = Math.floor(10000000 + Math.random() * 90000000).toString();

@@ -152,7 +152,7 @@ export default function FeedScreen() {
         <TouchableOpacity style={styles.actionBtn} onPress={() => handleLike(item.id)}>
           <Text style={styles.actionText}>Like</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/posts/${item.id}`)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/comments/${item.id}`)}>
           <Text style={styles.actionText}>Comment</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}>

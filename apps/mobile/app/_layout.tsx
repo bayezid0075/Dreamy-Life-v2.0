@@ -9,6 +9,7 @@ export default function RootLayout() {
       <Stack.Screen name="feed" />
       <Stack.Screen name="posts/create" />
       <Stack.Screen name="posts/[id]" />
+      <Stack.Screen name="comments/[postId]" />
       <Stack.Screen name="users/[id]" />
       <Stack.Screen name="referral" />
       <Stack.Screen name="notifications" />

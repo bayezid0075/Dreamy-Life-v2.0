@@ -79,3 +79,22 @@ export type {
   NotificationStats,
   DeliveryStats,
 } from './entities/notification';
+
+// ---------- Chat Entity Exports ----------
+export type {
+  Conversation,
+  ConversationMember,
+  Message,
+  MessageRead,
+  ChatUser,
+  ConversationWithDetails,
+  MessageWithSender,
+} from './entities/chat';
+
+// ---------- Chat DTO Exports ----------
+export type {
+  CreateConversationDto,
+  SendMessageDto,
+  ConversationListResponse,
+  MessageListResponse,
+} from './dtos/chat.dto';

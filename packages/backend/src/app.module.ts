@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { MembershipModule } from './modules/membership/membership.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { HealthController } from './common/controllers/health.controller';
 
 @Module({
@@ -27,6 +28,7 @@ import { HealthController } from './common/controllers/health.controller';
     MembershipModule,
     WalletModule,
     AdminModule,
+    ChatModule,
   ],
   controllers: [HealthController],
   providers: [],

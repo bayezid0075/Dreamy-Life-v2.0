@@ -68,13 +68,34 @@ export class PostController {
     );
   }
 
+  @Get('posts/:id/comments')
+  async getComments(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.postService.getComments(
+      id,
+      parseInt(page || '1'),
+      parseInt(limit || '50'),
+    );
+  }
+
   @Post('posts/:id/comments')
   async addComment(
     @Param('id') id: string,
     @Body() dto: CreateCommentDto,
     @Req() req: any,
   ) {
-    return this.postService.addComment(id, req.user.userId, dto.content);
+    return this.postService.addComment(id, req.user.userId, dto.content, dto.parentCommentId);
+  }
+
+  @Post('comments/:commentId/like')
+  async toggleCommentLike(
+    @Param('commentId') commentId: string,
+    @Req() req: any,
+  ) {
+    return this.postService.toggleCommentLike(commentId, req.user.userId);
   }
 
   @Delete('posts/:postId/comments/:commentId')
@@ -84,6 +105,13 @@ export class PostController {
   ) {
     await this.postService.removeComment(commentId, postId);
     return { deleted: true };
+  }
+
+  @Get('users/:id')
+  async getUserProfile(@Param('id') id: string) {
+    const profile = await this.postService.getUserProfile(id);
+    if (!profile) return { error: 'User not found' };
+    return profile;
   }
 
   @Get('users/:id/posts')

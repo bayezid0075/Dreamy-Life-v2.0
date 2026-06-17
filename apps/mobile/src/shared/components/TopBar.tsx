@@ -50,13 +50,16 @@ export default function TopBar({
           <Text style={styles.title}>Dreamy Life</Text>
         )}
 
-        {showNotification ? (
-          <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.side}>
-            <Text style={styles.notifIcon}>🔔</Text>
+        <View style={styles.rightIcons}>
+          <TouchableOpacity onPress={() => router.push('/chat')} style={styles.iconBtn}>
+            <Text style={styles.notifIcon}>💬</Text>
           </TouchableOpacity>
-        ) : (
-          <View style={styles.side} />
-        )}
+          {showNotification ? (
+            <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.iconBtn}>
+              <Text style={styles.notifIcon}>🔔</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </BlurView>
   );
@@ -103,6 +106,17 @@ const styles = StyleSheet.create({
   },
   notifIcon: {
     fontSize: 20,
+  },
+  rightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarSmall: {
     width: 40,

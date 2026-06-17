@@ -14,6 +14,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: 'dashboard', filled: true },
   { label: 'Users', href: '/dashboard/users', icon: 'group' },
+  { label: 'Messages', href: '/dashboard/messages', icon: 'chat' },
   { label: 'Notifications', href: '/dashboard/notifications', icon: 'notifications' },
   { label: 'Creator Studio', href: '/dashboard/creator-studio', icon: 'movie' },
   { label: 'Moderation', href: '/dashboard/moderation', icon: 'shield' },

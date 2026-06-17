@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
   Image,
-  FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -17,14 +15,6 @@ import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
-
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: string;
-  authorId: string;
-  authorName: string;
-}
 
 function getTimeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -45,8 +35,6 @@ export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [commentText, setCommentText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -72,24 +60,6 @@ export default function PostDetailScreen() {
     });
     const data = await res.json();
     if (res.ok) setPost({ ...post, liked: data.liked, likesCount: post.likesCount + (data.liked ? 1 : -1) });
-  };
-
-  const handleComment = async () => {
-    if (!commentText.trim() || !post) return;
-    setSubmitting(true);
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) return;
-    const res = await fetch(`${API_URL}/posts/${post.id}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ content: commentText }),
-    });
-    if (res.ok) {
-      const comment = await res.json();
-      setPost({ ...post, comments: [comment, ...post.comments], commentsCount: post.commentsCount + 1 });
-      setCommentText('');
-    }
-    setSubmitting(false);
   };
 
   if (loading) {
@@ -140,32 +110,11 @@ export default function PostDetailScreen() {
                 Like ({post.likesCount})
               </Text>
             </TouchableOpacity>
-            <Text style={styles.actionText}>Comments ({post.commentsCount})</Text>
+            <TouchableOpacity onPress={() => router.push(`/comments/${post.id}`)} style={styles.actionBtn}>
+              <Text style={styles.actionText}>Comments ({post.commentsCount})</Text>
+            </TouchableOpacity>
           </View>
         </GlassPanel>
-
-        {/* Comment Input */}
-        <View style={styles.commentInput}>
-          <TextInput
-            value={commentText}
-            onChangeText={setCommentText}
-            placeholder="Write a comment..."
-            placeholderTextColor="#45474b80"
-            style={styles.input}
-          />
-          <TouchableOpacity onPress={handleComment} disabled={submitting || !commentText.trim()}>
-            <Text style={styles.sendBtn}>{submitting ? '...' : 'Send'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Comments */}
-        {post.comments?.map((c: Comment) => (
-          <GlassPanel key={c.id} borderRadius={8} style={styles.commentCard}>
-            <Text style={styles.commentAuthor}>{c.authorName}</Text>
-            <Text style={styles.commentContent}>{c.content}</Text>
-            <Text style={styles.commentTime}>{getTimeAgo(c.createdAt)}</Text>
-          </GlassPanel>
-        ))}
       </ScrollView>
     </View>
   );
@@ -188,14 +137,4 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 16, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e5e2e130' },
   actionBtn: {},
   actionText: { fontSize: 14, fontWeight: '600', color: '#45474b' },
-  commentInput: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 24, paddingHorizontal: 16, paddingVertical: 8,
-  },
-  input: { flex: 1, fontSize: 14, color: '#1c1b1b' },
-  sendBtn: { color: '#2d666d', fontWeight: '700', fontSize: 14 },
-  commentCard: { padding: 12 },
-  commentAuthor: { fontSize: 14, fontWeight: '700', color: '#1c1b1b', marginBottom: 4 },
-  commentContent: { fontSize: 14, color: '#45474b', lineHeight: 20 },
-  commentTime: { fontSize: 12, color: '#76777b', marginTop: 4 },
 });

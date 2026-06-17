@@ -1,3 +1,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.bg-aurora {
+  background-color: #F8F8FF;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(186, 230, 253, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(253, 164, 175, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(167, 243, 208, 0.4) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+.glass-panel {
+  background-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+}
+
+.chat-bubble-received {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom-left-radius: 4px;
+}
+
+.chat-bubble-sent {
+  background: linear-gradient(135deg, rgba(93, 94, 100, 0.9) 0%, rgba(45, 102, 109, 0.9) 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(45, 102, 109, 0.2);
+  border-bottom-right-radius: 4px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
