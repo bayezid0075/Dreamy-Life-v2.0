@@ -31,7 +31,7 @@ export default function WalletHistoryPage() {
   const fetchTransactions = async () => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/transactions?type=wallet&filter=${timeRange}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=wallet&filter=${timeRange}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       if (res.status === 401) { clearAuth(); router.replace('/login'); return; }

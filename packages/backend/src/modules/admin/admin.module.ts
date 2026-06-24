@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { AdminGuard } from './guards/admin.guard';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AdminGuard } from './guards/admin.guard';
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '15m' },
       }),
     }),
+    WalletModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],

@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { VendorProfile } from '@/features/vendor/api';
+import DesktopHeader from '@/shared/components/DesktopHeader';
+import SideDrawer from '@/shared/components/SideDrawer';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -10,6 +13,9 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -17,11 +23,24 @@ export default function ProfilePage() {
       return;
     }
     fetchProfile(accessToken);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+    fetch(`${apiUrl}/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+      .catch(() => {});
+    fetch(`${apiUrl}/vendor/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { setVendorProfile(data.data || null); })
+      .catch(() => { setVendorProfile(null); });
   }, [isAuthenticated, accessToken, router]);
 
   const fetchProfile = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) {
@@ -46,6 +65,12 @@ export default function ProfilePage() {
   const handleLogout = () => {
     clearAuth();
     router.replace('/login');
+  };
+
+  const copyReferCode = () => {
+    if (user?.ownRefercode) {
+      navigator.clipboard.writeText(user.ownRefercode);
+    }
   };
 
   if (loading) {
@@ -113,28 +138,22 @@ export default function ProfilePage() {
       </div>
 
       {/* TopAppBar - Desktop */}
-      <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-[30px] border-b border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.06)] px-6 py-4 flex justify-between items-center hidden md:flex">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-white/50">
-            {avatarUrl ? (
-              <img alt="User Avatar" className="w-full h-full object-cover" src={avatarUrl} />
-            ) : (
-              <div className="w-full h-full bg-[#e5e2e1] flex items-center justify-center">
-                <span className="material-symbols-outlined text-[#5d5e64]">person</span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">
-          Dreamy Life
-        </div>
-        <button
-          onClick={() => router.push('/notifications')}
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]"
-        >
-          <span className="material-symbols-outlined">notifications</span>
-        </button>
-      </header>
+      <DesktopHeader
+        title="Dreamy Life"
+        onMenuClick={() => setDrawerOpen(true)}
+        avatarUrl={avatarUrl}
+        unreadNotifCount={unreadNotifCount}
+      />
+
+      {/* Side Drawer */}
+      <SideDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        user={user}
+        vendorProfile={vendorProfile}
+        handleLogout={handleLogout}
+        copyReferCode={copyReferCode}
+      />
 
       {/* Mobile Top Bar */}
       <header className="md:hidden flex justify-between items-center px-6 py-5 sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-white/30">
@@ -253,9 +272,9 @@ export default function ProfilePage() {
         <button className="flex items-center justify-center p-3 transition-colors rounded-full" style={{ color: '#45474b' }}>
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
         </button>
-        <button className="flex items-center justify-center p-3 transition-colors rounded-full" style={{ color: '#45474b' }}>
+        <Link href="/cart" className="flex items-center justify-center p-3 transition-colors rounded-full" style={{ color: '#45474b' }}>
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>shopping_cart</span>
-        </button>
+        </Link>
         <Link
           href="/profile"
           className="flex items-center justify-center rounded-full p-3 transition-colors scale-90 duration-200"

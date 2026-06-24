@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import DesktopHeader from '@/shared/components/DesktopHeader';
+import SideDrawer from '@/shared/components/SideDrawer';
+import { VendorProfile } from '@/features/vendor/api';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -13,15 +16,25 @@ export default function DashboardPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
+  const [vendorExpanded, setVendorExpanded] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
 
   useEffect(() => {
     if (isAuthenticated && accessToken) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/notifications/unread-count`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+      fetch(`${apiUrl}/notifications/unread-count`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
         .then((res) => res.json())
         .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
         .catch(() => {});
+      fetch(`${apiUrl}/vendor/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { setVendorProfile(data.data || null); })
+        .catch(() => { setVendorProfile(null); });
     }
   }, [isAuthenticated, accessToken]);
 
@@ -35,12 +48,13 @@ export default function DashboardPage() {
 
   const fetchUser = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) {
         setUser(data.data.user);
+        setAvatarUrl(data.data.user?.avatarUrl || '');
       } else {
         clearAuth();
         router.replace('/login');
@@ -98,31 +112,13 @@ export default function DashboardPage() {
         }}
       >
         {/* TopAppBar - Desktop */}
-        <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-[30px] border-b border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.06)] px-6 py-4 flex justify-between items-center hidden md:flex">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-[#e5e2e1] overflow-hidden">
-              <img
-                alt="User Avatar"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8VJBubFq2WsSNxWaWY2MkbBsQ5atSANwKw-mD9h9fOc28g3crPE8wgBS9cjPJ-2baMdLS6kWjFhhZbdOvuDOZ-s8wCLMrUangK6NAjMHhDpaY7_bjT_7Ez_6l1kX3wFPSYf1G1LBBAcIrEzBfTv3Q55bbyUL-K2DS-2jeM5Y4oemjyRzvcNMmE6NBRPSA8WWg9s-mLGjrdf5BygttLeHVHfL0pGXW2OfFZ7gJBYZTTJZubsMB9OaqMEZbqiTv4l_3tUsI9l5b1znu"
-              />
-            </div>
-          </div>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">
-            Dreamy Life
-          </div>
-          <button
-            onClick={() => router.push('/notifications')}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b] relative"
-          >
-            <span className="material-symbols-outlined">notifications</span>
-            {unreadNotifCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#ba1a1a] text-white text-[11px] font-bold flex items-center justify-center">
-                {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
-              </span>
-            )}
-          </button>
-        </header>
+        <DesktopHeader
+          title="Dreamy Life"
+          onMenuClick={() => setDrawerOpen(true)}
+          avatarUrl={avatarUrl}
+          unreadNotifCount={unreadNotifCount}
+          onSearchClick={() => setSearchOpen(true)}
+        />
 
         {/* Mobile Top Bar */}
         <header className="md:hidden flex justify-between items-center px-6 py-5 sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-white/30">
@@ -204,7 +200,7 @@ export default function DashboardPage() {
               </div>
               <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Express Delivery</span>
             </button>
-            <Link href="/feed" className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
+            <Link href="/social-feed" className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#e0f7fa] text-[#00838f] flex items-center justify-center group-hover:bg-[#00838f] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">public</span>
               </div>
@@ -225,8 +221,10 @@ export default function DashboardPage() {
                 const features = [
                   { icon: 'phone_iphone', label: 'Mobile Recharge', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
                   { icon: 'directions_car', label: 'Easy Drive', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
-                  { icon: 'storefront', label: 'Reselling', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
-                  { icon: 'business', label: 'Vendorship', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
+                  { icon: 'storefront', label: 'Reselling', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]', href: '/reseller-shop' },
+                  { icon: 'business', label: 'Vendorship', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]', href: '/vendor/apply' },
+                  { icon: 'shopping_cart', label: 'Cart', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]', href: '/cart' },
+                  { icon: 'local_shipping', label: 'My Orders', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/reselling/orders' },
                   { icon: 'groups', label: 'Drive Pack', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
                   { icon: 'receipt_long', label: 'Pay Bill', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
                   { icon: 'send', label: 'Telegram Sell', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
@@ -234,7 +232,7 @@ export default function DashboardPage() {
                   { icon: 'chat', label: 'WhatsApp Sell', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
                   { icon: 'star', label: 'Premium Apps', bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
                   { icon: 'task_alt', label: 'Micro Jobs', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
-                  { icon: 'share', label: 'Social Media', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/feed' },
+                  { icon: 'share', label: 'Social Media', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/social-feed' },
                   { icon: 'work', label: 'Job Post', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
                   { icon: 'keyboard', label: 'Typing Work', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
                   { icon: 'quiz', label: 'Quiz Work', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
@@ -333,9 +331,9 @@ export default function DashboardPage() {
         <nav className="md:hidden bg-white/60 backdrop-blur-[20px] fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full shadow-[0_20px_40px_rgba(0,0,0,0.04)] z-50 flex justify-around items-center py-2 px-4 border border-white/30">
           {[
             { icon: 'home', active: true, href: '/dashboard', isButton: false },
-            { icon: 'public', active: false, href: '/feed', isButton: false },
+            { icon: 'public', active: false, href: '/social-feed', isButton: false },
             { icon: 'search', active: false, href: '#', isButton: true },
-            { icon: 'shopping_cart', active: false, href: '#', isButton: false },
+            { icon: 'shopping_cart', active: false, href: '/cart', isButton: false },
             { icon: 'person', active: false, href: '/profile', isButton: false },
           ].map((item) => {
             if (item.isButton) {
@@ -387,7 +385,7 @@ export default function DashboardPage() {
               }}
             ></div>
             <header
-              className={`relative h-full md:hidden bg-white/60 backdrop-blur-2xl flex flex-col p-6 overflow-y-auto transition-transform duration-300 ease-out ${searchOpen ? 'translate-y-0' : '-translate-y-full'}`}
+              className={`relative h-full bg-white/60 backdrop-blur-2xl flex flex-col p-6 overflow-y-auto transition-transform duration-300 ease-out ${searchOpen ? 'translate-y-0' : '-translate-y-full'}`}
               style={{
                 background: `radial-gradient(circle at 10% 20%, rgba(255, 217, 226, 0.4) 0%, transparent 40%),
                              radial-gradient(circle at 90% 80%, rgba(179, 236, 243, 0.4) 0%, transparent 40%),
@@ -462,104 +460,14 @@ export default function DashboardPage() {
         </>
 
         {/* Side Drawer */}
-        <>
-          <div className={`fixed inset-0 z-[60] transition-all duration-500 ease-in-out ${drawerOpen ? '' : 'pointer-events-none'}`}>
-            <div
-              className={`absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer transition-opacity duration-500 ${drawerOpen ? 'opacity-100' : 'opacity-0'}`}
-              onClick={() => setDrawerOpen(false)}
-            ></div>
-            <div
-              className={`absolute top-0 left-0 h-full w-[320px] bg-white/70 backdrop-blur-3xl border-r border-white/30 flex flex-col transition-transform duration-500 ease-out ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
-            >
-              <div className="p-6 flex flex-col h-full">
-                {/* Drawer Header */}
-                <div className="flex justify-between items-center mb-8">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-[#5d5e64]">Dreamy Life</span>
-                  </div>
-                  <button onClick={() => setDrawerOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
-                    <span className="material-symbols-outlined text-[#45474b]">close</span>
-                  </button>
-                </div>
-
-                {/* User Info Card */}
-                <div
-                  className="rounded-2xl p-5 mb-8 relative overflow-hidden shadow-lg"
-                  style={{
-                    background: `radial-gradient(circle at 10% 20%, rgba(255, 217, 226, 0.4) 0%, transparent 40%),
-                                 radial-gradient(circle at 90% 80%, rgba(179, 236, 243, 0.4) 0%, transparent 40%),
-                                 radial-gradient(circle at 50% 50%, rgba(248, 248, 255, 1) 0%, transparent 100%)`,
-                    backgroundColor: '#f8f8ff',
-                  }}
-                >
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-14 h-14 rounded-full bg-[#f8f8ff] border-2 border-white shadow-md flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[#5d5e64] text-3xl">person</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-[#1c1b1b]">{user?.username}</h3>
-                        <div className="flex gap-1.5 mt-1">
-                          <span className="px-2 py-0.5 bg-[#f8f8ff] text-[#5d5e64] text-[10px] rounded-full flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
-                            {user?.memberStatus}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between bg-white/40 p-2.5 rounded-xl border border-white/50">
-                      <span className="text-xs font-semibold text-[#45474b]">
-                        Refer: <span className="text-[#5d5e64]">{user?.ownRefercode}</span>
-                      </span>
-                      <button onClick={copyReferCode}>
-                        <span className="material-symbols-outlined text-sm cursor-pointer">content_copy</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Navigation */}
-                <div className="flex-1 overflow-y-auto space-y-6 pr-2">
-                  <div>
-                    <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">Main</h4>
-                    <div className="space-y-1">
-                      <Link href="/dashboard" className="flex items-center gap-4 px-4 py-3 rounded-xl bg-[#f8f8ff] text-[#5d5e64] transition-all">
-                        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
-                        <span className="font-semibold">Dashboard</span>
-                      </Link>
-                      <Link href="/feed" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                        <span className="material-symbols-outlined">public</span>
-                        <span>Social Feed</span>
-                      </Link>
-                      <Link href="/referral" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                        <span className="material-symbols-outlined">share</span>
-                        <span>Referral</span>
-                      </Link>
-                      <Link href="/membership" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                        <span className="material-symbols-outlined">card_membership</span>
-                        <span>Membership</span>
-                      </Link>
-                      <Link href="/wallet" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                        <span className="material-symbols-outlined">account_balance_wallet</span>
-                        <span>Wallet</span>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Logout */}
-                <button
-                  onClick={handleLogout}
-                  className="mt-auto flex items-center justify-center gap-3 w-full py-4 bg-[#ffdad6]/50 text-[#ba1a1a] rounded-2xl font-bold border border-[#ba1a1a]/10 hover:bg-[#ba1a1a] hover:text-white transition-all"
-                >
-                  <span className="material-symbols-outlined">logout</span>
-                  Logout
-                </button>
-                <div className="text-center mt-4 text-[10px] text-[#45474b]/40">v1.0.0</div>
-              </div>
-            </div>
-          </div>
-        </>
+        <SideDrawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          user={user}
+          vendorProfile={vendorProfile}
+          handleLogout={handleLogout}
+          copyReferCode={copyReferCode}
+        />
       </div>
     </>
   );

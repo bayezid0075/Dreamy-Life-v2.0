@@ -2,6 +2,9 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { VendorProfile } from '@/features/vendor/api';
+import DesktopHeader from '@/shared/components/DesktopHeader';
+import SideDrawer from '@/shared/components/SideDrawer';
 
 interface UserNotification {
   id: string;
@@ -51,8 +54,11 @@ export default function NotificationsPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
 
   const fetchNotifications = useCallback(
     async (pageNum: number, append = false) => {
@@ -83,6 +89,18 @@ export default function NotificationsPage() {
       return;
     }
     fetchNotifications(1).finally(() => setLoading(false));
+    fetch(`${API_URL}/auth/profile`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { if (data.data?.user) setUser(data.data.user); })
+      .catch(() => {});
+    fetch(`${API_URL}/vendor/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { setVendorProfile(data.data || null); })
+      .catch(() => { setVendorProfile(null); });
   }, [isAuthenticated, accessToken, router, fetchNotifications]);
 
   const handleMarkAsRead = async (id: string) => {
@@ -117,6 +135,17 @@ export default function NotificationsPage() {
     const nextPage = page + 1;
     setPage(nextPage);
     fetchNotifications(nextPage, true);
+  };
+
+  const handleLogout = () => {
+    useAuthStore.getState().clearAuth();
+    router.replace('/login');
+  };
+
+  const copyReferCode = () => {
+    if (user?.ownRefercode) {
+      navigator.clipboard.writeText(user.ownRefercode);
+    }
   };
 
   if (loading) {
@@ -176,15 +205,21 @@ export default function NotificationsPage() {
         <div className="aurora-orb orb-3"></div>
       </div>
 
-      <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-[30px] border-b border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.06)] px-6 py-4 hidden md:flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/dashboard')} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
-            <span className="material-symbols-outlined">arrow_back</span>
-          </button>
-        </div>
-        <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Notifications</div>
-        <div className="w-10"></div>
-      </header>
+      <DesktopHeader
+        title="Notifications"
+        onMenuClick={() => setDrawerOpen(true)}
+        avatarUrl={user?.info?.avatarUrl || ''}
+        unreadNotifCount={unreadCount}
+      />
+
+      <SideDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        user={user}
+        vendorProfile={vendorProfile}
+        handleLogout={handleLogout}
+        copyReferCode={copyReferCode}
+      />
 
       <header className="md:hidden flex justify-between items-center px-6 py-5 sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-white/30">
         <button onClick={() => router.push('/dashboard')} className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">

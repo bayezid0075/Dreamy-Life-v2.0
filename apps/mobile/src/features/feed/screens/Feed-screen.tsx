@@ -15,7 +15,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface Post {
   id: string;
@@ -56,31 +56,35 @@ export default function FeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [feedType, setFeedType] = useState<'all' | 'friends'>('all');
 
   const fetchPosts = useCallback(async (pageNum: number, append = false) => {
     try {
       const token = await AsyncStorage.getItem('accessToken');
       if (!token) return;
-      const res = await fetch(`${API_URL}/feed?page=${pageNum}&limit=20`, {
+      const endpoint = feedType === 'friends' ? '/feed/personalized' : '/feed';
+      const res = await fetch(`${API_URL}${endpoint}?page=${pageNum}&limit=20`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) {
-        if (append) setPosts((prev) => [...prev, ...data.items]);
-        else setPosts(data.items);
-        setHasMore(data.items.length === 20);
+        const items = data.items || data.posts || [];
+        if (append) setPosts((prev) => [...prev, ...items]);
+        else setPosts(items);
+        setHasMore(items.length === 20);
       }
     } catch (err) { console.error(err); }
-  }, []);
+  }, [feedType]);
 
   useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('accessToken');
       if (!token) { router.replace('/login'); return; }
+      setPage(1);
       await fetchPosts(1);
       setLoading(false);
     })();
-  }, []);
+  }, [feedType]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -174,7 +178,38 @@ export default function FeedScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Feed" />
+      <TopBar
+        title="Feed"
+        showSearch={false}
+        rightAction={
+          <View style={styles.topBarActions}>
+            <TouchableOpacity onPress={() => router.push('/friends')} style={styles.topBarBtn}>
+              <Text style={styles.topBarBtnIcon}>👤</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/chat')} style={styles.topBarBtn}>
+              <Text style={styles.topBarBtnIcon}>💬</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
+
+      {/* Feed Type Tabs */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          onPress={() => setFeedType('all')}
+          style={[styles.tab, feedType === 'all' && styles.activeTab]}
+        >
+          <Text style={[styles.tabText, feedType === 'all' && styles.activeTabText]}>All Posts</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setFeedType('friends')}
+          style={[styles.tab, feedType === 'friends' && styles.activeTabFriends]}
+        >
+          <Text style={[styles.tabText, feedType === 'friends' && styles.activeTabText]}>
+            👥 Friends
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={posts}
@@ -211,7 +246,19 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fcf9f8' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fcf9f8' },
-  listContent: { paddingTop: 100, paddingHorizontal: 16, paddingBottom: 100, gap: 16 },
+  topBarActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  topBarBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
+  topBarBtnIcon: { fontSize: 16 },
+  tabsContainer: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginTop: 100, marginBottom: 12 },
+  tab: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+  },
+  activeTab: { backgroundColor: '#1c1b1b', borderColor: '#1c1b1b' },
+  activeTabFriends: { backgroundColor: '#2d666d', borderColor: '#2d666d' },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#45474b' },
+  activeTabText: { color: '#ffffff' },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100, gap: 16 },
   postCard: { padding: 16 },
   postHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   avatar: { width: 40, height: 40, borderRadius: 20 },

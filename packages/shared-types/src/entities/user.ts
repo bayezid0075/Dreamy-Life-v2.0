@@ -7,6 +7,7 @@ export interface User {
   ownRefercode: string;
   referredBy?: string;
   memberStatus: MemberStatus;
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +30,7 @@ export interface UserProfile {
   phoneNumber: string;
   ownRefercode: string;
   memberStatus: MemberStatus;
+  isVerified: boolean;
   info?: UserInfo;
   totalReferrals?: number;
   totalEarnings?: number;

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Param,
@@ -8,11 +9,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
+import { FundPaymentService } from '../wallet/application/services/fund-payment.service';
 import { AdminGuard } from './guards/admin.guard';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { CreateMembershipPlanDto, UpdateMembershipPlanDto } from './dto/membership-plan.dto';
 import {
   AdminDashboardResponse,
   AdminUsersResponse,
@@ -28,7 +31,10 @@ import {
 @UseGuards(AdminGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly fundPaymentService: FundPaymentService,
+  ) {}
 
   @Get('stats')
   @ApiOperation({ summary: 'Get dashboard statistics' })
@@ -96,5 +102,94 @@ export class AdminController {
   async getReferralTree() {
     const tree = await this.adminService.getReferralTree();
     return { success: true, data: tree };
+  }
+
+  @Get('fund-payments')
+  @ApiOperation({ summary: 'Get all fund payments with filters' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'filter', required: false, enum: ['today', '7d', '30d', 'all'] })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Fund payments list' })
+  async getFundPayments(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('filter') filter?: string,
+    @Query('search') search?: string,
+  ) {
+    const result = await this.fundPaymentService.getFundPayments(
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 20,
+      filter,
+      search,
+    );
+    return { success: true, data: result };
+  }
+
+  @Get('fund-stats')
+  @ApiOperation({ summary: 'Get fund payment statistics' })
+  @ApiResponse({ status: 200, description: 'Fund stats retrieved' })
+  async getFundStats() {
+    const stats = await this.fundPaymentService.getFundStats();
+    return { success: true, data: stats };
+  }
+
+  // ─── Membership Plan Management ──────────────────────────────────────
+
+  @Get('membership-plans')
+  @ApiOperation({ summary: 'List all membership plans' })
+  @ApiResponse({ status: 200, description: 'Membership plans list' })
+  async getMembershipPlans() {
+    const plans = await this.adminService.getMembershipPlans();
+    return { success: true, data: plans };
+  }
+
+  @Get('membership-plans/:id')
+  @ApiOperation({ summary: 'Get a membership plan by ID' })
+  @ApiResponse({ status: 200, description: 'Membership plan detail' })
+  @ApiResponse({ status: 404, description: 'Plan not found' })
+  async getMembershipPlanById(@Param('id') id: string) {
+    const plan = await this.adminService.getMembershipPlanById(id);
+    return { success: true, data: plan };
+  }
+
+  @Post('membership-plans')
+  @ApiOperation({ summary: 'Create a new membership plan' })
+  @ApiResponse({ status: 201, description: 'Plan created successfully' })
+  @ApiResponse({ status: 409, description: 'Duplicate name or level' })
+  async createMembershipPlan(@Body() body: CreateMembershipPlanDto) {
+    const plan = await this.adminService.createMembershipPlan(body);
+    return { success: true, data: plan };
+  }
+
+  @Patch('membership-plans/:id')
+  @ApiOperation({ summary: 'Update a membership plan' })
+  @ApiResponse({ status: 200, description: 'Plan updated successfully' })
+  @ApiResponse({ status: 404, description: 'Plan not found' })
+  @ApiResponse({ status: 409, description: 'Duplicate name or level' })
+  async updateMembershipPlan(
+    @Param('id') id: string,
+    @Body() body: UpdateMembershipPlanDto,
+  ) {
+    const plan = await this.adminService.updateMembershipPlan(id, body);
+    return { success: true, data: plan };
+  }
+
+  @Delete('membership-plans/:id')
+  @ApiOperation({ summary: 'Delete a membership plan' })
+  @ApiResponse({ status: 200, description: 'Plan deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Plan not found' })
+  @ApiResponse({ status: 409, description: 'Cannot delete plan with active users' })
+  async deleteMembershipPlan(@Param('id') id: string) {
+    const result = await this.adminService.deleteMembershipPlan(id);
+    return { success: true, data: result };
+  }
+
+  @Get('membership-stats')
+  @ApiOperation({ summary: 'Get membership purchase statistics' })
+  @ApiResponse({ status: 200, description: 'Membership stats retrieved' })
+  async getMembershipStats() {
+    const stats = await this.adminService.getMembershipStats();
+    return { success: true, data: stats };
   }
 }

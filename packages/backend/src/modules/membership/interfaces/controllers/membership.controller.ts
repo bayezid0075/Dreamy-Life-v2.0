@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Req, UnauthorizedException } from '@nestjs
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
 import { MembershipService } from '../../application/services/membership.service';
-import { PurchaseMembershipDto } from '../dto/purchase-membership.dto';
+import { PurchaseMembershipDto, PaymentCallbackDto } from '../dto/purchase-membership.dto';
 import {
   PlansListResponse,
   MyMembershipResponse,
@@ -37,8 +37,8 @@ export class MembershipController {
   }
 
   @Post('purchase')
-  @ApiOperation({ summary: 'Purchase a membership plan (distributes commissions to upline)' })
-  @ApiResponse({ status: 201, description: 'Membership purchased successfully', type: PurchaseMembershipResponse })
+  @ApiOperation({ summary: 'Create UddoktaPay payment session for membership purchase' })
+  @ApiResponse({ status: 201, description: 'Payment URL created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
   @ApiResponse({ status: 409, description: 'Already have this or a higher membership' })
@@ -47,8 +47,32 @@ export class MembershipController {
     @Body() body: PurchaseMembershipDto,
   ) {
     const userId = this.extractUserId(req);
-    const result = await this.membershipService.purchaseMembership(userId, body.planId);
+    const result = await this.membershipService.createMembershipPayment(userId, body.planId);
+    return { success: true, data: { paymentUrl: result.paymentUrl, invoiceId: result.invoiceId } };
+  }
+
+  @Post('payment-success')
+  @ApiOperation({ summary: 'UddoktaPay payment success callback (no auth required)' })
+  @ApiResponse({ status: 200, description: 'Payment processed' })
+  async paymentSuccess(@Body() body: PaymentCallbackDto) {
+    const result = await this.membershipService.handleMembershipPaymentSuccess(body.invoice_id);
+    return { success: result.success, data: result };
+  }
+
+  @Post('payment-cancel')
+  @ApiOperation({ summary: 'UddoktaPay payment cancel callback' })
+  @ApiResponse({ status: 200, description: 'Payment cancelled' })
+  async paymentCancel(@Body() body: PaymentCallbackDto) {
+    const result = await this.membershipService.handleMembershipPaymentCancel(body.invoice_id);
     return { success: true, data: result };
+  }
+
+  @Post('payment-webhook')
+  @ApiOperation({ summary: 'UddoktaPay IPN webhook for membership payments' })
+  @ApiResponse({ status: 200, description: 'Webhook processed' })
+  async paymentWebhook(@Body() body: PaymentCallbackDto) {
+    const result = await this.membershipService.handleMembershipPaymentSuccess(body.invoice_id);
+    return { success: result.success };
   }
 
   private extractUserId(req: any): string {

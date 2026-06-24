@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 export const connectFeedSocket = (token: string): Socket => {
   if (socket?.connected) return socket;
 
-  socket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000', {
+  socket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4080', {
     auth: { token },
     transports: ['websocket'],
   });

@@ -1,4 +1,6 @@
-import type { MembershipPlan, MembershipPurchase, CommissionDistribution } from '../entities/referral';
+import type { MembershipPlan, MembershipPurchase, CommissionDistribution, MembershipPlanFeature } from '../entities/referral';
+
+export type { MembershipPlanFeature };
 
 export interface MembershipPlanDto {
   id: string;
@@ -6,6 +8,13 @@ export interface MembershipPlanDto {
   price: number;
   description?: string;
   level: number;
+  features: MembershipPlanFeature[];
+  buttonText: string;
+  isPopular: boolean;
+  sortOrder: number;
+  colorTheme: string;
+  commissionRates: number[];
+  isActive: boolean;
 }
 
 export interface PurchaseMembershipInput {

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { searchUsers, createConversation, fetchDownlineUsers } from '../api';
 import AuroraBackground from '@/shared/components/AuroraBackground';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface User {
   id: string;
@@ -11,6 +12,7 @@ interface User {
   fullName: string | null;
   avatarUrl: string | null;
   level?: number;
+  friendshipStatus?: string;
 }
 
 export default function PeopleScreen() {
@@ -22,12 +24,18 @@ export default function PeopleScreen() {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'search' | 'downline'>('search');
+  const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem('accessToken').then((t) => {
       setToken(t);
       if (t) {
-        fetchDownlineUsers(t).then(setDownlineUsers).catch(console.error);
+        fetch(`${API_URL}/chat/downline-users`, {
+          headers: { Authorization: `Bearer ${t}` },
+        })
+          .then((res) => res.json())
+          .then(setDownlineUsers)
+          .catch(console.error);
       }
     });
   }, []);
@@ -39,8 +47,13 @@ export default function PeopleScreen() {
     }
     setLoading(true);
     try {
-      const data = await searchUsers(token, q);
-      setUsers(data);
+      const res = await fetch(`${API_URL}/users/search/all?q=${encodeURIComponent(q)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+      }
     } catch (err) {
       console.error('Failed to search users', err);
     } finally {
@@ -57,13 +70,78 @@ export default function PeopleScreen() {
     if (!token) return;
     setCreating(userId);
     try {
-      const conv = await createConversation(token, { type: 'direct', memberIds: [userId] });
-      router.push(`/chat/${conv.id}`);
+      const res = await fetch(`${API_URL}/chat/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: 'direct', memberIds: [userId] }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/chat/${data.id}`);
+      }
     } catch (err) {
       console.error('Failed to create conversation', err);
     } finally {
       setCreating(null);
     }
+  };
+
+  const handleSendFriendRequest = async (userId: string) => {
+    if (!token) return;
+    setFriendActionLoading(userId);
+    try {
+      const res = await fetch(`${API_URL}/friends/request/${userId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, friendshipStatus: 'request_sent' } : u)),
+        );
+        setDownlineUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, friendshipStatus: 'request_sent' } : u)),
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFriendActionLoading(null);
+    }
+  };
+
+  const renderFriendButton = (user: User) => {
+    if (user.friendshipStatus === 'friends') {
+      return (
+        <View style={styles.friendsBadge}>
+          <Text style={styles.friendsBadgeText}>✓ Friends</Text>
+        </View>
+      );
+    }
+    if (user.friendshipStatus === 'request_sent') {
+      return (
+        <View style={styles.sentBadge}>
+          <Text style={styles.sentBadgeText}>Sent</Text>
+        </View>
+      );
+    }
+    if (user.friendshipStatus === 'request_received') {
+      return (
+        <View style={styles.pendingBadge}>
+          <Text style={styles.pendingBadgeText}>Pending</Text>
+        </View>
+      );
+    }
+    return (
+      <TouchableOpacity
+        style={styles.addFriendBtn}
+        onPress={() => handleSendFriendRequest(user.id)}
+        disabled={friendActionLoading === user.id}
+      >
+        <Text style={styles.addFriendBtnText}>
+          {friendActionLoading === user.id ? '...' : '+ Add'}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
   const displayUsers = activeTab === 'search' ? users : downlineUsers;
@@ -80,13 +158,16 @@ export default function PeopleScreen() {
           {item.level && <Text style={styles.userLevel}> · Level {item.level}</Text>}
         </Text>
       </View>
-      <TouchableOpacity
-        style={styles.messageButton}
-        onPress={() => startConversation(item.id)}
-        disabled={creating === item.id}
-      >
-        <Text style={styles.messageButtonText}>{creating === item.id ? '...' : 'Message'}</Text>
-      </TouchableOpacity>
+      <View style={styles.userActions}>
+        {renderFriendButton(item)}
+        <TouchableOpacity
+          style={styles.messageButton}
+          onPress={() => startConversation(item.id)}
+          disabled={creating === item.id}
+        >
+          <Text style={styles.messageButtonText}>{creating === item.id ? '...' : 'Message'}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -99,7 +180,9 @@ export default function PeopleScreen() {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>People</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity onPress={() => router.push('/friends')} style={styles.friendsBtn}>
+          <Text style={styles.friendsBtnText}>👤</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search */}
@@ -170,44 +253,30 @@ export default function PeopleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f8ff' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 60, paddingBottom: 12, paddingHorizontal: 16,
     backgroundColor: 'rgba(255,255,255,0.4)',
   },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   backIcon: { fontSize: 24, color: '#5d5e64' },
   headerTitle: { fontSize: 20, fontWeight: '700', color: '#1c1b1b' },
+  friendsBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.5)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
+  friendsBtnText: { fontSize: 16 },
 
   searchContainer: { paddingHorizontal: 16, marginBottom: 8 },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 24, paddingHorizontal: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
   searchIcon: { fontSize: 18, marginRight: 8 },
   searchInput: { flex: 1, paddingVertical: 12, fontSize: 16, color: '#1c1b1b' },
 
   tabsContainer: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 12 },
   tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
-  activeTab: {
-    backgroundColor: '#5d5e64',
-    borderColor: '#5d5e64',
-  },
+  activeTab: { backgroundColor: '#5d5e64', borderColor: '#5d5e64' },
   tabText: { fontSize: 14, fontWeight: '600', color: '#45474b' },
   activeTabText: { color: '#ffffff' },
 
@@ -215,37 +284,34 @@ const styles = StyleSheet.create({
 
   listContent: { paddingBottom: 40 },
   userItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    flexDirection: 'row', alignItems: 'center', padding: 12, marginHorizontal: 16, marginVertical: 4,
+    backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#e5e2e1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    width: 50, height: 50, borderRadius: 25, backgroundColor: '#e5e2e1',
+    justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  avatarText: { fontSize: 20, fontWeight: '700', color: '#5d5e64' },
+  avatarText: { fontSize: 18, fontWeight: '700', color: '#5d5e64' },
   userInfo: { flex: 1 },
   userName: { fontSize: 14, fontWeight: '600', color: '#1c1b1b' },
   userHandle: { fontSize: 13, color: '#76777b' },
   userLevel: { color: '#2d666d', fontWeight: '600' },
+  userActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   messageButton: {
-    backgroundColor: '#2d666d',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: '#2d666d', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16,
   },
-  messageButtonText: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
+  messageButtonText: { fontSize: 12, fontWeight: '600', color: '#ffffff' },
+  addFriendBtn: {
+    backgroundColor: 'rgba(255,255,255,0.6)', paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 16, borderWidth: 1, borderColor: '#2d666d30',
+  },
+  addFriendBtnText: { fontSize: 12, fontWeight: '600', color: '#2d666d' },
+  friendsBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#e9fdff' },
+  friendsBadgeText: { fontSize: 11, fontWeight: '600', color: '#2d666d' },
+  sentBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#e5e2e1' },
+  sentBadgeText: { fontSize: 11, fontWeight: '600', color: '#45474b' },
+  pendingBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#ffd1dc' },
+  pendingBadgeText: { fontSize: 11, fontWeight: '600', color: '#78555e' },
 
   emptyContainer: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40 },
   emptyIcon: { fontSize: 48, marginBottom: 16 },

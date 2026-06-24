@@ -1,12 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Image, Dimensions } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchMessages, fetchConversationById } from '../api';
 import { useSocket } from '../hooks/useSocket';
 import AuroraBackground from '@/shared/components/AuroraBackground';
-
-const { width } = Dimensions.get('window');
 
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -63,7 +61,7 @@ export default function ChatScreen({ conversationId }: Props) {
     AsyncStorage.getItem('accessToken').then((t) => {
       setToken(t);
       if (t) {
-        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
         Promise.all([
           fetchMessages(t, conversationId),
           fetchConversationById(t, conversationId),

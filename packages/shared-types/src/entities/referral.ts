@@ -39,12 +39,24 @@ export interface ReferralTree {
   children: ReferralNode[];
 }
 
+export interface MembershipPlanFeature {
+  text: string;
+  icon: string;
+}
+
 export interface MembershipPlan {
   id: string;
   name: string;
   price: number;
   description?: string;
   level: number;
+  features: MembershipPlanFeature[];
+  buttonText: string;
+  isPopular: boolean;
+  sortOrder: number;
+  colorTheme: string;
+  commissionRates: number[];
+  isActive: boolean;
 }
 
 export interface MembershipPurchase {

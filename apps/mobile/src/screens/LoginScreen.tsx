@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -24,13 +24,15 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
     setLoading(true);
+    setError('');
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -39,14 +41,14 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (!res.ok) {
-        Alert.alert('Login Failed', data.error?.message || 'Invalid credentials');
+        setError(data.error?.message || 'Invalid credentials');
         setLoading(false);
         return;
       }
       await AsyncStorage.setItem('accessToken', data.data.accessToken);
       router.replace('/dashboard');
     } catch (err) {
-      Alert.alert('Connection Error', 'Please check your connection and try again');
+      setError('Connection error. Please try again.');
       setLoading(false);
     }
   };
@@ -55,68 +57,92 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <AuroraBackground />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.centerWrap}>
-          <Text style={styles.logo}>✨</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logoWrap}>
+            <Text style={styles.logoIcon}>✨</Text>
+          </View>
           <Text style={styles.appName}>Dreamy Life</Text>
-          <Text style={styles.tagline}>Welcome back to your elegant space</Text>
+        </View>
 
-          <GlassPanel borderRadius={24} intensity={30} style={styles.card}>
-            <Text style={styles.cardTitle}>Sign In</Text>
+        {/* Card */}
+        <GlassPanel borderRadius={24} style={styles.card}>
+          {/* Avatar */}
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarIcon}>👤</Text>
+          </View>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Username</Text>
+          <Text style={styles.cardTitle}>Welcome Back</Text>
+          <Text style={styles.cardSubtitle}>Enter your credentials to access your account</Text>
+
+          {/* Error */}
+          {error !== '' && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorIcon}>⚠️</Text>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Username */}
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>USERNAME OR PHONE</Text>
+            <View style={styles.inputRow}>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your username"
+                placeholder="Enter username or phone"
                 placeholderTextColor="rgba(69,71,75,0.4)"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
               />
             </View>
+          </View>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <View style={styles.passwordRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Enter your password"
-                  placeholderTextColor="rgba(69,71,75,0.4)"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                  <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
-                </TouchableOpacity>
-              </View>
+          {/* Password */}
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>PASSWORD</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Enter your password"
+                placeholderTextColor="rgba(69,71,75,0.4)"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
             </View>
+          </View>
 
-            <TouchableOpacity style={styles.forgotBtn}>
-              <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
+          {/* Forgot Password */}
+          <TouchableOpacity style={styles.forgotBtn}>
+            <Text style={styles.forgotText}>Forgot Password?</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity style={styles.signinBtn} onPress={handleLogin} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.signinBtnText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
+          {/* Sign In Button */}
+          <TouchableOpacity style={styles.signinBtn} onPress={handleLogin} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.signinBtnText}>Sign In</Text>
+            )}
+          </TouchableOpacity>
 
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <TouchableOpacity onPress={() => router.push('/register')}>
-              <Text style={styles.signupText}>
-                Don't have an account? <Text style={styles.signupLink}>Create Account</Text>
+          {/* Sign Up Link */}
+          <View style={styles.signupWrap}>
+            <Text style={styles.signupText}>
+              Don't have an account?{' '}
+              <Text style={styles.signupLink} onPress={() => router.push('/register')}>
+                Sign up
               </Text>
-            </TouchableOpacity>
-          </GlassPanel>
-        </View>
+            </Text>
+          </View>
+        </GlassPanel>
+
+        {/* Footer */}
+        <Text style={styles.footer}>© 2026 Dreamy Life. All rights reserved.</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -125,25 +151,100 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f8ff' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  centerWrap: { alignItems: 'center' },
-  logo: { fontSize: 48, marginBottom: 8 },
+  header: { alignItems: 'center', marginBottom: 24 },
+  logoWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    marginBottom: 12,
+  },
+  logoIcon: { fontSize: 24 },
   appName: { fontSize: 28, fontWeight: '800', color: '#1c1b1b', letterSpacing: -0.5 },
-  tagline: { fontSize: 14, color: '#45474b', marginBottom: 32 },
-  card: { width: '100%', padding: 24 },
-  cardTitle: { fontSize: 24, fontWeight: '700', color: '#1c1b1b', marginBottom: 24, textAlign: 'center' },
-  inputWrap: { marginBottom: 16 },
-  inputLabel: { fontSize: 12, fontWeight: '600', color: '#45474b', letterSpacing: 0.5, marginBottom: 8 },
-  input: { backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 9999, paddingHorizontal: 20, paddingVertical: 14, fontSize: 16, color: '#1c1b1b', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  eyeBtn: { padding: 12 },
+  card: { width: '100%', padding: 32, alignItems: 'center' },
+  avatarCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f8f8ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  avatarIcon: { fontSize: 36 },
+  cardTitle: { fontSize: 24, fontWeight: '700', color: '#1c1b1b', marginBottom: 8, textAlign: 'center' },
+  cardSubtitle: { fontSize: 14, color: '#45474b', textAlign: 'center', marginBottom: 24 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
+    backgroundColor: '#ffdad6',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  errorIcon: { fontSize: 16 },
+  errorText: { fontSize: 13, fontWeight: '600', color: '#93000a', flex: 1 },
+  inputWrap: { width: '100%', marginBottom: 16 },
+  inputLabel: { fontSize: 11, fontWeight: '700', color: '#1c1b1b', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
+  inputRow: {
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(118,119,123,0.2)',
+    paddingHorizontal: 20,
+  },
+  input: {
+    height: 56,
+    fontSize: 16,
+    color: '#1c1b1b',
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(118,119,123,0.2)',
+    paddingHorizontal: 20,
+  },
+  eyeBtn: { padding: 8 },
   eyeIcon: { fontSize: 18 },
-  forgotBtn: { alignSelf: 'flex-end', marginBottom: 20 },
+  forgotBtn: { alignSelf: 'flex-end', marginBottom: 20, marginTop: 4 },
   forgotText: { fontSize: 13, color: '#2d666d', fontWeight: '600' },
-  signinBtn: { backgroundColor: '#1c1b1b', borderRadius: 9999, paddingVertical: 16, alignItems: 'center', marginBottom: 20 },
-  signinBtnText: { fontSize: 16, fontWeight: '600', color: 'white' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.3)' },
-  dividerText: { marginHorizontal: 12, fontSize: 13, color: '#45474b' },
-  signupText: { textAlign: 'center', fontSize: 14, color: '#45474b' },
+  signinBtn: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#5d5e64',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  signinBtnText: { fontSize: 16, fontWeight: '700', color: 'white', letterSpacing: 0.5 },
+  signupWrap: { marginTop: 24 },
+  signupText: { fontSize: 14, color: '#45474b', textAlign: 'center' },
   signupLink: { fontWeight: '700', color: '#2d666d' },
+  footer: { fontSize: 12, color: '#c6c6cb', textAlign: 'center', marginTop: 24 },
 });

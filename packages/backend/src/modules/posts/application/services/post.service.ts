@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, desc, count, and, sql } from 'drizzle-orm';
+import { eq, desc, count, and, sql, or, inArray } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
@@ -418,6 +418,381 @@ export class PostService {
       totalLikes: totalLikes[0]?.count || 0,
       totalComments: totalComments[0]?.count || 0,
       totalFollows: totalFollows[0]?.count || 0,
+    };
+  }
+
+  // ─── Friend Request Methods ──────────────────────────────────────────
+
+  async sendFriendRequest(senderId: string, receiverId: string) {
+    if (senderId === receiverId) {
+      throw new Error('Cannot send friend request to yourself');
+    }
+
+    const receiver = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, receiverId),
+    });
+    if (!receiver) throw new Error('User not found');
+
+    const existingRequest = await this.db.query.friendRequests.findFirst({
+      where: or(
+        and(
+          eq(schema.friendRequests.senderId, senderId),
+          eq(schema.friendRequests.receiverId, receiverId),
+        ),
+        and(
+          eq(schema.friendRequests.senderId, receiverId),
+          eq(schema.friendRequests.receiverId, senderId),
+        ),
+      ),
+    });
+
+    if (existingRequest) {
+      if (existingRequest.status === 'pending') {
+        throw new Error('Friend request already pending');
+      }
+      if (existingRequest.status === 'accepted') {
+        throw new Error('Already friends');
+      }
+    }
+
+    const existingFriend = await this.db.query.friends.findFirst({
+      where: or(
+        and(eq(schema.friends.userId, senderId), eq(schema.friends.friendId, receiverId)),
+        and(eq(schema.friends.userId, receiverId), eq(schema.friends.friendId, senderId)),
+      ),
+    });
+    if (existingFriend) throw new Error('Already friends');
+
+    const [request] = await this.db
+      .insert(schema.friendRequests)
+      .values({ senderId, receiverId })
+      .returning();
+
+    return request;
+  }
+
+  async acceptFriendRequest(requestId: string, userId: string) {
+    const request = await this.db.query.friendRequests.findFirst({
+      where: eq(schema.friendRequests.id, requestId),
+    });
+    if (!request) throw new Error('Friend request not found');
+    if (request.receiverId !== userId) throw new Error('Not authorized');
+    if (request.status !== 'pending') throw new Error('Request already processed');
+
+    await this.db
+      .update(schema.friendRequests)
+      .set({ status: 'accepted', updatedAt: new Date() })
+      .where(eq(schema.friendRequests.id, requestId));
+
+    await this.db.insert(schema.friends).values([
+      { userId: request.senderId, friendId: request.receiverId },
+      { userId: request.receiverId, friendId: request.senderId },
+    ]);
+
+    return { success: true };
+  }
+
+  async rejectFriendRequest(requestId: string, userId: string) {
+    const request = await this.db.query.friendRequests.findFirst({
+      where: eq(schema.friendRequests.id, requestId),
+    });
+    if (!request) throw new Error('Friend request not found');
+    if (request.receiverId !== userId) throw new Error('Not authorized');
+    if (request.status !== 'pending') throw new Error('Request already processed');
+
+    await this.db
+      .update(schema.friendRequests)
+      .set({ status: 'rejected', updatedAt: new Date() })
+      .where(eq(schema.friendRequests.id, requestId));
+
+    return { success: true };
+  }
+
+  async cancelFriendRequest(requestId: string, senderId: string) {
+    const request = await this.db.query.friendRequests.findFirst({
+      where: eq(schema.friendRequests.id, requestId),
+    });
+    if (!request) throw new Error('Friend request not found');
+    if (request.senderId !== senderId) throw new Error('Not authorized');
+    if (request.status !== 'pending') throw new Error('Request already processed');
+
+    await this.db
+      .delete(schema.friendRequests)
+      .where(eq(schema.friendRequests.id, requestId));
+
+    return { success: true };
+  }
+
+  async getFriendRequests(userId: string) {
+    const requests = await this.db
+      .select({
+        id: schema.friendRequests.id,
+        userId: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.userInfo.fullName,
+        avatarUrl: schema.userInfo.avatarUrl,
+        createdAt: schema.friendRequests.createdAt,
+      })
+      .from(schema.friendRequests)
+      .innerJoin(schema.users, eq(schema.friendRequests.senderId, schema.users.id))
+      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+      .where(
+        and(
+          eq(schema.friendRequests.receiverId, userId),
+          eq(schema.friendRequests.status, 'pending'),
+        ),
+      )
+      .orderBy(desc(schema.friendRequests.createdAt));
+
+    return { requests, total: requests.length };
+  }
+
+  async getSentFriendRequests(userId: string) {
+    const requests = await this.db
+      .select({
+        id: schema.friendRequests.id,
+        userId: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.userInfo.fullName,
+        avatarUrl: schema.userInfo.avatarUrl,
+        createdAt: schema.friendRequests.createdAt,
+      })
+      .from(schema.friendRequests)
+      .innerJoin(schema.users, eq(schema.friendRequests.receiverId, schema.users.id))
+      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+      .where(
+        and(
+          eq(schema.friendRequests.senderId, userId),
+          eq(schema.friendRequests.status, 'pending'),
+        ),
+      )
+      .orderBy(desc(schema.friendRequests.createdAt));
+
+    return { requests, total: requests.length };
+  }
+
+  async getFriends(userId: string) {
+    const friendships = await this.db
+      .select({
+        id: schema.friends.id,
+        friendId: schema.friends.friendId,
+        username: schema.users.username,
+        fullName: schema.userInfo.fullName,
+        avatarUrl: schema.userInfo.avatarUrl,
+        bio: schema.userInfo.bio,
+        memberStatus: schema.users.memberStatus,
+        createdAt: schema.friends.createdAt,
+      })
+      .from(schema.friends)
+      .innerJoin(schema.users, eq(schema.friends.friendId, schema.users.id))
+      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+      .where(eq(schema.friends.userId, userId))
+      .orderBy(desc(schema.friends.createdAt));
+
+    return { friends: friendships, total: friendships.length };
+  }
+
+  async getFriendIds(userId: string): Promise<Set<string>> {
+    const friendships = await this.db
+      .select({ friendId: schema.friends.friendId })
+      .from(schema.friends)
+      .where(eq(schema.friends.userId, userId));
+
+    return new Set(friendships.map((f) => f.friendId));
+  }
+
+  async getFriendshipStatus(userId1: string, userId2: string): Promise<string> {
+    if (userId1 === userId2) return 'self';
+
+    const existingFriend = await this.db.query.friends.findFirst({
+      where: or(
+        and(eq(schema.friends.userId, userId1), eq(schema.friends.friendId, userId2)),
+        and(eq(schema.friends.userId, userId2), eq(schema.friends.friendId, userId1)),
+      ),
+    });
+    if (existingFriend) return 'friends';
+
+    const sentRequest = await this.db.query.friendRequests.findFirst({
+      where: and(
+        eq(schema.friendRequests.senderId, userId1),
+        eq(schema.friendRequests.receiverId, userId2),
+        eq(schema.friendRequests.status, 'pending'),
+      ),
+    });
+    if (sentRequest) return 'request_sent';
+
+    const receivedRequest = await this.db.query.friendRequests.findFirst({
+      where: and(
+        eq(schema.friendRequests.senderId, userId2),
+        eq(schema.friendRequests.receiverId, userId1),
+        eq(schema.friendRequests.status, 'pending'),
+      ),
+    });
+    if (receivedRequest) return 'request_received';
+
+    return 'none';
+  }
+
+  async removeFriend(userId: string, friendId: string) {
+    await this.db
+      .delete(schema.friends)
+      .where(
+        or(
+          and(eq(schema.friends.userId, userId), eq(schema.friends.friendId, friendId)),
+          and(eq(schema.friends.userId, friendId), eq(schema.friends.friendId, userId)),
+        ),
+      );
+
+    await this.db
+      .delete(schema.friendRequests)
+      .where(
+        or(
+          and(
+            eq(schema.friendRequests.senderId, userId),
+            eq(schema.friendRequests.receiverId, friendId),
+          ),
+          and(
+            eq(schema.friendRequests.senderId, friendId),
+            eq(schema.friendRequests.receiverId, userId),
+          ),
+        ),
+      );
+
+    return { success: true };
+  }
+
+  async searchFriends(userId: string, query: string) {
+    if (!query || query.length < 2) return [];
+
+    const friendIds = await this.getFriendIds(userId);
+    if (friendIds.size === 0) return [];
+
+    const idsArray = Array.from(friendIds);
+
+    const results = await this.db
+      .select({
+        id: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.userInfo.fullName,
+        avatarUrl: schema.userInfo.avatarUrl,
+      })
+      .from(schema.users)
+      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+      .where(
+        and(
+          sql`${schema.users.id} IN ${idsArray}`,
+          sql`(${schema.users.username} ILIKE ${'%' + query + '%'} OR ${schema.userInfo.fullName} ILIKE ${'%' + query + '%'})`,
+        ),
+      )
+      .limit(20);
+
+    return results;
+  }
+
+  async searchAllUsers(userId: string, query: string) {
+    if (!query || query.length < 2) return [];
+
+    const results = await this.db
+      .select({
+        id: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.userInfo.fullName,
+        avatarUrl: schema.userInfo.avatarUrl,
+      })
+      .from(schema.users)
+      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+      .where(
+        and(
+          sql`(${schema.users.username} ILIKE ${'%' + query + '%'} OR ${schema.userInfo.fullName} ILIKE ${'%' + query + '%'})`,
+          sql`${schema.users.id} != ${userId}`,
+        ),
+      )
+      .limit(20);
+
+    const resultsWithStatus = await Promise.all(
+      results.map(async (user) => {
+        const status = await this.getFriendshipStatus(userId, user.id);
+        return { ...user, friendshipStatus: status };
+      }),
+    );
+
+    return resultsWithStatus;
+  }
+
+  // ─── Personalized Feed Algorithm ─────────────────────────────────────
+
+  async getPersonalizedFeed(userId: string, page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+
+    const friendIds = await this.getFriendIds(userId);
+    const friendIdsArray = Array.from(friendIds);
+
+    const likedAuthors = await this.db
+      .select({
+        authorId: schema.posts.authorId,
+        likeCount: count(),
+      })
+      .from(schema.postLikes)
+      .innerJoin(schema.posts, eq(schema.postLikes.postId, schema.posts.id))
+      .where(eq(schema.postLikes.userId, userId))
+      .groupBy(schema.posts.authorId);
+
+    const likedAuthorMap = new Map<string, number>();
+    likedAuthors.forEach((a) => likedAuthorMap.set(a.authorId, a.likeCount));
+
+    const allPosts = await this.db
+      .select({
+        id: schema.posts.id,
+        content: schema.posts.content,
+        mediaUrls: schema.posts.mediaUrls,
+        likesCount: schema.posts.likesCount,
+        commentsCount: schema.posts.commentsCount,
+        createdAt: schema.posts.createdAt,
+        updatedAt: schema.posts.updatedAt,
+        authorId: schema.users.id,
+        authorName: schema.users.username,
+        authorAvatar: schema.userInfo.avatarUrl,
+      })
+      .from(schema.posts)
+      .innerJoin(schema.users, eq(schema.posts.authorId, schema.users.id))
+      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+      .orderBy(desc(schema.posts.createdAt))
+      .limit(200)
+      .offset(0);
+
+    const now = Date.now();
+    const scoredPosts = allPosts.map((post) => {
+      let score = 0;
+
+      if (friendIds.has(post.authorId)) {
+        score += 100;
+      }
+
+      const authorLikeCount = likedAuthorMap.get(post.authorId) || 0;
+      score += authorLikeCount * 10;
+
+      const hoursOld = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+      score += Math.max(0, 48 - hoursOld);
+
+      score += (post.likesCount || 0) * 0.1;
+      score += (post.commentsCount || 0) * 0.5;
+
+      return { ...post, score };
+    });
+
+    scoredPosts.sort((a, b) => b.score - a.score);
+
+    const paginated = scoredPosts.slice(offset, offset + limit);
+
+    const totalResult = await this.db
+      .select({ count: count() })
+      .from(schema.posts);
+
+    return {
+      items: paginated,
+      total: totalResult[0]?.count || 0,
+      page,
+      limit,
     };
   }
 }

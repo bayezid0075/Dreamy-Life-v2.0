@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,20 +6,19 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Dimensions,
   Modal,
   TextInput,
   FlatList,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
-const { width } = Dimensions.get('window');
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface WalletData {
   walletBalance: number;
@@ -47,6 +46,12 @@ export default function WalletScreen() {
 
   useEffect(() => { loadData(); }, [filter]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading) loadData();
+    }, [filter])
+  );
+
   const loadData = async () => {
     const token = await AsyncStorage.getItem('accessToken');
     if (!token) { router.replace('/login'); return; }
@@ -73,12 +78,17 @@ export default function WalletScreen() {
     if (!token) return;
     setAdding(true);
     try {
-      const res = await fetch(`${API_URL}/wallet/add-funds`, {
+      const res = await fetch(`${API_URL}/wallet/create-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ amount }),
       });
-      if (res.ok) { setAddFundsVisible(false); setAddAmount(''); loadData(); }
+      const data = await res.json();
+      if (res.ok && data.success && data.data?.paymentUrl) {
+        setAddFundsVisible(false);
+        setAddAmount('');
+        Linking.openURL(data.data.paymentUrl);
+      }
     } catch (err) { console.error(err); }
     finally { setAdding(false); }
   };
@@ -119,15 +129,9 @@ export default function WalletScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar showBack title="Wallet" showNotification={false} />
+      <TopBar showBack title="Wallet" showNotification={false} showSearch={false} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <Text style={styles.headerTitle}>Wallet</Text>
-          <Text style={styles.headerSubtitle}>Manage your financial accounts</Text>
-        </View>
-
         {/* Balance Cards */}
         <View style={styles.cardsSection}>
           {/* Wallet Card */}
@@ -135,9 +139,7 @@ export default function WalletScreen() {
             <View style={styles.gridOverlay} />
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Wallet</Text>
-              <View style={styles.cardIcon}>
-                <Text style={styles.cardIconText}>💰</Text>
-              </View>
+              <View style={styles.cardIcon}><Text style={styles.cardIconText}>👛</Text></View>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardBalance}>৳{wallet?.walletBalance?.toFixed(2) || '0.00'}</Text>
@@ -157,9 +159,7 @@ export default function WalletScreen() {
             <View style={styles.gridOverlay} />
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Funds</Text>
-              <View style={styles.cardIcon}>
-                <Text style={styles.cardIconText}>💳</Text>
-              </View>
+              <View style={styles.cardIcon}><Text style={styles.cardIconText}>💳</Text></View>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardBalance}>৳{wallet?.fundsBalance?.toFixed(2) || '0.00'}</Text>
@@ -184,9 +184,7 @@ export default function WalletScreen() {
             <View style={styles.gridOverlay} />
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Points</Text>
-              <View style={styles.cardIcon}>
-                <Text style={styles.cardIconText}>⭐</Text>
-              </View>
+              <View style={styles.cardIcon}><Text style={styles.cardIconText}>⭐</Text></View>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardBalance}>৳{wallet?.pointsBalance?.toFixed(2) || '0.00'}</Text>
@@ -332,10 +330,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f8ff' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f8ff' },
   scroll: { flex: 1 },
-  content: { paddingTop: 110, paddingHorizontal: 24, paddingBottom: 40 },
-  headerSection: { marginBottom: 24 },
-  headerTitle: { fontSize: 32, fontWeight: '800', color: '#1c1b1b', letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 16, color: '#45474b', marginTop: 4 },
+  content: { paddingTop: 110, paddingHorizontal: 20, paddingBottom: 40 },
   cardsSection: { gap: 16, marginBottom: 24 },
   balanceCard: { borderRadius: 24, padding: 24, minHeight: 220, justifyContent: 'space-between', overflow: 'hidden' },
   gridOverlay: { ...StyleSheet.absoluteFillObject, opacity: 0.1 },

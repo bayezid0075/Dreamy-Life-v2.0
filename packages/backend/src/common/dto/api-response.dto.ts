@@ -153,6 +153,9 @@ class ProfileUserResponse {
   @ApiProperty()
   memberStatus: string;
 
+  @ApiProperty({ example: false })
+  isVerified: boolean;
+
   @ApiPropertyOptional({ nullable: true })
   referredBy?: string | null;
 
@@ -208,6 +211,9 @@ class MembershipPlanItem {
 
   @ApiProperty({ example: 1 })
   level: number;
+
+  @ApiProperty({ example: [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5] })
+  commissionRates: number[];
 
   @ApiProperty()
   createdAt: string;

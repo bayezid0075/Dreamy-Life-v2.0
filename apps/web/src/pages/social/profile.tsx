@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface UserProfile {
   id: string;
@@ -325,11 +325,11 @@ export default function SocialProfilePage() {
         {/* BottomNavBar */}
         <nav className="md:hidden fixed bottom-0 w-full z-50 rounded-t-lg bg-white/40 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.04)] border-t border-white/30">
           <div className="flex justify-around items-center py-3 px-4">
-            <Link href="/feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
+            <Link href="/social-feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
               <span className="material-symbols-outlined mb-1">home</span>
               <span className="text-[10px] font-semibold">Home</span>
             </Link>
-            <Link href="/feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
+            <Link href="/social-feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
               <span className="material-symbols-outlined mb-1">search</span>
               <span className="text-[10px] font-semibold">Explore</span>
             </Link>
@@ -354,11 +354,11 @@ export default function SocialProfilePage() {
         {/* Desktop Sidebar */}
         <aside className="hidden md:flex fixed top-16 left-0 h-full w-64 flex-col gap-6 p-6 glass-panel border-l-0 border-t-0 border-b-0 rounded-r-2xl z-40">
           <div className="space-y-4">
-            <Link href="/feed" className="flex items-center gap-4 text-on-surface-variant/60 hover:text-primary transition-all duration-300 p-2 rounded-lg hover:bg-white/20">
+            <Link href="/social-feed" className="flex items-center gap-4 text-on-surface-variant/60 hover:text-primary transition-all duration-300 p-2 rounded-lg hover:bg-white/20">
               <span className="material-symbols-outlined">home</span>
               <span className="text-[14px] font-semibold">Home</span>
             </Link>
-            <Link href="/feed" className="flex items-center gap-4 text-on-surface-variant/60 hover:text-primary transition-all duration-300 p-2 rounded-lg hover:bg-white/20">
+            <Link href="/social-feed" className="flex items-center gap-4 text-on-surface-variant/60 hover:text-primary transition-all duration-300 p-2 rounded-lg hover:bg-white/20">
               <span className="material-symbols-outlined">search</span>
               <span className="text-[14px] font-semibold">Explore</span>
             </Link>

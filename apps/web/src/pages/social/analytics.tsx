@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface UserStats {
   postsCount: number;
@@ -175,11 +175,11 @@ export default function AnalyticsPage() {
         {/* BottomNavBar */}
         <nav className="md:hidden fixed bottom-0 w-full z-50 rounded-t-lg bg-white/40 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.04)] border-t border-white/30">
           <div className="flex justify-around items-center py-3 px-4">
-            <Link href="/feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
+            <Link href="/social-feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
               <span className="material-symbols-outlined mb-1">home</span>
               <span className="text-[10px] font-semibold">Home</span>
             </Link>
-            <Link href="/feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
+            <Link href="/social-feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
               <span className="material-symbols-outlined mb-1">search</span>
               <span className="text-[10px] font-semibold">Explore</span>
             </Link>

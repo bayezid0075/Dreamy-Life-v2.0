@@ -1,13 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchConversations, fetchDownlineUsers } from '../api';
 import { useSocket } from '../hooks/useSocket';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
-
-const { width } = Dimensions.get('window');
 
 function getTimeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -49,7 +47,7 @@ export default function ChatListScreen() {
     AsyncStorage.getItem('accessToken').then((t) => {
       setToken(t);
       if (t) {
-        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
         Promise.all([
           fetchConversations(t).catch(() => []),
           fetchDownlineUsers(t).catch(() => []),

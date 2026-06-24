@@ -32,11 +32,11 @@ export default function PointsHistoryPage() {
   const fetchData = async () => {
     try {
       const [walletRes, txRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/transactions?type=points&filter=${timeRange}`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=points&filter=${timeRange}`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         ),
       ]);

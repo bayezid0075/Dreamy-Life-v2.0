@@ -54,10 +54,8 @@ services:
       dockerfile: packages/backend/Dockerfile
     container_name: dreamy-life-backend
     restart: always
-    expose:
-      - "4000"
     ports:
-      - "4000:4000"
+      - "4080:4000"
     environment:
       - NODE_ENV=production
       - PORT=4000
@@ -84,7 +82,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:4000
+      - NEXT_PUBLIC_API_URL=http://backend:4080
     depends_on:
       - backend
 
@@ -98,7 +96,7 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:4000
+      - NEXT_PUBLIC_API_URL=http://backend:4080
     depends_on:
       - backend
 

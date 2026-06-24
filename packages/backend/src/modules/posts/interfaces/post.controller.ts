@@ -152,4 +152,75 @@ export class PostController {
   ) {
     return this.postService.getFollowing(id, parseInt(page || '1'));
   }
+
+  // ─── Friend Endpoints ──────────────────────────────────────────────
+
+  @Get('feed/personalized')
+  async getPersonalizedFeed(
+    @Req() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.postService.getPersonalizedFeed(
+      req.user.userId,
+      parseInt(page || '1'),
+      parseInt(limit || '20'),
+    );
+  }
+
+  @Post('friends/request/:userId')
+  async sendFriendRequest(@Param('userId') userId: string, @Req() req: any) {
+    return this.postService.sendFriendRequest(req.user.userId, userId);
+  }
+
+  @Post('friends/accept/:requestId')
+  async acceptFriendRequest(@Param('requestId') requestId: string, @Req() req: any) {
+    return this.postService.acceptFriendRequest(requestId, req.user.userId);
+  }
+
+  @Post('friends/reject/:requestId')
+  async rejectFriendRequest(@Param('requestId') requestId: string, @Req() req: any) {
+    return this.postService.rejectFriendRequest(requestId, req.user.userId);
+  }
+
+  @Delete('friends/request/:requestId')
+  async cancelFriendRequest(@Param('requestId') requestId: string, @Req() req: any) {
+    return this.postService.cancelFriendRequest(requestId, req.user.userId);
+  }
+
+  @Get('friends/requests')
+  async getFriendRequests(@Req() req: any) {
+    return this.postService.getFriendRequests(req.user.userId);
+  }
+
+  @Get('friends/requests/sent')
+  async getSentFriendRequests(@Req() req: any) {
+    return this.postService.getSentFriendRequests(req.user.userId);
+  }
+
+  @Get('friends')
+  async getFriends(@Req() req: any) {
+    return this.postService.getFriends(req.user.userId);
+  }
+
+  @Get('friends/status/:userId')
+  async getFriendshipStatus(@Param('userId') userId: string, @Req() req: any) {
+    const status = await this.postService.getFriendshipStatus(req.user.userId, userId);
+    return { status };
+  }
+
+  @Delete('friends/:userId')
+  async removeFriend(@Param('userId') userId: string, @Req() req: any) {
+    return this.postService.removeFriend(req.user.userId, userId);
+  }
+
+  @Get('friends/search')
+  async searchFriends(@Query('q') query: string, @Req() req: any) {
+    return this.postService.searchFriends(req.user.userId, query);
+  }
+
+  @Get('users/search/all')
+  async searchAllUsers(@Query('q') query: string, @Req() req: any) {
+    return this.postService.searchAllUsers(req.user.userId, query);
+  }
 }

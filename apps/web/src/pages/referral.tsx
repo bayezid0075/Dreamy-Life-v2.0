@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { VendorProfile } from '@/features/vendor/api';
+import DesktopHeader from '@/shared/components/DesktopHeader';
+import SideDrawer from '@/shared/components/SideDrawer';
 
 export default function ReferralPage() {
   const router = useRouter();
@@ -13,6 +16,9 @@ export default function ReferralPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [expandedLevels, setExpandedLevels] = useState<Record<number, boolean>>({});
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
   const toggleLevel = (level: number) => {
     setExpandedLevels(prev => ({ ...prev, [level]: !prev[level] }));
@@ -24,21 +30,34 @@ export default function ReferralPage() {
       return;
     }
     fetchData(accessToken);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+    fetch(`${apiUrl}/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+      .catch(() => {});
+    fetch(`${apiUrl}/vendor/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { setVendorProfile(data.data || null); })
+      .catch(() => { setVendorProfile(null); });
   }, [isAuthenticated, accessToken, router]);
 
   const fetchData = async (token: string) => {
     try {
       const [profileRes, statsRes, downlineRes, treeRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/profile`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/stats`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/referral/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/downline`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/referral/downline`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/downline/tree`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/referral/downline/tree`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -81,6 +100,17 @@ export default function ReferralPage() {
     }
   };
 
+  const copyReferCode = () => {
+    if (user?.ownRefercode) {
+      navigator.clipboard.writeText(user.ownRefercode);
+    }
+  };
+
+  const handleLogout = () => {
+    clearAuth();
+    router.replace('/login');
+  };
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       super_admin: 'bg-purple-100 text-purple-700',
@@ -117,17 +147,22 @@ export default function ReferralPage() {
         }}
       >
         {/* TopAppBar - Desktop */}
-        <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-[30px] border-b border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.06)] px-6 py-4 hidden md:flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
-              <span className="material-symbols-outlined">arrow_back</span>
-            </Link>
-          </div>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">
-            Referral
-          </div>
-          <div className="w-10"></div>
-        </header>
+        <DesktopHeader
+          title="Referral"
+          onMenuClick={() => setDrawerOpen(true)}
+          avatarUrl={user?.info?.avatarUrl || ''}
+          unreadNotifCount={unreadNotifCount}
+        />
+
+        {/* Side Drawer */}
+        <SideDrawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          user={user}
+          vendorProfile={vendorProfile}
+          handleLogout={handleLogout}
+          copyReferCode={copyReferCode}
+        />
 
         {/* Mobile Top Bar */}
         <header className="md:hidden flex justify-between items-center px-6 py-5 sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-white/30">

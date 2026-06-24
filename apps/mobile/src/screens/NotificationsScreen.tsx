@@ -12,9 +12,8 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
-import { registerForPushNotifications, sendPushTokenToServer, setupNotificationListeners } from '@/shared/utils/push';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface UserNotification {
   id: string;
@@ -32,7 +31,7 @@ interface UserNotification {
 const iconMap: Record<string, { emoji: string; bg: string }> = {
   local_shipping: { emoji: '🚚', bg: '#e9fdff' },
   chat_bubble: { emoji: '💬', bg: '#ffd1dc' },
-  percent: { emoji: '🏷', bg: '#ffdad6' },
+  percent: { emoji: '🏷️', bg: '#ffdad6' },
   star: { emoji: '⭐', bg: '#fffde7' },
   account_circle: { emoji: '👤', bg: '#e5e2e1' },
   notifications: { emoji: '🔔', bg: '#e8eaf6' },
@@ -94,19 +93,6 @@ export default function NotificationsScreen() {
         router.replace('/login');
         return;
       }
-
-      // Register for push notifications
-      const pushToken = await registerForPushNotifications();
-      if (pushToken) {
-        await sendPushTokenToServer(pushToken);
-      }
-
-      // Set up foreground notification listener
-      setupNotificationListeners((notification) => {
-        // Refresh notifications when one is received in foreground
-        fetchNotifications(1);
-      });
-
       await fetchNotifications(1);
       setLoading(false);
     })();
@@ -164,7 +150,7 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Notifications" showBack />
+      <TopBar title="Notifications" showBack showSearch={false} showNotification={false} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
@@ -181,6 +167,7 @@ export default function NotificationsScreen() {
         <View style={styles.list}>
           {notifications.length === 0 && (
             <GlassPanel borderRadius={12} style={styles.emptyCard}>
+              <Text style={styles.emptyIcon}>🔔</Text>
               <Text style={styles.emptyText}>No notifications yet</Text>
             </GlassPanel>
           )}
@@ -195,7 +182,7 @@ export default function NotificationsScreen() {
               >
                 <GlassPanel
                   borderRadius={12}
-                  style={[styles.notifCard, !n.read && { opacity: 1 }, n.read && { opacity: 0.7 }]}
+                  style={[styles.notifCard, n.read && styles.notifCardRead]}
                 >
                   <View style={styles.notifInner}>
                     {!n.read && <View style={styles.unreadBar} />}
@@ -236,23 +223,25 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f8ff' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f8ff' },
   scroll: { flex: 1 },
-  content: { paddingTop: 110, paddingHorizontal: 24, paddingBottom: 40 },
+  content: { paddingTop: 110, paddingHorizontal: 20, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  headerText: { fontSize: 16, color: '#45474b', flex: 1 },
-  clearBtn: { fontSize: 14, fontWeight: '600', color: '#2d666d', letterSpacing: 1 },
+  headerText: { fontSize: 14, color: '#45474b', flex: 1 },
+  clearBtn: { fontSize: 12, fontWeight: '700', color: '#2d666d', letterSpacing: 1 },
   list: { gap: 12 },
   emptyCard: { padding: 48, alignItems: 'center' },
+  emptyIcon: { fontSize: 40, marginBottom: 12 },
   emptyText: { fontSize: 16, color: '#45474b' },
   notifCard: { padding: 0 },
+  notifCardRead: { opacity: 0.7 },
   notifInner: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12, position: 'relative' },
-  unreadBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: '#2d666d', borderRadius: 2 },
+  unreadBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: '#2d666d', borderTopRightRadius: 2, borderBottomRightRadius: 2 },
   notifIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   notifEmoji: { fontSize: 22 },
   notifContent: { flex: 1, minWidth: 0 },
   notifTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  notifTitle: { fontSize: 16, fontWeight: '700', color: '#1c1b1b', flex: 1 },
+  notifTitle: { fontSize: 15, fontWeight: '700', color: '#1c1b1b', flex: 1 },
   notifTime: { fontSize: 12, fontWeight: '600', color: '#76777b', marginLeft: 8, flexShrink: 0 },
-  notifMessage: { fontSize: 14, color: '#45474b' },
+  notifMessage: { fontSize: 13, color: '#45474b' },
   loadMoreBtn: { marginTop: 4 },
   loadMoreCard: { paddingVertical: 12, alignItems: 'center' },
   loadMoreText: { fontSize: 14, fontWeight: '600', color: '#2d666d' },

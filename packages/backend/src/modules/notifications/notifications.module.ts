@@ -8,7 +8,6 @@ import { PushTokenService } from './application/push-token.service';
 import { NotificationController } from './interfaces/notification.controller';
 import { PushController } from './interfaces/push.controller';
 import { UserGuard } from './guards/user.guard';
-import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
@@ -22,7 +21,6 @@ import { AdminModule } from '../admin/admin.module';
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '15m' },
       }),
     }),
-    AdminModule,
   ],
   controllers: [NotificationController, PushController],
   providers: [NotificationService, PushService, PushTokenService, UserGuard],

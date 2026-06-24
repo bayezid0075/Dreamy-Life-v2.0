@@ -16,13 +16,14 @@ import TopBar from '@/shared/components/TopBar';
 import BottomNav from '@/shared/components/BottomNav';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 const SETTINGS_ITEMS = [
   { icon: '👤', label: 'Personal Information' },
   { icon: '📍', label: 'Shipping Address' },
   { icon: '🧾', label: 'Order History' },
   { icon: '💳', label: 'Payment Methods' },
+  { icon: '👛', label: 'Wallet', href: '/wallet' as const },
   { icon: '🔔', label: 'Notifications', href: '/notifications' as const },
 ];
 
@@ -75,20 +76,16 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar showMenu avatarUrl={user?.info?.avatarUrl} />
+      <TopBar showMenu={false} showBack />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrap}>
             <Animated.View style={[styles.avatarRing, { transform: [{ scale: pulseAnim }] }]} />
-            {user?.info?.avatarUrl ? (
-              <Image source={{ uri: user.info.avatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarFallback]}>
-                <Text style={styles.avatarFallbackText}>👤</Text>
-              </View>
-            )}
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarFallbackText}>👤</Text>
+            </View>
           </View>
           <Text style={styles.displayName}>{displayName}</Text>
           <Text style={styles.displayEmail}>{displayEmail}</Text>
@@ -136,7 +133,7 @@ export default function ProfileScreen() {
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Log Out</Text>
+          <Text style={styles.logoutText}>🚪 Log Out</Text>
         </TouchableOpacity>
 
         <View style={{ height: 100 }} />

@@ -14,7 +14,7 @@ export default function CreatePostPage() {
     // TODO: integrate with post API
     await new Promise((r) => setTimeout(r, 500));
     setIsPending(false);
-    router.push('/feed');
+    router.push('/social-feed');
   };
 
   return (

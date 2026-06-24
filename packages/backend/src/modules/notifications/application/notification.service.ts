@@ -34,6 +34,36 @@ export class NotificationService {
     return notification;
   }
 
+  async sendToUser(userId: string, data: {
+    title: string;
+    body: string;
+    icon?: string;
+    createdBy: string;
+  }) {
+    const [notification] = await this.db
+      .insert(schema.notifications)
+      .values({
+        title: data.title,
+        body: data.body,
+        icon: data.icon,
+        type: 'targeted',
+        status: 'sent',
+        sentAt: new Date(),
+        totalRecipients: 1,
+        createdBy: data.createdBy,
+      })
+      .returning();
+
+    await this.db.insert(schema.notificationRecipients).values({
+      notificationId: notification.id,
+      userId,
+      sent: true,
+      sentAt: new Date(),
+    });
+
+    return notification;
+  }
+
   async broadcast(notificationId: string) {
     const notification = await this.db.query.notifications.findFirst({
       where: eq(schema.notifications.id, notificationId),

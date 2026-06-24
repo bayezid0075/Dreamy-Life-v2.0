@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { IsUUID, IsString, IsNotEmpty } from 'class-validator';
 
 export class PurchaseMembershipDto {
   @ApiProperty({
@@ -8,4 +8,14 @@ export class PurchaseMembershipDto {
   })
   @IsUUID()
   planId: string;
+}
+
+export class PaymentCallbackDto {
+  @ApiProperty({
+    description: 'Invoice ID from UddoktaPay',
+    example: 'Erm9wzjM0FBwjSYT0QVb',
+  })
+  @IsString()
+  @IsNotEmpty()
+  invoice_id: string;
 }

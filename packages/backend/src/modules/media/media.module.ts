@@ -7,6 +7,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
+    ConfigModule,
     NotificationsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

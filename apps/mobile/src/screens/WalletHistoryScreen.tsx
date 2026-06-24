@@ -6,7 +6,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface Transaction {
   id: string;
@@ -62,7 +62,7 @@ export default function WalletHistoryScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar showBack title="Wallet History" showNotification={false} />
+      <TopBar showBack title="Wallet History" showNotification={false} showSearch={false} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Time Filters */}
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingTop: 110, paddingHorizontal: 20, paddingBottom: 40 },
   filterScroll: { marginBottom: 12 },
-  filterRow: { gap: 8 },
+  filterRow: { gap: 8, flexDirection: 'row' },
   timeFilter: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 9999, backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   timeFilterActive: { backgroundColor: '#1c1b1b' },
   timeFilterText: { fontSize: 13, fontWeight: '600', color: '#45474b' },

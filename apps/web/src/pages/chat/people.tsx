@@ -1,9 +1,10 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface User {
   id: string;
@@ -11,6 +12,7 @@ interface User {
   fullName: string | null;
   avatarUrl: string | null;
   level?: number;
+  friendshipStatus?: string;
 }
 
 export default function PeoplePage() {
@@ -22,6 +24,7 @@ export default function PeoplePage() {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'search' | 'downline'>('search');
+  const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -56,7 +59,7 @@ export default function PeoplePage() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/chat/users/search?q=${encodeURIComponent(q)}`, {
+      const res = await fetch(`${API_URL}/users/search/all?q=${encodeURIComponent(q)}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
@@ -97,6 +100,64 @@ export default function PeoplePage() {
     }
   };
 
+  const handleSendFriendRequest = async (userId: string) => {
+    setFriendActionLoading(userId);
+    try {
+      const res = await fetch(`${API_URL}/friends/request/${userId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, friendshipStatus: 'request_sent' } : u)),
+        );
+        setDownlineUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, friendshipStatus: 'request_sent' } : u)),
+        );
+      }
+    } catch (err) {
+      console.error('Failed to send friend request', err);
+    } finally {
+      setFriendActionLoading(null);
+    }
+  };
+
+  const renderFriendButton = (user: User) => {
+    if (user.id === useAuthStore.getState().user?.id) return null;
+
+    if (user.friendshipStatus === 'friends') {
+      return (
+        <span className="px-3 py-1.5 rounded-full bg-[#e9fdff] text-[#2d666d] text-[12px] font-semibold flex items-center gap-1">
+          <span className="material-symbols-outlined text-[14px]">check</span>
+          Friends
+        </span>
+      );
+    }
+    if (user.friendshipStatus === 'request_sent') {
+      return (
+        <span className="px-3 py-1.5 rounded-full bg-[#e5e2e1]/50 text-[#45474b] text-[12px] font-semibold">
+          Sent
+        </span>
+      );
+    }
+    if (user.friendshipStatus === 'request_received') {
+      return (
+        <span className="px-3 py-1.5 rounded-full bg-[#ffd1dc]/50 text-[#78555e] text-[12px] font-semibold">
+          Pending
+        </span>
+      );
+    }
+    return (
+      <button
+        onClick={() => handleSendFriendRequest(user.id)}
+        disabled={friendActionLoading === user.id}
+        className="px-3 py-1.5 rounded-full bg-white/60 text-[#2d666d] text-[12px] font-semibold hover:bg-[#e9fdff] transition-colors disabled:opacity-50 border border-[#2d666d]/20"
+      >
+        {friendActionLoading === user.id ? '...' : 'Add'}
+      </button>
+    );
+  };
+
   const displayUsers = activeTab === 'search' ? users : downlineUsers;
 
   return (
@@ -114,7 +175,9 @@ export default function PeoplePage() {
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
             <h1 className="text-[24px] font-bold text-on-surface tracking-tight">People</h1>
-            <div className="w-10" />
+            <Link href="/friends" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-primary active:scale-95">
+              <span className="material-symbols-outlined">person_add</span>
+            </Link>
           </div>
         </header>
 
@@ -193,13 +256,16 @@ export default function PeoplePage() {
                     {user.level && <span className="ml-2 text-tertiary text-[11px] font-semibold">Level {user.level}</span>}
                   </p>
                 </div>
-                <button
-                  onClick={() => startConversation(user.id)}
-                  disabled={creating === user.id}
-                  className="bg-tertiary text-white px-5 py-2 rounded-full text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 active:scale-95"
-                >
-                  {creating === user.id ? '...' : 'Message'}
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {renderFriendButton(user)}
+                  <button
+                    onClick={() => startConversation(user.id)}
+                    disabled={creating === user.id}
+                    className="bg-tertiary text-white px-4 py-2 rounded-full text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 active:scale-95"
+                  >
+                    {creating === user.id ? '...' : 'Message'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, ConflictException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, sql, like, or, desc, count, sum } from 'drizzle-orm';
+import { eq, sql, like, or, desc, count, sum, asc } from 'drizzle-orm';
 import * as schema from '../../infrastructure/database/schema';
 
 @Injectable()
@@ -105,6 +105,7 @@ export class AdminService {
         ownRefercode: schema.users.ownRefercode,
         referredBy: schema.users.referredBy,
         memberStatus: schema.users.memberStatus,
+        isVerified: schema.users.isVerified,
         createdAt: schema.users.createdAt,
         updatedAt: schema.users.updatedAt,
         fullName: schema.userInfo.fullName,
@@ -148,6 +149,7 @@ export class AdminService {
         ownRefercode: schema.users.ownRefercode,
         referredBy: schema.users.referredBy,
         memberStatus: schema.users.memberStatus,
+        isVerified: schema.users.isVerified,
         createdAt: schema.users.createdAt,
         updatedAt: schema.users.updatedAt,
         fullName: schema.userInfo.fullName,
@@ -285,5 +287,200 @@ export class AdminService {
       .orderBy(schema.referrals.level);
 
     return referrals;
+  }
+
+  // ─── Membership Plan Management ────────────────────────────────────────
+
+  async getMembershipPlans() {
+    const plans = await this.db
+      .select()
+      .from(schema.membershipPlans)
+      .orderBy(asc(schema.membershipPlans.sortOrder));
+    return plans;
+  }
+
+  async getMembershipPlanById(planId: string) {
+    const plan = await this.db.query.membershipPlans.findFirst({
+      where: eq(schema.membershipPlans.id, planId),
+    });
+    if (!plan) throw new NotFoundException('Membership plan not found');
+    return plan;
+  }
+
+  async createMembershipPlan(data: {
+    name: string;
+    price: string;
+    description?: string;
+    level: number;
+    features?: { text: string; icon: string }[];
+    buttonText?: string;
+    isPopular?: boolean;
+    sortOrder?: number;
+    colorTheme?: string;
+    commissionRates?: number[];
+    isActive?: boolean;
+  }) {
+    // Check for duplicate name
+    const existing = await this.db.query.membershipPlans.findFirst({
+      where: eq(schema.membershipPlans.name, data.name),
+    });
+    if (existing) throw new ConflictException(`Plan with name "${data.name}" already exists`);
+
+    // Check for duplicate level
+    const levelExists = await this.db.query.membershipPlans.findFirst({
+      where: eq(schema.membershipPlans.level, data.level),
+    });
+    if (levelExists) throw new ConflictException(`Plan with level ${data.level} already exists`);
+
+    const [plan] = await this.db
+      .insert(schema.membershipPlans)
+      .values({
+        name: data.name,
+        price: data.price,
+        description: data.description,
+        level: data.level,
+        features: data.features || [],
+        buttonText: data.buttonText || 'Choose Plan',
+        isPopular: data.isPopular || false,
+        sortOrder: data.sortOrder || 0,
+        colorTheme: data.colorTheme || 'primary',
+        commissionRates: data.commissionRates || [],
+        isActive: data.isActive !== undefined ? data.isActive : true,
+      })
+      .returning();
+
+    return plan;
+  }
+
+  async updateMembershipPlan(planId: string, data: {
+    name?: string;
+    price?: string;
+    description?: string;
+    level?: number;
+    features?: { text: string; icon: string }[];
+    buttonText?: string;
+    isPopular?: boolean;
+    sortOrder?: number;
+    colorTheme?: string;
+    commissionRates?: number[];
+    isActive?: boolean;
+  }) {
+    const plan = await this.db.query.membershipPlans.findFirst({
+      where: eq(schema.membershipPlans.id, planId),
+    });
+    if (!plan) throw new NotFoundException('Membership plan not found');
+
+    // Check duplicate name if name is being changed
+    if (data.name && data.name !== plan.name) {
+      const existing = await this.db.query.membershipPlans.findFirst({
+        where: eq(schema.membershipPlans.name, data.name),
+      });
+      if (existing) throw new ConflictException(`Plan with name "${data.name}" already exists`);
+    }
+
+    // Check duplicate level if level is being changed
+    if (data.level !== undefined && data.level !== plan.level) {
+      const levelExists = await this.db.query.membershipPlans.findFirst({
+        where: eq(schema.membershipPlans.level, data.level),
+      });
+      if (levelExists) throw new ConflictException(`Plan with level ${data.level} already exists`);
+    }
+
+    const updateData: Record<string, any> = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.level !== undefined) updateData.level = data.level;
+    if (data.features !== undefined) updateData.features = data.features;
+    if (data.buttonText !== undefined) updateData.buttonText = data.buttonText;
+    if (data.isPopular !== undefined) updateData.isPopular = data.isPopular;
+    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+    if (data.colorTheme !== undefined) updateData.colorTheme = data.colorTheme;
+    if (data.commissionRates !== undefined) updateData.commissionRates = data.commissionRates;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+    const [updated] = await this.db
+      .update(schema.membershipPlans)
+      .set(updateData)
+      .where(eq(schema.membershipPlans.id, planId))
+      .returning();
+
+    return updated;
+  }
+
+  async deleteMembershipPlan(planId: string) {
+    const plan = await this.db.query.membershipPlans.findFirst({
+      where: eq(schema.membershipPlans.id, planId),
+    });
+    if (!plan) throw new NotFoundException('Membership plan not found');
+
+    // Check if users are on this plan
+    const usersOnPlan = await this.db
+      .select({ count: count() })
+      .from(schema.users)
+      .where(eq(schema.users.memberStatus, plan.name));
+
+    if (Number(usersOnPlan[0]?.count ?? 0) > 0) {
+      throw new ConflictException(`Cannot delete plan: ${usersOnPlan[0].count} users are currently on this plan`);
+    }
+
+    await this.db.delete(schema.membershipPlans).where(eq(schema.membershipPlans.id, planId));
+    return { message: 'Plan deleted successfully' };
+  }
+
+  async getMembershipStats() {
+    const totalPurchases = await this.db
+      .select({ count: count() })
+      .from(schema.membershipPurchases)
+      .where(eq(schema.membershipPurchases.status, 'completed'));
+
+    const totalRevenue = await this.db
+      .select({ total: sum(schema.membershipPurchases.amount) })
+      .from(schema.membershipPurchases)
+      .where(eq(schema.membershipPurchases.status, 'completed'));
+
+    const planBreakdown = await this.db
+      .select({
+        planName: schema.membershipPlans.name,
+        planId: schema.membershipPlans.id,
+        price: schema.membershipPlans.price,
+        purchaseCount: count(schema.membershipPurchases.id),
+      })
+      .from(schema.membershipPlans)
+      .leftJoin(
+        schema.membershipPurchases,
+        eq(schema.membershipPlans.id, schema.membershipPurchases.planId),
+      )
+      .groupBy(schema.membershipPlans.id, schema.membershipPlans.name, schema.membershipPlans.price)
+      .orderBy(asc(schema.membershipPlans.level));
+
+    const totalCommissions = await this.db
+      .select({ total: sum(schema.commissions.amount) })
+      .from(schema.commissions);
+
+    const usersByStatus = await this.db
+      .select({
+        status: schema.users.memberStatus,
+        count: count(),
+      })
+      .from(schema.users)
+      .groupBy(schema.users.memberStatus);
+
+    return {
+      totalPurchases: Number(totalPurchases[0]?.count ?? 0),
+      totalRevenue: Number(totalRevenue[0]?.total ?? 0),
+      totalCommissions: Number(totalCommissions[0]?.total ?? 0),
+      planBreakdown: planBreakdown.map(p => ({
+        planId: p.planId,
+        planName: p.planName,
+        price: Number(p.price),
+        purchaseCount: Number(p.purchaseCount),
+        revenue: Number(p.price) * Number(p.purchaseCount),
+      })),
+      usersByStatus: usersByStatus.map(u => ({
+        status: u.status,
+        count: Number(u.count),
+      })),
+    };
   }
 }

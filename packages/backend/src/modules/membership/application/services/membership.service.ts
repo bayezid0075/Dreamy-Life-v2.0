@@ -1,21 +1,53 @@
-import { Injectable, Inject, NotFoundException, ConflictException, OnModuleInit } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, desc, asc } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
+import { NotificationService } from '../../../notifications/application/notification.service';
 
-// Commission percentages per level for membership purchases
-const COMMISSION_PERCENTAGES: Record<string, number[]> = {
-  basic: [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5],
-  standard: [12, 6, 4, 3, 2, 1, 1, 0.5, 0.5, 0.5],
-  smart: [15, 8, 5, 3, 2, 1.5, 1, 0.5, 0.5, 0.5],
-  vvip: [20, 10, 6, 4, 3, 2, 1.5, 1, 1, 0.5],
-};
+// Default commission percentages per level (used when plan has no configured rates)
+const DEFAULT_COMMISSION_PERCENTAGES: number[] = [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5];
+
+interface UddoktaPayCreateResponse {
+  status: boolean;
+  message: string;
+  payment_url?: string;
+}
+
+interface UddoktaPayVerifyResponse {
+  full_name: string;
+  email: string;
+  amount: string;
+  fee: string;
+  charged_amount: string;
+  invoice_id: string;
+  metadata: Record<string, unknown>;
+  payment_method: string;
+  sender_number: string;
+  transaction_id: string;
+  date: string;
+  status: string;
+}
 
 @Injectable()
 export class MembershipService implements OnModuleInit {
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+  private readonly successUrl: string;
+  private readonly cancelUrl: string;
+  private readonly webhookUrl: string;
+
   constructor(
+    private readonly configService: ConfigService,
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
-  ) {}
+    private readonly notificationService: NotificationService,
+  ) {
+    this.baseUrl = this.configService.get<string>('UDDOKTAPAY_BASE_URL') || 'https://sandbox.uddoktapay.com';
+    this.apiKey = this.configService.get<string>('UDDOKTAPAY_API_KEY') || '';
+    this.successUrl = this.configService.get<string>('UDDOKTAPAY_MEMBERSHIP_SUCCESS_URL') || 'http://localhost:3000/membership/payment-success';
+    this.cancelUrl = this.configService.get<string>('UDDOKTAPAY_MEMBERSHIP_CANCEL_URL') || 'http://localhost:3000/membership';
+    this.webhookUrl = this.configService.get<string>('UDDOKTAPAY_MEMBERSHIP_WEBHOOK_URL') || 'http://localhost:4080/membership/payment-webhook';
+  }
 
   async onModuleInit() {
     await this.seedPlans();
@@ -69,6 +101,13 @@ export class MembershipService implements OnModuleInit {
         price: Number(currentPlan.price),
         description: currentPlan.description,
         level: currentPlan.level,
+        features: currentPlan.features || [],
+        buttonText: currentPlan.buttonText,
+        isPopular: currentPlan.isPopular,
+        sortOrder: currentPlan.sortOrder,
+        colorTheme: currentPlan.colorTheme,
+        commissionRates: currentPlan.commissionRates || [],
+        isActive: currentPlan.isActive,
       } : null,
       plans: plans.map(p => ({
         id: p.id,
@@ -76,7 +115,15 @@ export class MembershipService implements OnModuleInit {
         price: Number(p.price),
         description: p.description,
         level: p.level,
+        features: p.features || [],
+        buttonText: p.buttonText,
+        isPopular: p.isPopular,
+        sortOrder: p.sortOrder,
+        colorTheme: p.colorTheme,
+        commissionRates: p.commissionRates || [],
+        isActive: p.isActive,
       })),
+      isVerified: user.isVerified,
       purchaseHistory: purchases,
       commissionEarned: totalEarned,
       commissionHistory: commissions.slice(0, 20).map(c => ({
@@ -84,15 +131,16 @@ export class MembershipService implements OnModuleInit {
         amount: Number(c.amount),
         level: c.level,
         percentage: Number(c.percentage),
+        fromUserId: c.fromUserId,
         createdAt: c.createdAt.toISOString(),
       })),
     };
   }
 
   /**
-   * Purchase a membership plan
+   * Create a UddoktaPay payment session for membership purchase
    */
-  async purchaseMembership(userId: string, planId: string) {
+  async createMembershipPayment(userId: string, planId: string): Promise<{ paymentUrl: string; invoiceId: string }> {
     const plan = await this.db.query.membershipPlans.findFirst({
       where: eq(schema.membershipPlans.id, planId),
     });
@@ -110,6 +158,148 @@ export class MembershipService implements OnModuleInit {
       throw new ConflictException('You already have this or a higher membership');
     }
 
+    const userInfo = await this.db.query.userInfo.findFirst({
+      where: eq(schema.userInfo.userId, userId),
+    });
+
+    const fullName = userInfo?.fullName || user.username;
+    const email = userInfo?.email || `${user.username}@dreamy-life.com`;
+    const amount = Number(plan.price);
+
+    if (amount <= 0) {
+      throw new BadRequestException('Plan price must be greater than 0');
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/checkout-v2`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'RT-UDDOKTAPAY-API-KEY': this.apiKey,
+      },
+      body: JSON.stringify({
+        full_name: fullName,
+        email: email,
+        amount: String(amount),
+        metadata: {
+          user_id: userId,
+          plan_id: planId,
+          plan_name: plan.name,
+          purpose: 'membership_purchase',
+        },
+        redirect_url: this.successUrl,
+        return_type: 'POST',
+        cancel_url: this.cancelUrl,
+        webhook_url: this.webhookUrl,
+      }),
+    });
+
+    const data: UddoktaPayCreateResponse = await response.json();
+
+    if (!data.status || !data.payment_url) {
+      throw new BadRequestException(data.message || 'Payment creation failed');
+    }
+
+    const invoiceId = data.payment_url.split('/').pop() || '';
+
+    return {
+      paymentUrl: data.payment_url,
+      invoiceId,
+    };
+  }
+
+  /**
+   * Handle successful payment callback from UddoktaPay
+   */
+  async handleMembershipPaymentSuccess(invoiceId: string): Promise<{ success: boolean; message: string; newStatus?: string }> {
+    const existing = await this.db.query.membershipPayments.findFirst({
+      where: eq(schema.membershipPayments.invoiceId, invoiceId),
+    });
+
+    if (existing && existing.status === 'completed') {
+      return { success: true, message: 'Payment already processed' };
+    }
+
+    let verification: UddoktaPayVerifyResponse;
+    try {
+      verification = await this.verifyPayment(invoiceId);
+    } catch (err: any) {
+      console.error(`[Membership] Verification failed for invoice ${invoiceId}:`, err?.message || err);
+      return { success: false, message: err?.message || 'Payment verification failed' };
+    }
+
+    if (verification.status !== 'COMPLETED') {
+      if (existing) {
+        await this.db
+          .update(schema.membershipPayments)
+          .set({ status: 'failed', updatedAt: new Date() })
+          .where(eq(schema.membershipPayments.invoiceId, invoiceId));
+      }
+      return { success: false, message: `Payment status: ${verification.status}` };
+    }
+
+    const amount = parseFloat(verification.amount);
+    const fee = parseFloat(verification.fee || '0');
+    const chargedAmount = parseFloat(verification.charged_amount);
+    const userId = verification.metadata?.user_id as string;
+    const planId = verification.metadata?.plan_id as string;
+    const planName = verification.metadata?.plan_name as string;
+
+    if (!userId || !planId) {
+      return { success: false, message: 'Missing user_id or plan_id in payment metadata' };
+    }
+
+    const plan = await this.db.query.membershipPlans.findFirst({
+      where: eq(schema.membershipPlans.id, planId),
+    });
+    if (!plan) {
+      return { success: false, message: 'Membership plan not found' };
+    }
+
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+    if (!user) {
+      return { success: false, message: 'User not found' };
+    }
+
+    // Save payment record
+    if (existing) {
+      await this.db
+        .update(schema.membershipPayments)
+        .set({
+          status: 'completed',
+          fee: String(fee),
+          chargedAmount: String(chargedAmount),
+          paymentMethod: verification.payment_method,
+          senderNumber: verification.sender_number,
+          transactionId: verification.transaction_id,
+          metadata: verification.metadata,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.membershipPayments.invoiceId, invoiceId));
+    } else {
+      await this.db.insert(schema.membershipPayments).values({
+        userId,
+        planId,
+        invoiceId,
+        amount: String(amount),
+        fee: String(fee),
+        chargedAmount: String(chargedAmount),
+        paymentMethod: verification.payment_method,
+        senderNumber: verification.sender_number,
+        transactionId: verification.transaction_id,
+        metadata: verification.metadata,
+        status: 'completed',
+      });
+    }
+
+    // Check if user already has this or higher membership (double-check)
+    const currentLevel = this.getMemberLevel(user.memberStatus);
+    if (plan.level <= currentLevel) {
+      return { success: true, message: 'User already has this or higher membership' };
+    }
+
     // Create purchase record
     const [purchase] = await this.db
       .insert(schema.membershipPurchases)
@@ -121,27 +311,64 @@ export class MembershipService implements OnModuleInit {
       })
       .returning();
 
-    // Update user's member status
+    // Update user's member status AND mark as verified
     await this.db
       .update(schema.users)
-      .set({ memberStatus: plan.name as any, updatedAt: new Date() })
+      .set({ memberStatus: plan.name as any, isVerified: true, updatedAt: new Date() })
       .where(eq(schema.users.id, userId));
 
     // Distribute commissions to upline (10 levels)
-    const commissions = await this.distributeCommissions(userId, plan, purchase.id);
+    await this.distributeCommissions(userId, plan, purchase.id);
 
-    return {
-      purchase: {
-        id: purchase.id,
-        userId: purchase.userId,
-        planId: purchase.planId,
-        amount: Number(purchase.amount),
-        status: purchase.status,
-        createdAt: purchase.createdAt.toISOString(),
+    // Send notifications
+    await this.sendMembershipNotifications(userId, plan.name, amount);
+
+    return { success: true, message: 'Membership purchased successfully', newStatus: plan.name };
+  }
+
+  /**
+   * Handle payment cancel callback from UddoktaPay
+   */
+  async handleMembershipPaymentCancel(invoiceId: string): Promise<{ success: boolean }> {
+    const existing = await this.db.query.membershipPayments.findFirst({
+      where: eq(schema.membershipPayments.invoiceId, invoiceId),
+    });
+
+    if (existing) {
+      await this.db
+        .update(schema.membershipPayments)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(schema.membershipPayments.invoiceId, invoiceId));
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Verify payment with UddoktaPay API
+   */
+  async verifyPayment(invoiceId: string): Promise<UddoktaPayVerifyResponse> {
+    const url = `${this.baseUrl}/api/verify-payment`;
+    console.log(`[Membership] Verifying invoice ${invoiceId} at ${url}`);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'RT-UDDOKTAPAY-API-KEY': this.apiKey,
       },
-      commissions,
-      newStatus: plan.name,
-    };
+      body: JSON.stringify({ invoice_id: invoiceId }),
+    });
+
+    const data = await response.json();
+    console.log(`[Membership] Verify response for ${invoiceId}:`, JSON.stringify(data));
+
+    if (data.status === 'ERROR') {
+      throw new BadRequestException(data.message || 'Payment verification failed');
+    }
+
+    return data as UddoktaPayVerifyResponse;
   }
 
   /**
@@ -157,7 +384,12 @@ export class MembershipService implements OnModuleInit {
     });
     if (!buyer || !buyer.referredBy) return [];
 
-    const percentages = COMMISSION_PERCENTAGES[plan.name] || [];
+    // Get buyer's display name for the notification
+    const buyerName = buyer.username || 'A user';
+
+    // Use admin-configured commission rates from the plan, fallback to defaults
+    const planRates = (plan.commissionRates as number[]) || [];
+    const percentages = planRates.length > 0 ? planRates : DEFAULT_COMMISSION_PERCENTAGES;
     const commissions: any[] = [];
 
     let currentReferCode: string | null = buyer.referredBy;
@@ -193,6 +425,22 @@ export class MembershipService implements OnModuleInit {
           amount: Number(commission.amount),
           percentage: Number(commission.percentage),
         });
+
+        // Send notification to the upline user about earned commission
+        try {
+          const uplineName = uplineUser.info && typeof uplineUser.info === 'object'
+            ? (uplineUser.info as any).name || uplineUser.username
+            : uplineUser.username;
+
+          await this.notificationService.sendToUser(uplineUser.id, {
+            title: 'Commission Earned!',
+            body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyerName}'s "${plan.name}" membership purchase. Level ${level} referral commission.`,
+            icon: 'payments',
+            createdBy: buyerId,
+          });
+        } catch (err) {
+          console.error(`Failed to send commission notification to ${uplineUser.id}:`, err);
+        }
       }
 
       currentReferCode = uplineUser.referredBy || null;
@@ -200,6 +448,42 @@ export class MembershipService implements OnModuleInit {
     }
 
     return commissions;
+  }
+
+  private async sendMembershipNotifications(userId: string, planName: string, amount: number) {
+    try {
+      const user = await this.db.query.users.findFirst({
+        where: eq(schema.users.id, userId),
+      });
+      const username = user?.username || 'Unknown';
+
+      // Notify user
+      await this.notificationService.sendToUser(userId, {
+        title: 'Membership Purchased!',
+        body: `Congratulations! You've been upgraded to "${planName}" membership. Your account is now verified.`,
+        icon: 'workspace_premium',
+        createdBy: userId,
+      });
+
+      // Notify admins
+      const admins = await this.db
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.memberStatus, 'super_admin'));
+
+      if (admins.length > 0) {
+        const adminNotification = await this.notificationService.create({
+          title: 'New Membership Purchase',
+          body: `User ${username} purchased "${planName}" membership for ৳${amount.toFixed(2)}.`,
+          icon: 'workspace_premium',
+          type: 'targeted',
+          createdBy: userId,
+        });
+        await this.notificationService.broadcast(adminNotification.id);
+      }
+    } catch (err) {
+      console.error('Failed to send membership notifications:', err);
+    }
   }
 
   private getMemberLevel(status: string): number {
@@ -222,11 +506,70 @@ export class MembershipService implements OnModuleInit {
     if (existing.length > 0) return;
 
     const plans = [
-      { name: 'user', price: '0', description: 'Free member', level: 0 },
-      { name: 'basic', price: '500', description: 'Basic membership with starter benefits', level: 1 },
-      { name: 'standard', price: '1500', description: 'Standard membership with enhanced benefits', level: 2 },
-      { name: 'smart', price: '3500', description: 'Smart membership with premium benefits', level: 3 },
-      { name: 'vvip', price: '10000', description: 'VVIP membership with exclusive benefits', level: 4 },
+      {
+        name: 'user',
+        price: '0',
+        description: 'Free member with basic access',
+        level: 0,
+        features: [{ text: 'Basic Access', icon: 'person' }, { text: 'Community Feed', icon: 'forum' }, { text: '1x Reward Points', icon: 'paid' }],
+        buttonText: 'Current Plan',
+        isPopular: false,
+        sortOrder: 0,
+        colorTheme: 'primary',
+        isActive: true,
+      },
+      {
+        name: 'basic',
+        price: '500',
+        description: 'Basic membership with starter benefits',
+        level: 1,
+        features: [{ text: 'Standard Support', icon: 'headset_mic' }, { text: 'Member Newsletter', icon: 'mail' }, { text: '1x Reward Points', icon: 'paid' }],
+        buttonText: 'Choose Basic',
+        isPopular: false,
+        sortOrder: 1,
+        colorTheme: 'primary',
+        commissionRates: [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5],
+        isActive: true,
+      },
+      {
+        name: 'standard',
+        price: '1500',
+        description: 'Standard membership with enhanced benefits',
+        level: 2,
+        features: [{ text: 'Priority Support', icon: 'support_agent' }, { text: 'Early Access to Sales', icon: 'schedule' }, { text: '2x Reward Points', icon: 'paid' }, { text: 'Exclusive Content', icon: 'star' }],
+        buttonText: 'Choose Standard',
+        isPopular: true,
+        sortOrder: 2,
+        colorTheme: 'tertiary',
+        commissionRates: [12, 6, 4, 3, 2, 1, 1, 0.5, 0.5, 0.5],
+        isActive: true,
+      },
+      {
+        name: 'smart',
+        price: '3500',
+        description: 'Smart membership with premium benefits',
+        level: 3,
+        features: [{ text: '24/7 VIP Support', icon: 'headset_mic' }, { text: 'Invite-Only Events', icon: 'celebration' }, { text: '3x Reward Points', icon: 'paid' }, { text: 'Free Shipping', icon: 'local_shipping' }],
+        buttonText: 'Choose Smart',
+        isPopular: false,
+        sortOrder: 3,
+        colorTheme: 'secondary',
+        commissionRates: [15, 8, 5, 3, 2, 1.5, 1, 0.5, 0.5, 0.5],
+        isActive: true,
+      },
+      {
+        name: 'vvip',
+        price: '10000',
+        description: 'VVIP membership with exclusive benefits',
+        level: 4,
+        features: [{ text: '24/7 VIP Concierge', icon: 'concierge' }, { text: 'Invite-Only Events', icon: 'celebration' }, { text: '4x Reward Points', icon: 'paid' }, { text: 'Complimentary Shipping', icon: 'local_shipping' }, { text: 'Personal Account Manager', icon: 'badge' }],
+        buttonText: 'Choose VVIP',
+        isPopular: false,
+        sortOrder: 4,
+        colorTheme: 'secondary',
+        commissionRates: [20, 10, 6, 4, 3, 2, 1.5, 1, 1, 0.5],
+        isActive: true,
+      },
     ];
 
     for (const plan of plans) {

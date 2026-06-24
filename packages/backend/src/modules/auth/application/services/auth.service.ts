@@ -189,6 +189,7 @@ export class AuthService {
         phoneNumber: user.phoneNumber,
         ownRefercode: user.ownRefercode,
         memberStatus: user.memberStatus,
+        isVerified: user.isVerified,
         referredBy: user.referredBy,
         info: info || undefined,
       },

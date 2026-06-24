@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { VendorProfile } from '@/features/vendor/api';
+import DesktopHeader from '@/shared/components/DesktopHeader';
+import SideDrawer from '@/shared/components/SideDrawer';
 
 interface WalletData {
   walletBalance: number;
@@ -28,6 +31,10 @@ export default function WalletPage() {
   const [addFundsOpen, setAddFundsOpen] = useState(false);
   const [addAmount, setAddAmount] = useState('');
   const [adding, setAdding] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -35,15 +42,34 @@ export default function WalletPage() {
       return;
     }
     fetchData();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+    fetch(`${apiUrl}/auth/profile`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { if (data.data?.user) setUser(data.data.user); })
+      .catch(() => {});
+    fetch(`${apiUrl}/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+      .catch(() => {});
+    fetch(`${apiUrl}/vendor/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { setVendorProfile(data.data || null); })
+      .catch(() => { setVendorProfile(null); });
   }, [isAuthenticated, accessToken, router, filter]);
 
   const fetchData = async () => {
     try {
       const [walletRes, txRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/transactions?type=${filter}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=${filter}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
       ]);
@@ -69,23 +95,33 @@ export default function WalletPage() {
     }
   };
 
+  const handleLogout = () => {
+    clearAuth();
+    router.replace('/login');
+  };
+
+  const copyReferCode = () => {
+    if (user?.ownRefercode) {
+      navigator.clipboard.writeText(user.ownRefercode);
+    }
+  };
+
   const handleAddFunds = async () => {
     const amount = parseFloat(addAmount);
     if (!amount || amount <= 0 || !accessToken) return;
     setAdding(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/add-funds`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/create-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ amount }),
       });
-      if (res.ok) {
-        setAddFundsOpen(false);
-        setAddAmount('');
-        fetchData();
+      const data = await res.json();
+      if (res.ok && data.success && data.data?.paymentUrl) {
+        window.location.href = data.data.paymentUrl;
       }
     } catch (err) {
-      console.error('Failed to add funds', err);
+      console.error('Failed to create payment', err);
     } finally {
       setAdding(false);
     }
@@ -154,15 +190,22 @@ export default function WalletPage() {
         }}
       >
         {/* TopAppBar - Desktop */}
-        <header className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-[30px] border-b border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.06)] px-6 py-4 hidden md:flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
-              <span className="material-symbols-outlined">arrow_back</span>
-            </Link>
-          </div>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Wallet</div>
-          <div className="w-10"></div>
-        </header>
+        <DesktopHeader
+          title="Wallet"
+          onMenuClick={() => setDrawerOpen(true)}
+          avatarUrl={user?.info?.avatarUrl || ''}
+          unreadNotifCount={unreadNotifCount}
+        />
+
+        {/* Side Drawer */}
+        <SideDrawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          user={user}
+          vendorProfile={vendorProfile}
+          handleLogout={handleLogout}
+          copyReferCode={copyReferCode}
+        />
 
         {/* Mobile Top Bar */}
         <header className="md:hidden flex justify-between items-center px-6 py-5 sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-white/30">

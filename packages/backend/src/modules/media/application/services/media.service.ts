@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -6,9 +7,11 @@ import * as path from 'path';
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
   private uploadDir: string;
+  private baseUrl: string;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     this.uploadDir = path.join(process.cwd(), 'uploads');
+    this.baseUrl = this.configService.get<string>('UPLOAD_BASE_URL') || `http://localhost:${this.configService.get<string>('PORT') || 4080}`;
     if (!fs.existsSync(this.uploadDir)) {
       fs.mkdirSync(this.uploadDir, { recursive: true });
     }
@@ -21,7 +24,7 @@ export class MediaService {
     fs.writeFileSync(filepath, file.buffer);
 
     return {
-      url: `/uploads/${filename}`,
+      url: `${this.baseUrl}/uploads/${filename}`,
       filename,
       originalName: file.originalname,
       mimetype: file.mimetype,

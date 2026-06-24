@@ -16,7 +16,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -28,16 +28,22 @@ export default function RegisterScreen() {
   const [referCode, setReferCode] = useState(ref || '');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleRegister = async () => {
-    if (!username.trim() || !phone.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+    const newErrors: Record<string, string> = {};
+    if (!username.trim()) newErrors.username = 'Username is required';
+    if (!phone.trim()) newErrors.phone = 'Phone number is required';
+    if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
+
+    setErrors({});
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
@@ -47,14 +53,14 @@ export default function RegisterScreen() {
       });
       const data = await res.json();
       if (!res.ok) {
-        Alert.alert('Registration Failed', data.error?.message || 'Something went wrong');
+        setErrors({ general: data.error?.message || 'Registration failed' });
         setLoading(false);
         return;
       }
       await AsyncStorage.setItem('accessToken', data.data.accessToken);
       router.replace('/dashboard');
     } catch (err) {
-      Alert.alert('Connection Error', 'Please check your connection and try again');
+      setErrors({ general: 'Connection error. Please try again.' });
       setLoading(false);
     }
   };
@@ -63,100 +69,132 @@ export default function RegisterScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <AuroraBackground />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.centerWrap}>
-          <Text style={styles.logo}>✨</Text>
-          <Text style={styles.appName}>Dreamy Life</Text>
-          <Text style={styles.tagline}>Begin your dreamy journey today</Text>
+        {/* Logo */}
+        <View style={styles.logoWrap}>
+          <Text style={styles.logoIcon}>✨</Text>
+        </View>
+        <Text style={styles.appName}>Dreamy Life</Text>
+        <Text style={styles.tagline}>Create your account to start your journey.</Text>
 
-          <GlassPanel borderRadius={24} intensity={30} style={styles.card}>
-            <Text style={styles.cardTitle}>Create Account</Text>
+        <GlassPanel borderRadius={24} style={styles.card}>
+          <Text style={styles.cardTitle}>Join Dreamy Life</Text>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Username</Text>
+          {/* General Error */}
+          {errors.general && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>{errors.general}</Text>
+            </View>
+          )}
+
+          {/* Username */}
+          <View style={styles.inputWrap}>
+            <View style={[styles.inputRow, errors.username && styles.inputError]}>
+              <Text style={styles.inputIcon}>👤</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Choose a username"
-                placeholderTextColor="rgba(69,71,75,0.4)"
+                placeholder="Username"
+                placeholderTextColor="rgba(198,198,203,1)"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
               />
+              {errors.username && <Text style={styles.inputErrorIcon}>⚠️</Text>}
             </View>
+            {errors.username && <Text style={styles.errorMsg}>{errors.username}</Text>}
+          </View>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
+          {/* Phone */}
+          <View style={styles.inputWrap}>
+            <View style={[styles.inputRow, errors.phone && styles.inputError]}>
+              <Text style={styles.inputIcon}>📱</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your phone number"
-                placeholderTextColor="rgba(69,71,75,0.4)"
+                placeholder="Phone Number"
+                placeholderTextColor="rgba(198,198,203,1)"
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
               />
+              {errors.phone && <Text style={styles.inputErrorIcon}>⚠️</Text>}
             </View>
+            {errors.phone && <Text style={styles.errorMsg}>{errors.phone}</Text>}
+          </View>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <View style={styles.passwordRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Create a password"
-                  placeholderTextColor="rgba(69,71,75,0.4)"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                  <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Confirm Password</Text>
+          {/* Password */}
+          <View style={styles.inputWrap}>
+            <View style={[styles.inputRow, errors.password && styles.inputError]}>
+              <Text style={styles.inputIcon}>🔒</Text>
               <TextInput
-                style={styles.input}
-                placeholder="Confirm your password"
-                placeholderTextColor="rgba(69,71,75,0.4)"
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Password"
+                placeholderTextColor="rgba(198,198,203,1)"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+            {errors.password && <Text style={styles.errorMsg}>{errors.password}</Text>}
+          </View>
+
+          {/* Confirm Password */}
+          <View style={styles.inputWrap}>
+            <View style={[styles.inputRow, errors.confirmPassword && styles.inputError]}>
+              <Text style={styles.inputIcon}>🔒</Text>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Confirm Password"
+                placeholderTextColor="rgba(198,198,203,1)"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                secureTextEntry
+                secureTextEntry={!showConfirm}
               />
+              <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={styles.eyeBtn}>
+                <Text style={styles.eyeIcon}>{showConfirm ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+              {errors.confirmPassword && <Text style={styles.inputErrorIcon}>⚠️</Text>}
             </View>
+            {errors.confirmPassword && <Text style={styles.errorMsg}>{errors.confirmPassword}</Text>}
+          </View>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Referral Code (Optional)</Text>
+          {/* Referral Code */}
+          <View style={styles.inputWrap}>
+            <View style={styles.inputRow}>
+              <Text style={styles.inputIcon}>🎁</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter referral code"
-                placeholderTextColor="rgba(69,71,75,0.4)"
+                placeholder="Referral Code (Optional)"
+                placeholderTextColor="rgba(198,198,203,1)"
                 value={referCode}
                 onChangeText={setReferCode}
                 autoCapitalize="none"
               />
             </View>
+          </View>
 
-            <TouchableOpacity style={styles.registerBtn} onPress={handleRegister} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.registerBtnText}>Create Account</Text>
-              )}
-            </TouchableOpacity>
+          {/* Submit */}
+          <TouchableOpacity style={styles.registerBtn} onPress={handleRegister} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.registerBtnText}>Sign Up →</Text>
+            )}
+          </TouchableOpacity>
 
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <TouchableOpacity onPress={() => router.replace('/login')}>
-              <Text style={styles.signinText}>
-                Already have an account? <Text style={styles.signinLink}>Sign In</Text>
+          {/* Sign In Link */}
+          <View style={styles.signinWrap}>
+            <Text style={styles.signinText}>
+              Already have an account?{' '}
+              <Text style={styles.signinLink} onPress={() => router.replace('/login')}>
+                Sign in
               </Text>
-            </TouchableOpacity>
-          </GlassPanel>
-        </View>
+            </Text>
+          </View>
+        </GlassPanel>
+
+        <Text style={styles.footer}>© 2026 Dreamy Life. All rights reserved.</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -165,23 +203,79 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f8ff' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  centerWrap: { alignItems: 'center' },
-  logo: { fontSize: 48, marginBottom: 8 },
-  appName: { fontSize: 28, fontWeight: '800', color: '#1c1b1b', letterSpacing: -0.5 },
-  tagline: { fontSize: 14, color: '#45474b', marginBottom: 32 },
+  logoWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  logoIcon: { fontSize: 24 },
+  appName: { fontSize: 28, fontWeight: '800', color: '#1c1b1b', letterSpacing: -0.5, textAlign: 'center' },
+  tagline: { fontSize: 14, color: '#45474b', textAlign: 'center', marginBottom: 24 },
   card: { width: '100%', padding: 24 },
-  cardTitle: { fontSize: 24, fontWeight: '700', color: '#1c1b1b', marginBottom: 24, textAlign: 'center' },
+  cardTitle: { fontSize: 24, fontWeight: '700', color: '#1c1b1b', marginBottom: 20, textAlign: 'center' },
+  errorBanner: {
+    backgroundColor: '#ffdad6',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  errorText: { fontSize: 13, fontWeight: '600', color: '#93000a', textAlign: 'center' },
   inputWrap: { marginBottom: 16 },
-  inputLabel: { fontSize: 12, fontWeight: '600', color: '#45474b', letterSpacing: 0.5, marginBottom: 8 },
-  input: { backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 9999, paddingHorizontal: 20, paddingVertical: 14, fontSize: 16, color: '#1c1b1b', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  eyeBtn: { padding: 12 },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  inputError: {
+    backgroundColor: 'rgba(255,218,214,0.2)',
+    borderColor: 'rgba(186,26,26,0.3)',
+  },
+  inputIcon: { fontSize: 18, color: '#76777b' },
+  input: {
+    height: 48,
+    fontSize: 16,
+    color: '#1c1b1b',
+    flex: 1,
+  },
+  inputErrorIcon: { fontSize: 14, color: '#ba1a1a' },
+  eyeBtn: { padding: 4 },
   eyeIcon: { fontSize: 18 },
-  registerBtn: { backgroundColor: '#1c1b1b', borderRadius: 9999, paddingVertical: 16, alignItems: 'center', marginBottom: 20 },
-  registerBtnText: { fontSize: 16, fontWeight: '600', color: 'white' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.3)' },
-  dividerText: { marginHorizontal: 12, fontSize: 13, color: '#45474b' },
-  signinText: { textAlign: 'center', fontSize: 14, color: '#45474b' },
+  errorMsg: { fontSize: 12, fontWeight: '600', color: '#ba1a1a', paddingHorizontal: 20, marginTop: 4 },
+  registerBtn: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#1c1b1b',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  registerBtnText: { fontSize: 16, fontWeight: '700', color: 'white', letterSpacing: 0.5 },
+  signinWrap: { marginTop: 20 },
+  signinText: { fontSize: 14, color: '#45474b', textAlign: 'center' },
   signinLink: { fontWeight: '700', color: '#2d666d' },
+  footer: { fontSize: 12, color: '#c6c6cb', textAlign: 'center', marginTop: 24 },
 });

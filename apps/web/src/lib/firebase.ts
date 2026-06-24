@@ -11,7 +11,7 @@ const firebaseConfig = {
 };
 
 let app;
-let messaging;
+let messaging: Awaited<ReturnType<typeof getMessaging>> | undefined;
 
 if (typeof window !== 'undefined') {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];

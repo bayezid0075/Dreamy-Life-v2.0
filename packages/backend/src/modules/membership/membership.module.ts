@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MembershipService } from './application/services/membership.service';
 import { MembershipController } from './interfaces/controllers/membership.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -14,6 +15,8 @@ import { MembershipController } from './interfaces/controllers/membership.contro
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '15m' },
       }),
     }),
+    ConfigModule,
+    NotificationsModule,
   ],
   controllers: [MembershipController],
   providers: [MembershipService],

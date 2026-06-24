@@ -10,6 +10,11 @@ export type {
   Post,
   PostCreateInput,
   PostLike,
+  FriendRequest,
+  FriendRequestWithUser,
+  Friend,
+  FriendWithUser,
+  FriendshipStatus,
 } from './entities/post';
 
 export type {
@@ -18,6 +23,7 @@ export type {
   ReferralNode,
   ReferralTree,
   MembershipPlan,
+  MembershipPlanFeature,
   MembershipPurchase,
   CommissionDistribution,
 } from './entities/referral';
@@ -34,6 +40,7 @@ export type {
 
 export type {
   MembershipPlanDto,
+  MembershipPlanFeature as MembershipPlanFeatureDto,
   PurchaseMembershipInput,
   PurchaseMembershipResponse,
   CommissionHistoryDto,
@@ -45,6 +52,11 @@ export type {
   UpdatePostDto,
   PostResponseDto,
   PostListResponseDto,
+  FriendRequestDto,
+  FriendDto,
+  FriendListResponse,
+  FriendRequestListResponse,
+  FriendshipStatusResponse,
 } from './dtos/post.dto';
 
 export type {
@@ -98,3 +110,34 @@ export type {
   ConversationListResponse,
   MessageListResponse,
 } from './dtos/chat.dto';
+
+// ---------- Vendor Entity Exports ----------
+export type {
+  Vendor,
+  Product,
+  ResellerOrder,
+  ResellerOrderStatus,
+  PaymentMethod,
+  ShipmentStatus,
+  Shipment,
+  VendorPayment,
+  VendorWithStats,
+  ProductWithVendor,
+  ResellerOrderWithDetails,
+} from './entities/vendor';
+
+// ---------- Vendor DTO Exports ----------
+export type {
+  CreateVendorDto,
+  UpdateVendorBannerDto,
+  CreateProductDto,
+  UpdateProductDto,
+  CreateResellerOrderDto,
+  UpdateOrderStatusDto,
+  CreateShipmentDto,
+  UpdateShipmentDto,
+  VendorApplyResponse,
+  ProductFeedQuery,
+  ResellerOrderResponse,
+  OrderTrackingResponse,
+} from './dtos/vendor.dto';

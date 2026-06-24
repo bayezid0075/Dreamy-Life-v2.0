@@ -7,6 +7,7 @@ export interface AdminUser {
   ownRefercode: string;
   referredBy: string | null;
   memberStatus: string;
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
   fullName: string | null;

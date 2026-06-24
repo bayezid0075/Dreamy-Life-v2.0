@@ -15,7 +15,7 @@ import TopBar from '@/shared/components/TopBar';
 import CommentItem, { CommentData } from '../components/CommentItem';
 import CommentInput from '../components/CommentInput';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
 export default function CommentsScreen() {
   const router = useRouter();

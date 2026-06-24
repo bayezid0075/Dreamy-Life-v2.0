@@ -1,0 +1,166 @@
+import { Injectable, Inject, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { eq, desc, and } from 'drizzle-orm';
+import * as schema from '../../../../infrastructure/database/schema';
+
+@Injectable()
+export class ProductService {
+  constructor(
+    @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
+  ) {}
+
+  async getVendorProducts(vendorId: string) {
+    const products = await this.db
+      .select()
+      .from(schema.products)
+      .where(and(
+        eq(schema.products.vendorId, vendorId),
+        eq(schema.products.isActive, true),
+      ))
+      .orderBy(desc(schema.products.createdAt));
+
+    return products.map(p => ({
+      ...p,
+      price: Number(p.price),
+    }));
+  }
+
+  async createProduct(vendorId: string, data: { name: string; description?: string; category: string; price: number; stock: number; sku?: string; imageUrls?: string[] }) {
+    const vendor = await this.db.query.vendors.findFirst({
+      where: eq(schema.vendors.id, vendorId),
+    });
+
+    if (!vendor || !vendor.isActive) {
+      throw new ForbiddenException('You are not an active vendor');
+    }
+
+    const sku = data.sku || this.generateSku(data.name);
+
+    const existingSku = await this.db.query.products.findFirst({
+      where: eq(schema.products.sku, sku),
+    });
+
+    if (existingSku) {
+      throw new ConflictException('Product with this SKU already exists');
+    }
+
+    const [product] = await this.db
+      .insert(schema.products)
+      .values({
+        vendorId,
+        name: data.name,
+        description: data.description,
+        category: data.category,
+        price: String(data.price),
+        stock: data.stock,
+        sku,
+        imageUrls: data.imageUrls || [],
+      })
+      .returning();
+
+    return {
+      ...product,
+      price: Number(product.price),
+    };
+  }
+
+  async updateProduct(vendorId: string, productId: string, data: { name?: string; description?: string; category?: string; price?: number; stock?: number; imageUrls?: string[] }) {
+    const product = await this.db.query.products.findFirst({
+      where: eq(schema.products.id, productId),
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.vendorId !== vendorId) {
+      throw new ForbiddenException('You can only edit your own products');
+    }
+
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.price !== undefined) updateData.price = String(data.price);
+    if (data.stock !== undefined) updateData.stock = data.stock;
+    if (data.imageUrls !== undefined) updateData.imageUrls = data.imageUrls;
+
+    const [updated] = await this.db
+      .update(schema.products)
+      .set(updateData)
+      .where(eq(schema.products.id, productId))
+      .returning();
+
+    return {
+      ...updated,
+      price: Number(updated.price),
+    };
+  }
+
+  async deleteProduct(vendorId: string, productId: string) {
+    const product = await this.db.query.products.findFirst({
+      where: eq(schema.products.id, productId),
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.vendorId !== vendorId) {
+      throw new ForbiddenException('You can only delete your own products');
+    }
+
+    await this.db
+      .update(schema.products)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(schema.products.id, productId));
+
+    return { message: 'Product deleted successfully' };
+  }
+
+  async getProductDetail(productId: string) {
+    const product = await this.db
+      .select({
+        id: schema.products.id,
+        vendorId: schema.products.vendorId,
+        name: schema.products.name,
+        description: schema.products.description,
+        category: schema.products.category,
+        price: schema.products.price,
+        stock: schema.products.stock,
+        sku: schema.products.sku,
+        imageUrls: schema.products.imageUrls,
+        isActive: schema.products.isActive,
+        createdAt: schema.products.createdAt,
+        updatedAt: schema.products.updatedAt,
+        shopName: schema.vendors.shopName,
+        vendorAddress: schema.vendors.address,
+      })
+      .from(schema.products)
+      .innerJoin(schema.vendors, eq(schema.products.vendorId, schema.vendors.id))
+      .where(and(
+        eq(schema.products.id, productId),
+        eq(schema.products.isActive, true),
+      ));
+
+    if (!product.length) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return {
+      ...product[0],
+      price: Number(product[0].price),
+    };
+  }
+
+  private generateSku(name: string): string {
+    const prefix = name
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .split(/\s+/)
+      .map(w => w.substring(0, 2).toUpperCase())
+      .join('')
+      .substring(0, 6);
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `${prefix}-${random}`;
+  }
+}

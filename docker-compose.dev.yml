@@ -52,7 +52,7 @@ services:
       dockerfile: packages/backend/Dockerfile.dev
     container_name: dreamy-life-backend
     ports:
-      - "4000:4000"
+      - "4080:4000"
     volumes:
       - ./packages/backend/src:/app/packages/backend/src
       - ./packages/backend/nest-cli.json:/app/packages/backend/nest-cli.json
@@ -102,7 +102,7 @@ services:
       - web_next:/app/apps/web/.next
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - NEXT_PUBLIC_API_URL=http://localhost:4080
     depends_on:
       - backend
 
@@ -127,7 +127,7 @@ services:
       - admin_next:/app/apps/admin/.next
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - NEXT_PUBLIC_API_URL=http://localhost:4080
     depends_on:
       - backend
 

@@ -3,8 +3,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { VendorProfile } from '@/features/vendor/api';
+import DesktopHeader from '@/shared/components/DesktopHeader';
+import SideDrawer from '@/shared/components/SideDrawer';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
 
 interface Post {
   id: string;
@@ -50,27 +53,33 @@ export default function FeedPage() {
   const [posting, setPosting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [feedType, setFeedType] = useState<'all' | 'friends'>('all');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
   const fetchPosts = useCallback(
     async (pageNum: number, append = false) => {
       try {
-        const res = await fetch(`${API_URL}/feed?page=${pageNum}&limit=20`, {
+        const endpoint = feedType === 'friends' ? '/feed/personalized' : '/feed';
+        const res = await fetch(`${API_URL}${endpoint}?page=${pageNum}&limit=20`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const data = await res.json();
         if (res.ok) {
+          const items = data.items || data.posts || [];
           if (append) {
-            setPosts((prev) => [...prev, ...data.items]);
+            setPosts((prev) => [...prev, ...items]);
           } else {
-            setPosts(data.items);
+            setPosts(items);
           }
-          setHasMore(data.items.length === 20);
+          setHasMore(items.length === 20);
         }
       } catch (err) {
         console.error('Failed to fetch feed', err);
       }
     },
-    [API_URL, accessToken],
+    [API_URL, accessToken, feedType],
   );
 
   useEffect(() => {
@@ -78,8 +87,21 @@ export default function FeedPage() {
       router.replace('/login');
       return;
     }
+    setPage(1);
     fetchPosts(1).finally(() => setLoading(false));
-  }, [isAuthenticated, accessToken, router, fetchPosts]);
+    fetch(`${API_URL}/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+      .catch(() => {});
+    fetch(`${API_URL}/vendor/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { setVendorProfile(data.data || null); })
+      .catch(() => { setVendorProfile(null); });
+  }, [isAuthenticated, accessToken, router, fetchPosts, feedType]);
 
   const handleCreatePost = async () => {
     if (!postContent.trim() && !selectedFile) return;
@@ -149,6 +171,17 @@ export default function FeedPage() {
     }
   };
 
+  const handleLogout = () => {
+    useAuthStore.getState().clearAuth();
+    router.replace('/login');
+  };
+
+  const copyReferCode = () => {
+    if (user?.ownRefercode) {
+      navigator.clipboard.writeText(user.ownRefercode);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#fcf9f8' }}>
@@ -178,15 +211,37 @@ export default function FeedPage() {
         }
       `}</style>
 
-      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm">
-        <div className="flex items-center justify-between w-full max-w-[1280px] mx-auto px-4 sm:px-6 h-16 md:h-20">
+      {/* Desktop Header */}
+      <DesktopHeader
+        title="Dreamy Life"
+        onMenuClick={() => setDrawerOpen(true)}
+        avatarUrl={''}
+        unreadNotifCount={unreadNotifCount}
+      />
+
+      {/* Side Drawer */}
+      <SideDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        user={user}
+        vendorProfile={vendorProfile}
+        handleLogout={handleLogout}
+        copyReferCode={copyReferCode}
+      />
+
+      {/* Mobile Header */}
+      <header className="md:hidden fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm">
+        <div className="flex items-center justify-between w-full max-w-[1280px] mx-auto px-4 sm:px-6 h-16">
           <Link href="/dashboard" className="p-2 -ml-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
             <span className="material-symbols-outlined">menu</span>
           </Link>
-          <h1 className="text-[24px] md:text-[28px] text-[#5d5e64] tracking-tight font-extrabold absolute left-1/2 -translate-x-1/2" style={{ fontFamily: 'Plus Jakarta Sans' }}>
+          <h1 className="text-[24px] text-[#5d5e64] tracking-tight font-extrabold absolute left-1/2 -translate-x-1/2" style={{ fontFamily: 'Plus Jakarta Sans' }}>
             Dreamy Life
           </h1>
           <div className="flex gap-3">
+            <Link href="/friends" className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
+              <span className="material-symbols-outlined">person_add</span>
+            </Link>
             <button className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
               <span className="material-symbols-outlined">search</span>
             </button>
@@ -226,6 +281,33 @@ export default function FeedPage() {
             </button>
           </div>
         </section>
+
+        {/* Feed Type Tabs */}
+        <div className="flex gap-2 mb-6 mx-4 sm:mx-0">
+          <button
+            onClick={() => setFeedType('all')}
+            className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all ${
+              feedType === 'all'
+                ? 'bg-[#1A1A1A] text-white shadow-lg shadow-black/10'
+                : 'glass-card text-[#45474b] hover:bg-white/70'
+            }`}
+          >
+            All Posts
+          </button>
+          <button
+            onClick={() => setFeedType('friends')}
+            className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all ${
+              feedType === 'friends'
+                ? 'bg-[#2d666d] text-white shadow-lg shadow-[#2d666d]/20'
+                : 'glass-card text-[#45474b] hover:bg-white/70'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[18px]">people</span>
+              Friends
+            </span>
+          </button>
+        </div>
 
         {/* Posts Feed */}
         <div className="flex flex-col gap-6 sm:gap-8">
@@ -388,7 +470,7 @@ export default function FeedPage() {
       {/* Bottom Nav (Mobile) */}
       <nav className="md:hidden fixed bottom-0 w-full z-50 rounded-t-2xl bg-white/70 backdrop-blur-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60">
         <div className="flex justify-around items-center py-2 px-2">
-          <Link href="/feed" className="flex flex-col items-center justify-center text-[#5d5e64] font-bold bg-[#f8f8ff]/60 rounded-xl px-5 py-2 relative">
+          <Link href="/social-feed" className="flex flex-col items-center justify-center text-[#5d5e64] font-bold bg-[#f8f8ff]/60 rounded-xl px-5 py-2 relative">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
           </Link>
           <Link href="/dashboard" className="flex flex-col items-center justify-center text-[#45474b]/70 hover:bg-[#e5e2e1]/40 transition-colors px-5 py-2 rounded-xl">

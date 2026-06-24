@@ -1,16 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { BlurView } from 'expo-blur';
-
-const { width } = Dimensions.get('window');
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface NavItem {
   icon: string;
-  activeIcon: string;
   href: string;
-  isButton: boolean;
-  onPress?: () => void;
+  isActive?: boolean;
 }
 
 interface BottomNavProps {
@@ -18,19 +15,22 @@ interface BottomNavProps {
 }
 
 const DEFAULT_ITEMS: NavItem[] = [
-  { icon: '🏠', activeIcon: '🏠', href: '/dashboard', isButton: false },
-  { icon: '🔍', activeIcon: '🔍', href: '#search', isButton: true },
-  { icon: '🛒', activeIcon: '🛒', href: '#cart', isButton: false },
-  { icon: '👤', activeIcon: '👤', href: '/profile', isButton: false },
+  { icon: '🏠', href: '/dashboard' },
+  { icon: '📰', href: '/social-feed' },
+   { icon: '🏪', href: '/reseller-shop' },
+  { icon: '🛒', href: '/reselling/orders' },
+  { icon: '👤', href: '/profile' },
 ];
 
 export default function BottomNav({ items = DEFAULT_ITEMS }: BottomNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.wrapper}>
-      <BlurView intensity={30} tint="light" style={styles.container}>
+    <View style={[styles.wrapper, { left: width * 0.05, width: width * 0.9, bottom: insets.bottom + 12 }]}>
+      <BlurView intensity={40} tint="light" style={styles.container}>
         <View style={styles.overlay} />
         <View style={styles.nav}>
           {items.map((item, index) => {
@@ -39,23 +39,23 @@ export default function BottomNav({ items = DEFAULT_ITEMS }: BottomNavProps) {
               <TouchableOpacity
                 key={item.href + index}
                 onPress={() => {
-                  if (item.isButton) {
-                    item.onPress?.();
-                    return;
-                  }
+                  if (item.href === '#search') return;
                   router.push(item.href as any);
                 }}
                 style={styles.item}
+                activeOpacity={0.7}
               >
-                {isActive ? (
-                  <View style={styles.activeCircle}>
-                    <Text style={styles.activeIcon}>{item.activeIcon}</Text>
-                  </View>
-                ) : (
-                  <View style={styles.inactiveIcon}>
-                    <Text style={styles.iconText}>{item.icon}</Text>
-                  </View>
-                )}
+                <View
+                  style={[
+                    styles.iconCircle,
+                    isActive && styles.activeCircle,
+                  ]}
+                >
+                  <Text style={[styles.iconText, isActive && styles.activeIconText]}>
+                    {item.icon}
+                  </Text>
+                </View>
+                {isActive && <View style={styles.activeDot} />}
               </TouchableOpacity>
             );
           })}
@@ -68,9 +68,6 @@ export default function BottomNav({ items = DEFAULT_ITEMS }: BottomNavProps) {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 24,
-    left: width * 0.05,
-    width: width * 0.9,
     zIndex: 50,
   },
   container: {
@@ -80,7 +77,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.3)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.08,
     shadowRadius: 40,
     elevation: 10,
   },
@@ -92,34 +89,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   item: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 6,
+    padding: 4,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activeCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
     backgroundColor: '#1c1b1b',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ scale: 0.9 }],
-  },
-  activeIcon: {
-    fontSize: 18,
-  },
-  inactiveIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   iconText: {
-    fontSize: 18,
+    fontSize: 20,
+  },
+  activeIconText: {},
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#1c1b1b',
+    marginTop: 2,
   },
 });

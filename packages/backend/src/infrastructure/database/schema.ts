@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, integer, decimal, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, text, boolean, integer, decimal, uniqueIndex, index, jsonb } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 // ─── Membership Status Enum ──────────────────────────────────────────────
@@ -13,6 +13,7 @@ export const users = pgTable('users', {
   ownRefercode: varchar('own_refercode', { length: 8 }).notNull().unique(),
   referredBy: varchar('referred_by', { length: 8 }), // refercode of the user who referred this user
   memberStatus: varchar('member_status', { length: 20 }).notNull().default('user'),
+  isVerified: boolean('is_verified').notNull().default(false), // true after first membership purchase
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -55,7 +56,15 @@ export const membershipPlans = pgTable('membership_plans', {
   price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   description: text('description'),
   level: integer('level').notNull().default(0), // 0=user, 1=basic, 2=standard, 3=smart, 4=vvip
+  features: jsonb('features').default([]), // [{ text: string, icon: string }]
+  buttonText: varchar('button_text', { length: 100 }).default('Choose Plan'),
+  isPopular: boolean('is_popular').notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  colorTheme: varchar('color_theme', { length: 30 }).default('primary'), // primary, tertiary, secondary
+  commissionRates: jsonb('commission_rates').default([]), // [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5] - 10 levels
+  isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // ─── Membership Purchases Table ──────────────────────────────────────────
@@ -192,6 +201,28 @@ export const commentLikes = pgTable('comment_likes', {
   commentUserIdx: uniqueIndex('comment_user_idx').on(table.commentId, table.userId),
 }));
 
+// ─── Friend Requests Table ──────────────────────────────────────────
+export const friendRequests = pgTable('friend_requests', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  senderId: uuid('sender_id').references(() => users.id).notNull(),
+  receiverId: uuid('receiver_id').references(() => users.id).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, accepted, rejected
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  senderReceiverIdx: uniqueIndex('sender_receiver_idx').on(table.senderId, table.receiverId),
+}));
+
+// ─── Friends Table ──────────────────────────────────────────────────
+export const friends = pgTable('friends', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  friendId: uuid('friend_id').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userFriendIdx: uniqueIndex('user_friend_idx').on(table.userId, table.friendId),
+}));
+
 // ─── Follows Table ───────────────────────────────────────────────────
 export const follows = pgTable('follows', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
@@ -248,6 +279,134 @@ export const messageReads = pgTable('message_reads', {
   readAt: timestamp('read_at').defaultNow().notNull(),
 }, (table) => ({
   msgUserIdx: uniqueIndex('msg_user_idx').on(table.messageId, table.userId),
+}));
+
+// ─── Vendors Table ──────────────────────────────────────────────────────
+export const vendors = pgTable('vendors', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull().unique(),
+  shopName: varchar('shop_name', { length: 255 }).notNull(),
+  address: text('address').notNull(),
+  bannerUrl: text('banner_url'),
+  paymentStatus: boolean('payment_status').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  vendorUserIdIdx: uniqueIndex('vendor_user_id_idx').on(table.userId),
+}));
+
+// ─── Products Table ─────────────────────────────────────────────────────
+export const products = pgTable('products', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  vendorId: uuid('vendor_id').references(() => vendors.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 50 }).notNull(),
+  price: decimal('price', { precision: 12, scale: 2 }).notNull(),
+  stock: integer('stock').notNull().default(0),
+  sku: varchar('sku', { length: 50 }).notNull().unique(),
+  imageUrls: text('image_urls').array().default([]),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  productSkuIdx: uniqueIndex('product_sku_idx').on(table.sku),
+}));
+
+// ─── Reseller Orders Table ──────────────────────────────────────────────
+export const resellerOrders = pgTable('reseller_orders', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  resellerId: uuid('reseller_id').references(() => users.id).notNull(),
+  vendorId: uuid('vendor_id').references(() => vendors.id).notNull(),
+  productId: uuid('product_id').references(() => products.id).notNull(),
+  customerName: varchar('customer_name', { length: 255 }).notNull(),
+  customerPhone: varchar('customer_phone', { length: 20 }).notNull(),
+  customerAltPhone: varchar('customer_alt_phone', { length: 20 }),
+  resellerPrice: decimal('reseller_price', { precision: 12, scale: 2 }).notNull(),
+  vendorPrice: decimal('vendor_price', { precision: 12, scale: 2 }).notNull(),
+  profit: decimal('profit', { precision: 12, scale: 2 }).notNull(),
+  customerAddress: text('customer_address').notNull(),
+  paymentMethod: varchar('payment_method', { length: 30 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Shipments Table ────────────────────────────────────────────────────
+export const shipments = pgTable('shipments', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  orderId: uuid('order_id').references(() => resellerOrders.id).notNull(),
+  vendorId: uuid('vendor_id').references(() => vendors.id).notNull(),
+  trackingNumber: varchar('tracking_number', { length: 100 }).unique(),
+  carrier: varchar('carrier', { length: 50 }).notNull().default('self'),
+  status: varchar('status', { length: 30 }).notNull().default('pending'),
+  estimatedDelivery: timestamp('estimated_delivery'),
+  deliveredAt: timestamp('delivered_at'),
+  shippingAddress: text('shipping_address').notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Vendor Payments Table (UddoktaPay records) ────────────────────────
+export const vendorPayments = pgTable('vendor_payments', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  invoiceId: varchar('invoice_id', { length: 255 }).notNull().unique(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  fee: decimal('fee', { precision: 12, scale: 2 }).default('0.00'),
+  chargedAmount: decimal('charged_amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: varchar('payment_method', { length: 50 }),
+  senderNumber: varchar('sender_number', { length: 30 }),
+  transactionId: varchar('transaction_id', { length: 255 }),
+  metadata: jsonb('metadata'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  paymentInvoiceIdx: uniqueIndex('payment_invoice_idx').on(table.invoiceId),
+}));
+
+// ─── Membership Payments Table (UddoktaPay membership purchase records) ──
+export const membershipPayments = pgTable('membership_payments', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  planId: uuid('plan_id').references(() => membershipPlans.id).notNull(),
+  invoiceId: varchar('invoice_id', { length: 255 }).notNull().unique(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  fee: decimal('fee', { precision: 12, scale: 2 }).default('0.00'),
+  chargedAmount: decimal('charged_amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: varchar('payment_method', { length: 50 }),
+  senderNumber: varchar('sender_number', { length: 30 }),
+  transactionId: varchar('transaction_id', { length: 255 }),
+  metadata: jsonb('metadata'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  membershipPaymentInvoiceIdx: uniqueIndex('membership_payment_invoice_idx').on(table.invoiceId),
+  membershipPaymentUserIdIdx: index('membership_payment_user_id_idx').on(table.userId),
+}));
+
+// ─── Fund Payments Table (UddoktaPay fund addition records) ─────────────
+export const fundPayments = pgTable('fund_payments', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  invoiceId: varchar('invoice_id', { length: 255 }).notNull().unique(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  fee: decimal('fee', { precision: 12, scale: 2 }).default('0.00'),
+  chargedAmount: decimal('charged_amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: varchar('payment_method', { length: 50 }),
+  senderNumber: varchar('sender_number', { length: 30 }),
+  transactionId: varchar('transaction_id', { length: 255 }),
+  metadata: jsonb('metadata'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  fundPaymentInvoiceIdx: uniqueIndex('fund_payment_invoice_idx').on(table.invoiceId),
+  fundPaymentUserIdIdx: index('fund_payment_user_id_idx').on(table.userId),
 }));
 
 // ─── Old Tables (kept for reference, to be removed after migration) ──────
