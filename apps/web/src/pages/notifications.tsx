@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
@@ -49,6 +50,7 @@ function getTimeAgo(dateStr: string): string {
 export default function NotificationsPage() {
   const router = useRouter();
   const { accessToken, isAuthenticated } = useAuthStore();
+  const { unreadCount: globalUnreadCount, setUnreadCount: setGlobalUnreadCount, resetCount } = useNotificationStore();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -103,6 +105,12 @@ export default function NotificationsPage() {
       .catch(() => { setVendorProfile(null); });
   }, [isAuthenticated, accessToken, router, fetchNotifications]);
 
+  useEffect(() => {
+    if (!loading && unreadCount > 0) {
+      handleMarkAllAsRead();
+    }
+  }, [loading]);
+
   const handleMarkAsRead = async (id: string) => {
     try {
       await fetch(`${API_URL}/notifications/${id}/read`, {
@@ -113,6 +121,7 @@ export default function NotificationsPage() {
         prev.map((n) => (n.recipientId === id ? { ...n, read: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      useNotificationStore.getState().decrementCount();
     } catch (err) {
       console.error('Failed to mark as read', err);
     }
@@ -126,6 +135,7 @@ export default function NotificationsPage() {
       });
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
+      resetCount();
     } catch (err) {
       console.error('Failed to mark all as read', err);
     }

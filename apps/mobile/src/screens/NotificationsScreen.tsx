@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useNotificationStore } from '@/shared/stores/notificationStore';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
@@ -98,6 +99,12 @@ export default function NotificationsScreen() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!loading && unreadCount > 0) {
+      handleMarkAllAsRead();
+    }
+  }, [loading]);
+
   const handleMarkAsRead = async (recipientId: string) => {
     try {
       const token = await AsyncStorage.getItem('accessToken');
@@ -111,6 +118,7 @@ export default function NotificationsScreen() {
         prev.map((n) => (n.recipientId === recipientId ? { ...n, read: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      useNotificationStore.getState().decrementCount();
     } catch (err) {
       console.error('Failed to mark as read', err);
     }
@@ -127,6 +135,7 @@ export default function NotificationsScreen() {
       });
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
+      useNotificationStore.getState().resetCount();
     } catch (err) {
       console.error('Failed to mark all as read', err);
     }

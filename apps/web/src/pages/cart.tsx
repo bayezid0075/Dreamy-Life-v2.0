@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore, CartItem } from '@/store/cartStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
@@ -16,7 +17,7 @@ export default function CartPage() {
   const { items, updateQuantity, updateResellerPrice, removeItem, clearCart, getTotalCost, getTotalProfit } = useCartStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
   const [ordering, setOrdering] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);

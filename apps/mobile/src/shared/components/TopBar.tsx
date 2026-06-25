@@ -9,6 +9,7 @@ interface TopBarProps {
   showBack?: boolean;
   onBack?: () => void;
   showNotification?: boolean;
+  unreadNotifCount?: number;
   avatarUrl?: string;
   onMenuPress?: () => void;
   showMenu?: boolean;
@@ -21,6 +22,7 @@ export default function TopBar({
   showBack = false,
   onBack,
   showNotification = true,
+  unreadNotifCount = 0,
   avatarUrl,
   onMenuPress,
   showMenu = false,
@@ -73,6 +75,11 @@ export default function TopBar({
         {showNotification && (
           <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.roundBtn}>
             <Text style={styles.btnText}>🔔</Text>
+            {unreadNotifCount > 0 && (
+              <View style={styles.notifBadge}>
+                <Text style={styles.notifBadgeText}>{unreadNotifCount > 99 ? '99+' : unreadNotifCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         )}
         {!showNotification && !showSearch && <View style={styles.placeholderBtn} />}
@@ -154,4 +161,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  notifBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#ba1a1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  notifBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
 });

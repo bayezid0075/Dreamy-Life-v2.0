@@ -18,6 +18,7 @@ import { BlurView } from 'expo-blur';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
 import BottomNav from '@/shared/components/BottomNav';
+import { useNotificationStore } from '@/shared/stores/notificationStore';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
 
@@ -80,7 +81,7 @@ export default function DashboardScreen() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [hasVendor, setHasVendor] = useState<boolean | null>(null);
   const [vendorExpanded, setVendorExpanded] = useState(false);
   const drawerAnim = useRef(new Animated.Value(-320)).current;

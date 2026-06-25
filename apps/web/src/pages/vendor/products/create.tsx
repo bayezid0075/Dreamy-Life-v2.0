@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { createProduct } from '@/features/products/api';
 import { getMyVendorProfile, VendorProfile } from '@/features/vendor/api';
 import { uploadMedia } from '@/features/media/upload';
@@ -26,7 +27,7 @@ export default function CreateProductPage() {
   const [error, setError] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
   useEffect(() => {

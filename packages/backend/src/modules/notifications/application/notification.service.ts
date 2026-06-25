@@ -265,10 +265,10 @@ export class NotificationService {
     };
   }
 
-  async markAsRead(notificationId: string, userId: string) {
+  async markAsRead(recipientId: string, userId: string) {
     const recipient = await this.db.query.notificationRecipients.findFirst({
       where: and(
-        eq(schema.notificationRecipients.notificationId, notificationId),
+        eq(schema.notificationRecipients.id, recipientId),
         eq(schema.notificationRecipients.userId, userId),
       ),
     });
@@ -284,7 +284,7 @@ export class NotificationService {
         .set({
           totalRead: sql`${schema.notifications.totalRead} + 1`,
         })
-        .where(eq(schema.notifications.id, notificationId));
+        .where(eq(schema.notifications.id, recipient.notificationId));
     }
 
     return { success: true };

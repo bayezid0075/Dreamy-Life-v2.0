@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { getMyProducts, deleteProduct, Product } from '@/features/products/api';
 import { getMyVendorProfile, VendorProfile } from '@/features/vendor/api';
 import api from '@dreamy-life/api-client';
@@ -19,7 +20,7 @@ export default function VendorProductsPage() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
 
   useEffect(() => {
     if (!isAuthenticated) { router.replace('/login'); return; }

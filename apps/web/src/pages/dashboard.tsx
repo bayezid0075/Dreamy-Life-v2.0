@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import { VendorProfile } from '@/features/vendor/api';
@@ -15,7 +16,7 @@ export default function DashboardPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
   const [vendorExpanded, setVendorExpanded] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('');

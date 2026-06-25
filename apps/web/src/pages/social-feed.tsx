@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
@@ -55,7 +56,7 @@ export default function FeedPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [feedType, setFeedType] = useState<'all' | 'friends'>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
   const fetchPosts = useCallback(
