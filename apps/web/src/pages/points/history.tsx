@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
 interface Transaction {
@@ -21,23 +21,21 @@ export default function PointsHistoryPage() {
   const [filter, setFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
 
-  useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
-    fetchData();
-  }, [isAuthenticated, accessToken, router, filter, timeRange]);
+  const fetchRef = useRef<{ token: string | null; timeRange: string }>({ token: accessToken, timeRange });
+  fetchRef.current = { token: accessToken, timeRange };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    const { token, timeRange: currentRange } = fetchRef.current;
+    if (!token) return;
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
       const [walletRes, txRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
+        fetch(`${apiUrl}/wallet`, {
+          headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=points&filter=${timeRange}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
+          `${apiUrl}/wallet/transactions?type=points&filter=${currentRange}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         ),
       ]);
       if (walletRes.status === 401 || txRes.status === 401) { clearAuth(); router.replace('/login'); return; }
@@ -45,7 +43,37 @@ export default function PointsHistoryPage() {
       if (txRes.ok) { const d = await txRes.json(); setTransactions(d.data.transactions); }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  };
+  }, [clearAuth, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) {
+      router.replace('/login');
+      return;
+    }
+    fetchData();
+  }, [isAuthenticated, accessToken, filter, timeRange, fetchData]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    const handleFocus = () => fetchData();
+    const handleRouteChange = (url: string) => {
+      if (url === '/points/history') fetchData();
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [isAuthenticated, accessToken, fetchData]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);

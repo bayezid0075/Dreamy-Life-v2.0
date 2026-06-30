@@ -689,8 +689,15 @@ export class PostService {
     return results;
   }
 
-  async searchAllUsers(userId: string, query: string) {
-    if (!query || query.length < 2) return [];
+  async searchAllUsers(userId: string, query: string, page = 1, limit = 30) {
+    const offset = (page - 1) * limit;
+
+    const baseWhere = query && query.length >= 2
+      ? and(
+          sql`(${schema.users.username} ILIKE ${'%' + query + '%'} OR ${schema.userInfo.fullName} ILIKE ${'%' + query + '%'})`,
+          sql`${schema.users.id} != ${userId}`,
+        )
+      : sql`${schema.users.id} != ${userId}`;
 
     const results = await this.db
       .select({
@@ -701,13 +708,9 @@ export class PostService {
       })
       .from(schema.users)
       .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
-      .where(
-        and(
-          sql`(${schema.users.username} ILIKE ${'%' + query + '%'} OR ${schema.userInfo.fullName} ILIKE ${'%' + query + '%'})`,
-          sql`${schema.users.id} != ${userId}`,
-        ),
-      )
-      .limit(20);
+      .where(baseWhere)
+      .limit(limit)
+      .offset(offset);
 
     const resultsWithStatus = await Promise.all(
       results.map(async (user) => {

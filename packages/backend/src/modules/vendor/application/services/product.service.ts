@@ -22,10 +22,31 @@ export class ProductService {
     return products.map(p => ({
       ...p,
       price: Number(p.price),
+      actualPrice: Number(p.actualPrice),
+      discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
+      deliveryChargeInside: Number(p.deliveryChargeInside),
+      deliveryChargeOutside: Number(p.deliveryChargeOutside),
     }));
   }
 
-  async createProduct(vendorId: string, data: { name: string; description?: string; category: string; price: number; stock: number; sku?: string; imageUrls?: string[] }) {
+  async createProduct(vendorId: string, data: {
+    name: string;
+    description?: string;
+    category: string;
+    subcategory?: string;
+    actualPrice: number;
+    discountPrice?: number;
+    deliveryArea?: string;
+    deliveryChargeInside?: number;
+    deliveryChargeOutside?: number;
+    colors?: string[];
+    sizes?: string[];
+    variantPrices?: Record<string, { price: number }>;
+    price: number;
+    stock: number;
+    sku?: string;
+    imageUrls?: string[];
+  }) {
     const vendor = await this.db.query.vendors.findFirst({
       where: eq(schema.vendors.id, vendorId),
     });
@@ -51,6 +72,15 @@ export class ProductService {
         name: data.name,
         description: data.description,
         category: data.category,
+        subcategory: data.subcategory,
+        actualPrice: String(data.actualPrice),
+        discountPrice: data.discountPrice ? String(data.discountPrice) : null,
+        deliveryArea: data.deliveryArea || 'inside_dhaka',
+        deliveryChargeInside: String(data.deliveryChargeInside ?? 0),
+        deliveryChargeOutside: String(data.deliveryChargeOutside ?? 0),
+        colors: data.colors || [],
+        sizes: data.sizes || [],
+        variantPrices: data.variantPrices || {},
         price: String(data.price),
         stock: data.stock,
         sku,
@@ -61,10 +91,30 @@ export class ProductService {
     return {
       ...product,
       price: Number(product.price),
+      actualPrice: Number(product.actualPrice),
+      discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
+      deliveryChargeInside: Number(product.deliveryChargeInside),
+      deliveryChargeOutside: Number(product.deliveryChargeOutside),
     };
   }
 
-  async updateProduct(vendorId: string, productId: string, data: { name?: string; description?: string; category?: string; price?: number; stock?: number; imageUrls?: string[] }) {
+  async updateProduct(vendorId: string, productId: string, data: {
+    name?: string;
+    description?: string;
+    category?: string;
+    subcategory?: string;
+    actualPrice?: number;
+    discountPrice?: number;
+    deliveryArea?: string;
+    deliveryChargeInside?: number;
+    deliveryChargeOutside?: number;
+    colors?: string[];
+    sizes?: string[];
+    variantPrices?: Record<string, { price: number }>;
+    price?: number;
+    stock?: number;
+    imageUrls?: string[];
+  }) {
     const product = await this.db.query.products.findFirst({
       where: eq(schema.products.id, productId),
     });
@@ -81,6 +131,15 @@ export class ProductService {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.category !== undefined) updateData.category = data.category;
+    if (data.subcategory !== undefined) updateData.subcategory = data.subcategory;
+    if (data.actualPrice !== undefined) updateData.actualPrice = String(data.actualPrice);
+    if (data.discountPrice !== undefined) updateData.discountPrice = data.discountPrice ? String(data.discountPrice) : null;
+    if (data.deliveryArea !== undefined) updateData.deliveryArea = data.deliveryArea;
+    if (data.deliveryChargeInside !== undefined) updateData.deliveryChargeInside = String(data.deliveryChargeInside);
+    if (data.deliveryChargeOutside !== undefined) updateData.deliveryChargeOutside = String(data.deliveryChargeOutside);
+    if (data.colors !== undefined) updateData.colors = data.colors;
+    if (data.sizes !== undefined) updateData.sizes = data.sizes;
+    if (data.variantPrices !== undefined) updateData.variantPrices = data.variantPrices;
     if (data.price !== undefined) updateData.price = String(data.price);
     if (data.stock !== undefined) updateData.stock = data.stock;
     if (data.imageUrls !== undefined) updateData.imageUrls = data.imageUrls;
@@ -94,6 +153,10 @@ export class ProductService {
     return {
       ...updated,
       price: Number(updated.price),
+      actualPrice: Number(updated.actualPrice),
+      discountPrice: updated.discountPrice ? Number(updated.discountPrice) : null,
+      deliveryChargeInside: Number(updated.deliveryChargeInside),
+      deliveryChargeOutside: Number(updated.deliveryChargeOutside),
     };
   }
 
@@ -126,6 +189,15 @@ export class ProductService {
         name: schema.products.name,
         description: schema.products.description,
         category: schema.products.category,
+        subcategory: schema.products.subcategory,
+        actualPrice: schema.products.actualPrice,
+        discountPrice: schema.products.discountPrice,
+        deliveryArea: schema.products.deliveryArea,
+        deliveryChargeInside: schema.products.deliveryChargeInside,
+        deliveryChargeOutside: schema.products.deliveryChargeOutside,
+        colors: schema.products.colors,
+        sizes: schema.products.sizes,
+        variantPrices: schema.products.variantPrices,
         price: schema.products.price,
         stock: schema.products.stock,
         sku: schema.products.sku,
@@ -150,6 +222,10 @@ export class ProductService {
     return {
       ...product[0],
       price: Number(product[0].price),
+      actualPrice: Number(product[0].actualPrice),
+      discountPrice: product[0].discountPrice ? Number(product[0].discountPrice) : null,
+      deliveryChargeInside: Number(product[0].deliveryChargeInside),
+      deliveryChargeOutside: Number(product[0].deliveryChargeOutside),
     };
   }
 

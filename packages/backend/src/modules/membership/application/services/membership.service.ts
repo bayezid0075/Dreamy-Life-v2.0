@@ -436,6 +436,7 @@ export class MembershipService implements OnModuleInit {
             title: 'Commission Earned!',
             body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyerName}'s "${plan.name}" membership purchase. Level ${level} referral commission.`,
             icon: 'payments',
+            category: 'app',
             createdBy: buyerId,
           });
         } catch (err) {
@@ -462,6 +463,7 @@ export class MembershipService implements OnModuleInit {
         title: 'Membership Purchased!',
         body: `Congratulations! You've been upgraded to "${planName}" membership. Your account is now verified.`,
         icon: 'workspace_premium',
+        category: 'app',
         createdBy: userId,
       });
 
@@ -477,6 +479,7 @@ export class MembershipService implements OnModuleInit {
           body: `User ${username} purchased "${planName}" membership for ৳${amount.toFixed(2)}.`,
           icon: 'workspace_premium',
           type: 'targeted',
+          category: 'app',
           createdBy: userId,
         });
         await this.notificationService.broadcast(adminNotification.id);

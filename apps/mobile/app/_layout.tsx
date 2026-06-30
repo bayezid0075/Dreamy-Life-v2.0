@@ -24,6 +24,10 @@ export default function RootLayout() {
         <Stack.Screen name="wallet-history" />
         <Stack.Screen name="funds-history" />
         <Stack.Screen name="points-history" />
+        <Stack.Screen name="friends" />
+        <Stack.Screen name="marketplace" />
+        <Stack.Screen name="marketplace/post" />
+        <Stack.Screen name="marketplace/[id]" />
         <Stack.Screen name="vendor/apply" />
         <Stack.Screen name="vendor/dashboard" />
         <Stack.Screen name="vendor/products" />

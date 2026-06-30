@@ -123,6 +123,10 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                   <span className="material-symbols-outlined">public</span>
                   <span>Social Feed</span>
                 </Link>
+                <Link href="/marketplace" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
+                  <span className="material-symbols-outlined">work</span>
+                  <span>Marketplace</span>
+                </Link>
                 <Link href="/referral" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">share</span>
                   <span>Referral</span>

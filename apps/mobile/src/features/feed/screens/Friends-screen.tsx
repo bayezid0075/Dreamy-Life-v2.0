@@ -80,13 +80,13 @@ export default function FriendsScreen() {
     }
   };
 
-  const searchUsers = useCallback(async (q: string) => {
-    if (!token || q.length < 2) {
-      setSearchResults([]);
-      return;
-    }
+  const fetchAllUsers = useCallback(async (q?: string) => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API_URL}/users/search/all?q=${encodeURIComponent(q)}`, {
+      const url = q && q.length >= 2
+        ? `${API_URL}/users/search/all?q=${encodeURIComponent(q)}`
+        : `${API_URL}/users/search/all`;
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -99,9 +99,10 @@ export default function FriendsScreen() {
   }, [token]);
 
   useEffect(() => {
-    const timer = setTimeout(() => searchUsers(searchQuery), 300);
+    if (activeTab !== 'find') return;
+    const timer = setTimeout(() => fetchAllUsers(searchQuery || undefined), 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, searchUsers]);
+  }, [searchQuery, activeTab, fetchAllUsers]);
 
   const handleAcceptRequest = async (requestId: string) => {
     if (!token) return;
@@ -429,13 +430,12 @@ export default function FriendsScreen() {
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search by username or name..."
+                  placeholder="Filter by username or name..."
                   placeholderTextColor="#76777b"
                   value={searchQuery}
                   onChangeText={(text) => {
                     setSearchQuery(text);
                   }}
-                  autoFocus
                 />
               </View>
             }
@@ -443,7 +443,7 @@ export default function FriendsScreen() {
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>🔍</Text>
                 <Text style={styles.emptyText}>
-                  {searchQuery.length >= 2 ? 'No users found' : 'Search for people to add as friends'}
+                  {searchQuery.length >= 2 ? 'No users found' : 'No users available'}
                 </Text>
               </View>
             }

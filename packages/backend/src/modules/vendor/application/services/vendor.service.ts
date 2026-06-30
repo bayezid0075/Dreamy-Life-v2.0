@@ -337,6 +337,7 @@ export class VendorService {
           : `Payment received! Your vendor shop "${shopName}" is now active. Welcome aboard!`,
         icon: 'storefront',
         type: 'targeted',
+        category: 'app',
         createdBy: userId,
       });
       await this.notificationService.broadcast(userNotification.id);
@@ -354,6 +355,7 @@ export class VendorService {
             : `New vendor "${shopName}" has joined. Payment of ৳700 received.`,
           icon: 'person_add',
           type: 'targeted',
+          category: 'app',
           createdBy: userId,
         });
         await this.notificationService.broadcast(adminNotification.id);

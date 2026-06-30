@@ -27,17 +27,22 @@ export class PushController {
     @Req() req: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('category') category?: string,
   ) {
     return this.notificationService.getUserNotifications(
       req.user.userId,
       parseInt(page || '1'),
       parseInt(limit || '20'),
+      category,
     );
   }
 
   @Get('unread-count')
-  async getUnreadCount(@Req() req: any) {
-    const count = await this.notificationService.getUnreadCount(req.user.userId);
+  async getUnreadCount(
+    @Req() req: any,
+    @Query('category') category?: string,
+  ) {
+    const count = await this.notificationService.getUnreadCount(req.user.userId, category);
     return { count };
   }
 
@@ -47,8 +52,11 @@ export class PushController {
   }
 
   @Patch('read-all')
-  async markAllAsRead(@Req() req: any) {
-    return this.notificationService.markAllAsRead(req.user.userId);
+  async markAllAsRead(
+    @Req() req: any,
+    @Query('category') category?: string,
+  ) {
+    return this.notificationService.markAllAsRead(req.user.userId, category);
   }
 
   @Post('register-push')

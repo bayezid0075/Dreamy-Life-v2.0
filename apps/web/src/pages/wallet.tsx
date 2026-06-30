@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
@@ -26,6 +26,7 @@ export default function WalletPage() {
   const router = useRouter();
   const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
   const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -36,6 +37,56 @@ export default function WalletPage() {
   const [user, setUser] = useState<any>(null);
   const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
+
+  const fetchDataRef = useRef<{ token: string | null; filter: string }>({ token: accessToken, filter });
+  fetchDataRef.current = { token: accessToken, filter };
+
+  const fetchData = useCallback(async () => {
+    const { token, filter: currentFilter } = fetchDataRef.current;
+    if (!token) return;
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+      const [walletRes, allTxRes, filteredTxRes] = await Promise.all([
+        fetch(`${apiUrl}/wallet`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${apiUrl}/wallet/transactions?type=all`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        currentFilter !== 'all'
+          ? fetch(`${apiUrl}/wallet/transactions?type=${currentFilter}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          : null,
+      ]);
+
+      if (walletRes.status === 401 || allTxRes.status === 401) {
+        clearAuth();
+        router.replace('/login');
+        return;
+      }
+
+      if (walletRes.ok) {
+        const wData = await walletRes.json();
+        setWallet(wData.data.wallet);
+      }
+      if (allTxRes.ok) {
+        const d = await allTxRes.json();
+        setAllTransactions(d.data.transactions);
+        if (currentFilter === 'all') {
+          setTransactions(d.data.transactions);
+        }
+      }
+      if (filteredTxRes && filteredTxRes.ok) {
+        const d = await filteredTxRes.json();
+        setTransactions(d.data.transactions);
+      }
+    } catch (err) {
+      console.error('Failed to fetch wallet data', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [clearAuth, router]);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -62,39 +113,37 @@ export default function WalletPage() {
       .then((res) => res.json())
       .then((data) => { setVendorProfile(data.data || null); })
       .catch(() => { setVendorProfile(null); });
-  }, [isAuthenticated, accessToken, router, filter]);
+  }, [isAuthenticated, accessToken, filter, fetchData]);
 
-  const fetchData = async () => {
-    try {
-      const [walletRes, txRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=${filter}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }),
-      ]);
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
 
-      if (walletRes.status === 401 || txRes.status === 401) {
-        clearAuth();
-        router.replace('/login');
-        return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
       }
+    };
 
-      if (walletRes.ok) {
-        const wData = await walletRes.json();
-        setWallet(wData.data.wallet);
+    const handleFocus = () => {
+      fetchData();
+    };
+
+    const handleRouteChange = (url: string) => {
+      if (url === '/wallet') {
+        fetchData();
       }
-      if (txRes.ok) {
-        const tData = await txRes.json();
-        setTransactions(tData.data.transactions);
-      }
-    } catch (err) {
-      console.error('Failed to fetch wallet data', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [isAuthenticated, accessToken, fetchData]);
 
   const handleLogout = () => {
     clearAuth();
@@ -145,12 +194,12 @@ export default function WalletPage() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  const walletIncome = transactions.filter(t => t.type === 'wallet_credit').reduce((s, t) => s + t.amount, 0);
-  const walletExpense = transactions.filter(t => t.type === 'wallet_debit').reduce((s, t) => s + t.amount, 0);
-  const fundsIncome = transactions.filter(t => t.type === 'fund_credit').reduce((s, t) => s + t.amount, 0);
-  const fundsExpense = transactions.filter(t => t.type === 'fund_debit').reduce((s, t) => s + t.amount, 0);
-  const pointsEarned = transactions.filter(t => t.type === 'point_earned').reduce((s, t) => s + t.amount, 0);
-  const pointsSpent = transactions.filter(t => t.type === 'point_spent').reduce((s, t) => s + t.amount, 0);
+  const walletIncome = allTransactions.filter(t => t.type === 'wallet_credit').reduce((s, t) => s + t.amount, 0);
+  const walletExpense = allTransactions.filter(t => t.type === 'wallet_debit').reduce((s, t) => s + t.amount, 0);
+  const fundsIncome = allTransactions.filter(t => t.type === 'fund_credit').reduce((s, t) => s + t.amount, 0);
+  const fundsExpense = allTransactions.filter(t => t.type === 'fund_debit').reduce((s, t) => s + t.amount, 0);
+  const pointsEarned = allTransactions.filter(t => t.type === 'point_earned').reduce((s, t) => s + t.amount, 0);
+  const pointsSpent = allTransactions.filter(t => t.type === 'point_spent').reduce((s, t) => s + t.amount, 0);
 
   if (loading) {
     return (

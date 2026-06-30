@@ -12,6 +12,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { VendorModule } from './modules/vendor/vendor.module';
+import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { HealthController } from './common/controllers/health.controller';
 
 @Module({
@@ -31,6 +32,7 @@ import { HealthController } from './common/controllers/health.controller';
     AdminModule,
     ChatModule,
     VendorModule,
+    MarketplaceModule,
   ],
   controllers: [HealthController],
   providers: [],

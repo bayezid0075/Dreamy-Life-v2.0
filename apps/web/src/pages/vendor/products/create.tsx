@@ -17,11 +17,39 @@ interface ImagePreview {
   uploaded?: boolean;
 }
 
+interface VariantPrice {
+  price: string;
+}
+
+interface VariantPrices {
+  [key: string]: VariantPrice;
+}
+
 export default function CreateProductPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ name: '', description: '', category: '', price: '', stock: '', sku: '' });
+  const colorInputRef = useRef<HTMLInputElement>(null);
+  const sizeInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    category: '',
+    subcategory: '',
+    actualPrice: '',
+    discountPrice: '',
+    deliveryArea: 'inside_dhaka',
+    deliveryChargeInside: '',
+    deliveryChargeOutside: '',
+    price: '',
+    stock: '',
+    sku: '',
+  });
+  const [colors, setColors] = useState<string[]>([]);
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [colorInput, setColorInput] = useState('');
+  const [sizeInput, setSizeInput] = useState('');
+  const [variantPrices, setVariantPrices] = useState<VariantPrices>({});
   const [images, setImages] = useState<ImagePreview[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +57,51 @@ export default function CreateProductPage() {
   const [user, setUser] = useState<any>(null);
   const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
+
+  const categories = [
+    { value: 'home_decor', label: 'Home Decor' },
+    { value: 'furniture', label: 'Furniture' },
+    { value: 'lighting', label: 'Lighting' },
+    { value: 'textiles', label: 'Textiles' },
+  ];
+
+  const subcategories: Record<string, { value: string; label: string }[]> = {
+    home_decor: [
+      { value: 'vases', label: 'Vases' },
+      { value: 'wall_art', label: 'Wall Art' },
+      { value: 'candles', label: 'Candles' },
+      { value: 'clocks', label: 'Clocks' },
+      { value: 'mirrors', label: 'Mirrors' },
+      { value: 'planters', label: 'Planters' },
+      { value: 'figurines', label: 'Figurines' },
+      { value: 'other', label: 'Other' },
+    ],
+    furniture: [
+      { value: 'tables', label: 'Tables' },
+      { value: 'chairs', label: 'Chairs' },
+      { value: 'shelves', label: 'Shelves' },
+      { value: 'beds', label: 'Beds' },
+      { value: 'sofas', label: 'Sofas' },
+      { value: 'cabinets', label: 'Cabinets' },
+      { value: 'other', label: 'Other' },
+    ],
+    lighting: [
+      { value: 'table_lamp', label: 'Table Lamp' },
+      { value: 'floor_lamp', label: 'Floor Lamp' },
+      { value: 'pendant', label: 'Pendant' },
+      { value: 'chandelier', label: 'Chandelier' },
+      { value: 'wall_light', label: 'Wall Light' },
+      { value: 'other', label: 'Other' },
+    ],
+    textiles: [
+      { value: 'curtains', label: 'Curtains' },
+      { value: 'pillows', label: 'Pillows' },
+      { value: 'rugs', label: 'Rugs' },
+      { value: 'blankets', label: 'Blankets' },
+      { value: 'tablecloths', label: 'Tablecloths' },
+      { value: 'other', label: 'Other' },
+    ],
+  };
 
   useEffect(() => {
     if (!isAuthenticated) { router.replace('/login'); return; }
@@ -38,6 +111,23 @@ export default function CreateProductPage() {
       api.get('/notifications/unread-count').then(d => { if (d.data?.count !== undefined) setUnreadNotifCount(d.data.count); }).catch(() => {}),
     ]);
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (colors.length > 0 && sizes.length > 0) {
+      const newVariantPrices: VariantPrices = {};
+      colors.forEach(color => {
+        sizes.forEach(size => {
+          const key = `${color}-${size}`;
+          if (variantPrices[key]) {
+            newVariantPrices[key] = variantPrices[key];
+          } else {
+            newVariantPrices[key] = { price: form.actualPrice || '' };
+          }
+        });
+      });
+      setVariantPrices(newVariantPrices);
+    }
+  }, [colors, sizes]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -112,6 +202,55 @@ export default function CreateProductPage() {
     });
   };
 
+  const addColor = () => {
+    const trimmed = colorInput.trim();
+    if (trimmed && !colors.includes(trimmed)) {
+      setColors(prev => [...prev, trimmed]);
+      setColorInput('');
+    }
+  };
+
+  const removeColor = (color: string) => {
+    setColors(prev => prev.filter(c => c !== color));
+    setVariantPrices(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(key => {
+        if (key.startsWith(`${color}-`)) {
+          delete updated[key];
+        }
+      });
+      return updated;
+    });
+  };
+
+  const addSize = () => {
+    const trimmed = sizeInput.trim();
+    if (trimmed && !sizes.includes(trimmed)) {
+      setSizes(prev => [...prev, trimmed]);
+      setSizeInput('');
+    }
+  };
+
+  const removeSize = (size: string) => {
+    setSizes(prev => prev.filter(s => s !== size));
+    setVariantPrices(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(key => {
+        if (key.endsWith(`-${size}`)) {
+          delete updated[key];
+        }
+      });
+      return updated;
+    });
+  };
+
+  const updateVariantPrice = (key: string, price: string) => {
+    setVariantPrices(prev => ({
+      ...prev,
+      [key]: { price },
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (images.some(img => img.uploading)) {
@@ -122,10 +261,28 @@ export default function CreateProductPage() {
     setError('');
     try {
       const imageUrls = images.filter(img => img.uploaded || !img.file).map(img => img.url);
+
+      const cleanedVariantPrices: Record<string, { price: number }> = {};
+      Object.entries(variantPrices).forEach(([key, val]) => {
+        const parsed = parseFloat(val.price);
+        if (!isNaN(parsed) && parsed > 0) {
+          cleanedVariantPrices[key] = { price: parsed };
+        }
+      });
+
       await createProduct({
         name: form.name,
         description: form.description || undefined,
         category: form.category,
+        subcategory: form.subcategory || undefined,
+        actualPrice: parseFloat(form.actualPrice),
+        discountPrice: form.discountPrice ? parseFloat(form.discountPrice) : undefined,
+        deliveryArea: form.deliveryArea,
+        deliveryChargeInside: form.deliveryChargeInside ? parseFloat(form.deliveryChargeInside) : 0,
+        deliveryChargeOutside: form.deliveryChargeOutside ? parseFloat(form.deliveryChargeOutside) : 0,
+        colors: colors.length > 0 ? colors : undefined,
+        sizes: sizes.length > 0 ? sizes : undefined,
+        variantPrices: Object.keys(cleanedVariantPrices).length > 0 ? cleanedVariantPrices : undefined,
         price: parseFloat(form.price),
         stock: parseInt(form.stock),
         sku: form.sku || undefined,
@@ -141,7 +298,7 @@ export default function CreateProductPage() {
   };
 
   const handleLogout = () => { useAuthStore.getState().clearAuth(); router.replace('/login'); };
-  const copyReferCode = () => { if (user?.ownRefercode) navigator.clipboard.writeText(user.ownRefercode); };
+  const copyReferCode = () => { if (user?.ownRefercode) navigator.clipboard.write(user.ownRefercode); };
 
   return (
     <>
@@ -265,37 +422,98 @@ export default function CreateProductPage() {
                   <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Minimalist Ceramic Vase" required
                     className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-[#5d5e64] px-1">Category *</label>
-                    <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required
+                    <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value, subcategory: '' })} required
                       className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] appearance-none focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all">
                       <option value="">Select Category</option>
-                      <option value="home_decor">Home Decor</option>
-                      <option value="furniture">Furniture</option>
-                      <option value="lighting">Lighting</option>
-                      <option value="textiles">Textiles</option>
+                      {categories.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Price ($) *</label>
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Sub Category</label>
+                    <select value={form.subcategory} onChange={e => setForm({ ...form, subcategory: e.target.value })}
+                      disabled={!form.category}
+                      className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] appearance-none focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                      <option value="">Select Sub Category</option>
+                      {form.category && subcategories[form.category]?.map(sc => (
+                        <option key={sc.value} value={sc.value}>{sc.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Actual Price (৳) *</label>
                     <div className="relative">
-                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">$</span>
-                      <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="0.00" required
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">৳</span>
+                      <input type="number" step="0.01" value={form.actualPrice} onChange={e => setForm({ ...form, actualPrice: e.target.value })} placeholder="0.00" required
+                        className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Discount Price (৳)</label>
+                    <div className="relative">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">৳</span>
+                      <input type="number" step="0.01" value={form.discountPrice} onChange={e => setForm({ ...form, discountPrice: e.target.value })} placeholder="0.00"
                         className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
                     </div>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Display Price (৳) *</label>
+                    <div className="relative">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">৳</span>
+                      <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="0.00" required
+                        className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
+                    </div>
+                  </div>
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-[#5d5e64] px-1">Stock Quantity *</label>
                     <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="Available units" required
                       className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-[#5d5e64] px-1">SKU (optional)</label>
                     <input type="text" value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="Auto-generated if empty"
                       className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Delivery Area *</label>
+                    <select value={form.deliveryArea} onChange={e => setForm({ ...form, deliveryArea: e.target.value })}
+                      className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] appearance-none focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all">
+                      <option value="inside_dhaka">Inside Dhaka</option>
+                      <option value="outside_dhaka">Outside Dhaka</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Delivery Charge Inside Dhaka (৳)</label>
+                    <div className="relative">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">৳</span>
+                      <input type="number" step="0.01" value={form.deliveryChargeInside} onChange={e => setForm({ ...form, deliveryChargeInside: e.target.value })} placeholder="0.00"
+                        className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Delivery Charge Outside Dhaka (৳)</label>
+                    <div className="relative">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">৳</span>
+                      <input type="number" step="0.01" value={form.deliveryChargeOutside} onChange={e => setForm({ ...form, deliveryChargeOutside: e.target.value })} placeholder="0.00"
+                        className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -304,6 +522,108 @@ export default function CreateProductPage() {
                 <label className="text-sm font-semibold text-[#5d5e64] px-1">Description</label>
                 <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Describe the product details, materials, and care instructions..." rows={5}
                   className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-2xl px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 resize-none focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
+              </div>
+
+              <div className="md:col-span-12">
+                <div className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-6 border border-white/50">
+                  <h3 className="text-sm font-bold text-[#1c1b1b] mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#2d666d] text-lg">palette</span>
+                    Colors & Sizes (Optional)
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#5d5e64] px-1">Add Colors</label>
+                      <div className="flex gap-2">
+                        <input
+                          ref={colorInputRef}
+                          type="text"
+                          value={colorInput}
+                          onChange={e => setColorInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }}
+                          placeholder="e.g. Red, Blue"
+                          className="flex-1 bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-3 text-sm text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all"
+                        />
+                        <button type="button" onClick={addColor}
+                          className="w-10 h-10 rounded-full bg-[#2d666d] text-white flex items-center justify-center hover:bg-[#1e4a50] transition-colors flex-shrink-0">
+                          <span className="material-symbols-outlined text-lg">add</span>
+                        </button>
+                      </div>
+                      {colors.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {colors.map(color => (
+                            <span key={color} className="inline-flex items-center gap-1.5 bg-[#e9fdff] text-[#2d666d] text-xs font-semibold px-3 py-1.5 rounded-full border border-[#98d0d7]/30">
+                              {color}
+                              <button type="button" onClick={() => removeColor(color)} className="hover:text-[#ba1a1a] transition-colors">
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#5d5e64] px-1">Add Sizes</label>
+                      <div className="flex gap-2">
+                        <input
+                          ref={sizeInputRef}
+                          type="text"
+                          value={sizeInput}
+                          onChange={e => setSizeInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSize(); } }}
+                          placeholder="e.g. S, M, L, XL"
+                          className="flex-1 bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-3 text-sm text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all"
+                        />
+                        <button type="button" onClick={addSize}
+                          className="w-10 h-10 rounded-full bg-[#2d666d] text-white flex items-center justify-center hover:bg-[#1e4a50] transition-colors flex-shrink-0">
+                          <span className="material-symbols-outlined text-lg">add</span>
+                        </button>
+                      </div>
+                      {sizes.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {sizes.map(size => (
+                            <span key={size} className="inline-flex items-center gap-1.5 bg-[#fff4e6] text-[#b36b00] text-xs font-semibold px-3 py-1.5 rounded-full border border-[#ffd699]/30">
+                              {size}
+                              <button type="button" onClick={() => removeSize(size)} className="hover:text-[#ba1a1a] transition-colors">
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {colors.length > 0 && sizes.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3">Variant Prices (৳)</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {colors.map(color =>
+                          sizes.map(size => {
+                            const key = `${color}-${size}`;
+                            return (
+                              <div key={key} className="flex items-center gap-2 bg-white/40 rounded-xl px-3 py-2 border border-white/30">
+                                <span className="text-xs font-semibold text-[#5d5e64] min-w-0 truncate">{color} - {size}</span>
+                                <div className="relative flex-1">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[#45474b] text-xs">৳</span>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={variantPrices[key]?.price || ''}
+                                    onChange={e => updateVariantPrice(key, e.target.value)}
+                                    placeholder="0.00"
+                                    className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-7 pr-2 py-1.5 text-xs text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-2 focus:ring-[#98d0d7]/20 outline-none transition-all"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -22,6 +22,7 @@ interface UserNotification {
   body: string;
   icon?: string;
   type: string;
+  category: string;
   sentAt?: string;
   createdAt: string;
   read: boolean;
@@ -63,13 +64,15 @@ export default function NotificationsScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState<'all' | 'social' | 'app'>('all');
 
-  const fetchNotifications = useCallback(async (pageNum: number, append = false) => {
+  const fetchNotifications = useCallback(async (pageNum: number, append = false, tab?: string) => {
     try {
       const token = await AsyncStorage.getItem('accessToken');
       if (!token) return;
 
-      const res = await fetch(`${API_URL}/notifications?page=${pageNum}&limit=20`, {
+      const category = tab || activeTab;
+      const res = await fetch(`${API_URL}/notifications?page=${pageNum}&limit=20&category=${category}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -85,7 +88,7 @@ export default function NotificationsScreen() {
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     (async () => {
@@ -104,6 +107,11 @@ export default function NotificationsScreen() {
       handleMarkAllAsRead();
     }
   }, [loading]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchNotifications(1, false, activeTab);
+  }, [activeTab]);
 
   const handleMarkAsRead = async (recipientId: string) => {
     try {
@@ -129,7 +137,7 @@ export default function NotificationsScreen() {
       const token = await AsyncStorage.getItem('accessToken');
       if (!token) return;
 
-      await fetch(`${API_URL}/notifications/read-all`, {
+      await fetch(`${API_URL}/notifications/read-all?category=${activeTab}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -156,10 +164,31 @@ export default function NotificationsScreen() {
     );
   }
 
+  const tabs = [
+    { key: 'all', label: 'All' },
+    { key: 'social', label: 'Social' },
+    { key: 'app', label: 'App' },
+  ];
+
   return (
     <View style={styles.container}>
       <AuroraBackground />
       <TopBar title="Notifications" showBack showSearch={false} showNotification={false} />
+
+      {/* Tabs */}
+      <View style={styles.tabsContainer}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            onPress={() => setActiveTab(tab.key as typeof activeTab)}
+            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+          >
+            <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
@@ -177,7 +206,11 @@ export default function NotificationsScreen() {
           {notifications.length === 0 && (
             <GlassPanel borderRadius={12} style={styles.emptyCard}>
               <Text style={styles.emptyIcon}>🔔</Text>
-              <Text style={styles.emptyText}>No notifications yet</Text>
+              <Text style={styles.emptyText}>
+                {activeTab === 'social' && 'No social notifications'}
+                {activeTab === 'app' && 'No app notifications'}
+                {activeTab === 'all' && 'No notifications yet'}
+              </Text>
             </GlassPanel>
           )}
 
@@ -202,7 +235,14 @@ export default function NotificationsScreen() {
 
                     <View style={styles.notifContent}>
                       <View style={styles.notifTop}>
-                        <Text style={styles.notifTitle} numberOfLines={1}>{n.title}</Text>
+                        <View style={styles.notifTitleRow}>
+                          <Text style={styles.notifTitle} numberOfLines={1}>{n.title}</Text>
+                          {n.category === 'social' && (
+                            <View style={styles.socialBadge}>
+                              <Text style={styles.socialBadgeText}>Social</Text>
+                            </View>
+                          )}
+                        </View>
                         <Text style={styles.notifTime}>
                           {n.sentAt ? getTimeAgo(n.sentAt) : getTimeAgo(n.createdAt)}
                         </Text>
@@ -231,8 +271,16 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f8ff' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f8ff' },
+  tabsContainer: { flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginTop: 100, marginBottom: 8 },
+  tab: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+  },
+  activeTab: { backgroundColor: '#1c1b1b', borderColor: '#1c1b1b' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#45474b' },
+  activeTabText: { color: '#ffffff' },
   scroll: { flex: 1 },
-  content: { paddingTop: 110, paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   headerText: { fontSize: 14, color: '#45474b', flex: 1 },
   clearBtn: { fontSize: 12, fontWeight: '700', color: '#2d666d', letterSpacing: 1 },
@@ -248,7 +296,10 @@ const styles = StyleSheet.create({
   notifEmoji: { fontSize: 22 },
   notifContent: { flex: 1, minWidth: 0 },
   notifTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
+  notifTitleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 6 },
   notifTitle: { fontSize: 15, fontWeight: '700', color: '#1c1b1b', flex: 1 },
+  socialBadge: { backgroundColor: '#ffd1dc', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  socialBadgeText: { fontSize: 10, fontWeight: '600', color: '#78555e' },
   notifTime: { fontSize: 12, fontWeight: '600', color: '#76777b', marginLeft: 8, flexShrink: 0 },
   notifMessage: { fontSize: 13, color: '#45474b' },
   loadMoreBtn: { marginTop: 4 },

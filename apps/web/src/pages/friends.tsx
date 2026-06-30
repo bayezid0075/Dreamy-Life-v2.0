@@ -69,13 +69,12 @@ export default function FriendsPage() {
     }
   };
 
-  const searchUsers = useCallback(async (q: string) => {
-    if (q.length < 2) {
-      setSearchResults([]);
-      return;
-    }
+  const fetchAllUsers = useCallback(async (q?: string) => {
     try {
-      const res = await fetch(`${API_URL}/users/search/all?q=${encodeURIComponent(q)}`, {
+      const url = q && q.length >= 2
+        ? `${API_URL}/users/search/all?q=${encodeURIComponent(q)}`
+        : `${API_URL}/users/search/all`;
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
@@ -88,9 +87,10 @@ export default function FriendsPage() {
   }, [accessToken]);
 
   useEffect(() => {
-    const timer = setTimeout(() => searchUsers(searchQuery), 300);
+    if (activeTab !== 'find') return;
+    const timer = setTimeout(() => fetchAllUsers(searchQuery || undefined), 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, searchUsers]);
+  }, [searchQuery, activeTab, fetchAllUsers]);
 
   const handleAcceptRequest = async (requestId: string) => {
     setActionLoading(requestId);
@@ -443,11 +443,10 @@ export default function FriendsPage() {
                 <span className="material-symbols-outlined text-[#45474b]">search</span>
                 <input
                   type="text"
-                  placeholder="Search by username or name..."
+                  placeholder="Filter by username or name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-transparent border-none outline-none w-full text-[#1c1b1b] placeholder:text-[#45474b]/50 text-[15px]"
-                  autoFocus
                 />
               </div>
 
@@ -456,6 +455,13 @@ export default function FriendsPage() {
                   <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">person_search</span>
                   <p className="text-[#45474b] text-lg font-semibold">No users found</p>
                   <p className="text-[#45474b]/60 text-sm mt-2">Try a different search term</p>
+                </div>
+              )}
+
+              {!searchQuery && searchResults.length === 0 && (
+                <div className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-12 text-center border border-white/30">
+                  <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">people</span>
+                  <p className="text-[#45474b] text-lg font-semibold">No users available</p>
                 </div>
               )}
 

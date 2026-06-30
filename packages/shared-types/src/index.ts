@@ -141,3 +141,36 @@ export type {
   ResellerOrderResponse,
   OrderTrackingResponse,
 } from './dtos/vendor.dto';
+
+// ---------- Marketplace Entity Exports ----------
+export type {
+  JobType,
+  JobStatus,
+  BidStatus,
+  AssignmentStatus,
+  SubmissionStatus,
+  EscrowStatus,
+  JobPost,
+  JobPostWithPoster,
+  JobBid,
+  JobBidWithBidder,
+  JobAssignment,
+  JobAssignmentWithWorker,
+  JobSubmission,
+  JobSubmissionWithWorker,
+  JobEscrow,
+  JobDashboard,
+} from './entities/marketplace';
+
+// ---------- Marketplace DTO Exports ----------
+export type {
+  CreateJobDto,
+  PlaceBidDto,
+  SubmitWorkDto,
+  JobListQuery,
+  AdminUpdateUnitsDto,
+  JobPostResponse,
+  JobListResponse,
+  BidListResponse,
+  SubmissionListResponse,
+} from './dtos/marketplace.dto';

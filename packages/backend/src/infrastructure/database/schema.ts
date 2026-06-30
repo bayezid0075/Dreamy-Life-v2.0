@@ -116,6 +116,7 @@ export const notifications = pgTable('notifications', {
   body: text('body').notNull(),
   icon: varchar('icon', { length: 50 }),
   type: varchar('type', { length: 20 }).notNull().default('broadcast'), // broadcast, targeted
+  category: varchar('category', { length: 20 }).notNull().default('app'), // social, app
   status: varchar('status', { length: 20 }).notNull().default('draft'), // draft, scheduled, sent
   scheduledAt: timestamp('scheduled_at'),
   sentAt: timestamp('sent_at'),
@@ -303,6 +304,15 @@ export const products = pgTable('products', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   category: varchar('category', { length: 50 }).notNull(),
+  subcategory: varchar('subcategory', { length: 100 }),
+  actualPrice: decimal('actual_price', { precision: 12, scale: 2 }).notNull(),
+  discountPrice: decimal('discount_price', { precision: 12, scale: 2 }),
+  deliveryArea: varchar('delivery_area', { length: 20 }).notNull().default('inside_dhaka'),
+  deliveryChargeInside: decimal('delivery_charge_inside', { precision: 12, scale: 2 }).notNull().default('0'),
+  deliveryChargeOutside: decimal('delivery_charge_outside', { precision: 12, scale: 2 }).notNull().default('0'),
+  colors: text('colors').array().default([]),
+  sizes: text('sizes').array().default([]),
+  variantPrices: jsonb('variant_prices').default({}),
   price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   stock: integer('stock').notNull().default(0),
   sku: varchar('sku', { length: 50 }).notNull().unique(),
@@ -407,6 +417,93 @@ export const fundPayments = pgTable('fund_payments', {
 }, (table) => ({
   fundPaymentInvoiceIdx: uniqueIndex('fund_payment_invoice_idx').on(table.invoiceId),
   fundPaymentUserIdIdx: index('fund_payment_user_id_idx').on(table.userId),
+}));
+
+// ─── Marketplace: Job Posts Table ────────────────────────────────────────
+export const jobPosts = pgTable('job_posts', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  posterId: uuid('poster_id').references(() => users.id).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  type: varchar('type', { length: 20 }).notNull(), // 'single' or 'multiple'
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  unitPay: decimal('unit_pay', { precision: 12, scale: 2 }).notNull(),
+  totalUnits: integer('total_units').notNull().default(1),
+  filledUnits: integer('filled_units').notNull().default(0),
+  status: varchar('status', { length: 20 }).notNull().default('pending_approval'),
+  // pending_approval, active, in_progress, completed, cancelled, rejected
+  adminApproved: boolean('admin_approved').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  jobPosterIdx: index('job_poster_idx').on(table.posterId),
+  jobStatusIdx: index('job_status_idx').on(table.status),
+}));
+
+// ─── Marketplace: Job Bids Table (single-unit jobs) ─────────────────────
+export const jobBids = pgTable('job_bids', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  jobId: uuid('job_id').references(() => jobPosts.id).notNull(),
+  bidderId: uuid('bidder_id').references(() => users.id).notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  // pending, accepted, rejected, cancelled
+  message: text('message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  bidJobIdx: index('bid_job_idx').on(table.jobId),
+  bidBidderIdx: index('bid_bidder_idx').on(table.bidderId),
+  bidJobBidderIdx: uniqueIndex('bid_job_bidder_idx').on(table.jobId, table.bidderId),
+}));
+
+// ─── Marketplace: Job Assignments Table (multi-unit jobs) ────────────────
+export const jobAssignments = pgTable('job_assignments', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  jobId: uuid('job_id').references(() => jobPosts.id).notNull(),
+  workerId: uuid('worker_id').references(() => users.id).notNull(),
+  units: integer('units').notNull().default(1),
+  status: varchar('status', { length: 20 }).notNull().default('assigned'),
+  // assigned, in_progress, submitted, approved, rejected
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  assignmentJobIdx: index('assignment_job_idx').on(table.jobId),
+  assignmentWorkerIdx: index('assignment_worker_idx').on(table.workerId),
+}));
+
+// ─── Marketplace: Job Submissions Table ─────────────────────────────────
+export const jobSubmissions = pgTable('job_submissions', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  jobId: uuid('job_id').references(() => jobPosts.id).notNull(),
+  assignmentId: uuid('assignment_id').references(() => jobAssignments.id),
+  bidId: uuid('bid_id').references(() => jobBids.id),
+  workerId: uuid('worker_id').references(() => users.id).notNull(),
+  proof: text('proof').notNull(),
+  proofMediaUrls: text('proof_media_urls').array().default([]),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  // pending, approved, rejected
+  posterComment: text('poster_comment'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  submissionJobIdx: index('submission_job_idx').on(table.jobId),
+  submissionWorkerIdx: index('submission_worker_idx').on(table.workerId),
+}));
+
+// ─── Marketplace: Job Escrow Table ──────────────────────────────────────
+export const jobEscrow = pgTable('job_escrow', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  jobId: uuid('job_id').references(() => jobPosts.id).notNull().unique(),
+  posterId: uuid('poster_id').references(() => users.id).notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('held'),
+  // held, released, refunded
+  releasedTo: uuid('released_to').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  escrowJobIdx: uniqueIndex('escrow_job_idx').on(table.jobId),
 }));
 
 // ─── Old Tables (kept for reference, to be removed after migration) ──────

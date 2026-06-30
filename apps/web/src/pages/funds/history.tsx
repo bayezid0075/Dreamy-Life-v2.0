@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
 interface Transaction {
@@ -20,19 +20,16 @@ export default function FundsHistoryPage() {
   const [filter, setFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
 
-  useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
-    fetchTransactions();
-  }, [isAuthenticated, accessToken, router, filter, timeRange]);
+  const fetchRef = useRef<{ token: string | null; timeRange: string }>({ token: accessToken, timeRange });
+  fetchRef.current = { token: accessToken, timeRange };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
+    const { token, timeRange: currentRange } = fetchRef.current;
+    if (!token) return;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=funds&filter=${timeRange}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=funds&filter=${currentRange}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.status === 401) { clearAuth(); router.replace('/login'); return; }
       if (res.ok) {
@@ -41,7 +38,37 @@ export default function FundsHistoryPage() {
       }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  };
+  }, [clearAuth, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) {
+      router.replace('/login');
+      return;
+    }
+    fetchTransactions();
+  }, [isAuthenticated, accessToken, filter, timeRange, fetchTransactions]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchTransactions();
+    };
+    const handleFocus = () => fetchTransactions();
+    const handleRouteChange = (url: string) => {
+      if (url === '/funds/history') fetchTransactions();
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [isAuthenticated, accessToken, fetchTransactions]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);

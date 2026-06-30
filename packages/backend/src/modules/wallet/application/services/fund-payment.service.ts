@@ -82,7 +82,7 @@ export class FundPaymentService {
           purpose: 'fund_addition',
         },
         redirect_url: this.successUrl,
-        return_type: 'POST',
+        return_type: 'GET',
         cancel_url: this.cancelUrl,
         webhook_url: this.webhookUrl,
       }),
@@ -139,6 +139,8 @@ export class FundPaymentService {
       return { success: false, message: 'Missing user_id in payment metadata' };
     }
 
+    await this.creditFundsBalance(userId, amount);
+
     if (existing) {
       await this.db
         .update(schema.fundPayments)
@@ -167,8 +169,6 @@ export class FundPaymentService {
         status: 'completed',
       });
     }
-
-    await this.creditFundsBalance(userId, amount);
 
     await this.sendPaymentNotifications(userId, amount);
 
@@ -221,6 +221,7 @@ export class FundPaymentService {
         body: `৳${amount.toFixed(2)} has been added to your funds balance.`,
         icon: 'payments',
         type: 'targeted',
+        category: 'app',
         createdBy: userId,
       });
 
@@ -232,6 +233,7 @@ export class FundPaymentService {
           body: `User ${username} added ৳${amount.toFixed(2)} to their funds.`,
           icon: 'account_balance',
           type: 'targeted',
+          category: 'app',
           createdBy: userId,
         });
 

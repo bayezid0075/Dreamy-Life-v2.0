@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray, Min, IsObject } from 'class-validator';
 
 export class CreateProductDto {
   @ApiProperty({ description: 'Product name', example: 'Luna Glo Lamp' })
@@ -17,7 +17,55 @@ export class CreateProductDto {
   @IsNotEmpty()
   category: string;
 
-  @ApiProperty({ description: 'Product price', example: 120.00 })
+  @ApiPropertyOptional({ description: 'Product subcategory', example: 'table_lamp' })
+  @IsOptional()
+  @IsString()
+  subcategory?: string;
+
+  @ApiProperty({ description: 'Actual/original price', example: 150.00 })
+  @IsNumber()
+  @Min(0)
+  actualPrice: number;
+
+  @ApiPropertyOptional({ description: 'Discount/sale price', example: 120.00 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  discountPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Delivery area', example: 'inside_dhaka', enum: ['inside_dhaka', 'outside_dhaka'] })
+  @IsOptional()
+  @IsString()
+  deliveryArea?: string;
+
+  @ApiPropertyOptional({ description: 'Delivery charge inside Dhaka', example: 60 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  deliveryChargeInside?: number;
+
+  @ApiPropertyOptional({ description: 'Delivery charge outside Dhaka', example: 120 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  deliveryChargeOutside?: number;
+
+  @ApiPropertyOptional({ description: 'Available colors', type: [String], example: ['Red', 'Blue', 'Green'] })
+  @IsOptional()
+  @IsArray()
+  colors?: string[];
+
+  @ApiPropertyOptional({ description: 'Available sizes', type: [String], example: ['S', 'M', 'L', 'XL'] })
+  @IsOptional()
+  @IsArray()
+  sizes?: string[];
+
+  @ApiPropertyOptional({ description: 'Variant prices by color/size', example: { 'Red-L': { price: 500 }, 'Blue-M': { price: 450 } } })
+  @IsOptional()
+  @IsObject()
+  variantPrices?: Record<string, { price: number }>;
+
+  @ApiProperty({ description: 'Base/display price', example: 120.00 })
   @IsNumber()
   @Min(0)
   price: number;
@@ -54,7 +102,56 @@ export class UpdateProductDto {
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ description: 'Product price' })
+  @ApiPropertyOptional({ description: 'Product subcategory' })
+  @IsOptional()
+  @IsString()
+  subcategory?: string;
+
+  @ApiPropertyOptional({ description: 'Actual/original price' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  actualPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Discount/sale price' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  discountPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Delivery area', enum: ['inside_dhaka', 'outside_dhaka'] })
+  @IsOptional()
+  @IsString()
+  deliveryArea?: string;
+
+  @ApiPropertyOptional({ description: 'Delivery charge inside Dhaka' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  deliveryChargeInside?: number;
+
+  @ApiPropertyOptional({ description: 'Delivery charge outside Dhaka' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  deliveryChargeOutside?: number;
+
+  @ApiPropertyOptional({ description: 'Available colors', type: [String] })
+  @IsOptional()
+  @IsArray()
+  colors?: string[];
+
+  @ApiPropertyOptional({ description: 'Available sizes', type: [String] })
+  @IsOptional()
+  @IsArray()
+  sizes?: string[];
+
+  @ApiPropertyOptional({ description: 'Variant prices by color/size' })
+  @IsOptional()
+  @IsObject()
+  variantPrices?: Record<string, { price: number }>;
+
+  @ApiPropertyOptional({ description: 'Base/display price' })
   @IsOptional()
   @IsNumber()
   @Min(0)

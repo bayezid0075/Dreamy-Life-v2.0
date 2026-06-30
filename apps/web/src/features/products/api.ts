@@ -6,6 +6,15 @@ export interface Product {
   name: string;
   description?: string;
   category: string;
+  subcategory?: string;
+  actualPrice: number;
+  discountPrice?: number;
+  deliveryArea: string;
+  deliveryChargeInside: number;
+  deliveryChargeOutside: number;
+  colors: string[];
+  sizes: string[];
+  variantPrices: Record<string, { price: number }>;
   price: number;
   stock: number;
   sku: string;
@@ -24,12 +33,45 @@ export const getMyProducts = async () => {
   return response.data;
 };
 
-export const createProduct = async (data: { name: string; description?: string; category: string; price: number; stock: number; sku?: string; imageUrls?: string[] }) => {
+export const createProduct = async (data: {
+  name: string;
+  description?: string;
+  category: string;
+  subcategory?: string;
+  actualPrice: number;
+  discountPrice?: number;
+  deliveryArea?: string;
+  deliveryChargeInside?: number;
+  deliveryChargeOutside?: number;
+  colors?: string[];
+  sizes?: string[];
+  variantPrices?: Record<string, { price: number }>;
+  price: number;
+  stock: number;
+  sku?: string;
+  imageUrls?: string[];
+}) => {
   const response = await api.post('/vendor/products', data);
   return response.data;
 };
 
-export const updateProduct = async (id: string, data: { name?: string; description?: string; category?: string; price?: number; stock?: number; imageUrls?: string[] }) => {
+export const updateProduct = async (id: string, data: {
+  name?: string;
+  description?: string;
+  category?: string;
+  subcategory?: string;
+  actualPrice?: number;
+  discountPrice?: number;
+  deliveryArea?: string;
+  deliveryChargeInside?: number;
+  deliveryChargeOutside?: number;
+  colors?: string[];
+  sizes?: string[];
+  variantPrices?: Record<string, { price: number }>;
+  price?: number;
+  stock?: number;
+  imageUrls?: string[];
+}) => {
   const response = await api.patch(`/vendor/products/${id}`, data);
   return response.data;
 };

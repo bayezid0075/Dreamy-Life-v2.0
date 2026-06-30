@@ -13,6 +13,7 @@ interface UserNotification {
   body: string;
   icon?: string;
   type: string;
+  category: string;
   sentAt?: string;
   createdAt: string;
   read: boolean;
@@ -59,13 +60,15 @@ export default function NotificationsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'social' | 'app'>('all');
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
 
   const fetchNotifications = useCallback(
-    async (pageNum: number, append = false) => {
+    async (pageNum: number, append = false, tab?: string) => {
+      const category = tab || activeTab;
       try {
-        const res = await fetch(`${API_URL}/notifications?page=${pageNum}&limit=20`, {
+        const res = await fetch(`${API_URL}/notifications?page=${pageNum}&limit=20&category=${category}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const data = await res.json();
@@ -82,7 +85,7 @@ export default function NotificationsPage() {
         console.error('Failed to fetch notifications', err);
       }
     },
-    [API_URL, accessToken],
+    [API_URL, accessToken, activeTab],
   );
 
   useEffect(() => {
@@ -111,6 +114,11 @@ export default function NotificationsPage() {
     }
   }, [loading]);
 
+  useEffect(() => {
+    setPage(1);
+    fetchNotifications(1, false, activeTab);
+  }, [activeTab]);
+
   const handleMarkAsRead = async (id: string) => {
     try {
       await fetch(`${API_URL}/notifications/${id}/read`, {
@@ -129,7 +137,7 @@ export default function NotificationsPage() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await fetch(`${API_URL}/notifications/read-all`, {
+      await fetch(`${API_URL}/notifications/read-all?category=${activeTab}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -157,6 +165,12 @@ export default function NotificationsPage() {
       navigator.clipboard.writeText(user.ownRefercode);
     }
   };
+
+  const tabs = [
+    { key: 'all', label: 'All' },
+    { key: 'social', label: 'Social' },
+    { key: 'app', label: 'App' },
+  ];
 
   if (loading) {
     return (
@@ -240,6 +254,23 @@ export default function NotificationsPage() {
       </header>
 
       <main className="pt-20 md:pt-28 pb-10 md:pb-20 px-6 max-w-[1280px] mx-auto min-h-screen flex flex-col">
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 w-full max-w-2xl mx-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as typeof activeTab)}
+              className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all ${
+                activeTab === tab.key
+                  ? 'bg-[#1A1A1A] text-white shadow-lg shadow-black/10'
+                  : 'bg-white/50 backdrop-blur-[24px] text-[#45474b] hover:bg-white/60 border border-white/30'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex justify-between items-end mb-8 w-full max-w-2xl mx-auto">
           <p className="text-sm text-[#45474b]">
             {unreadCount > 0 ? `You have ${unreadCount} unread notifications.` : 'All caught up!'}
@@ -259,7 +290,11 @@ export default function NotificationsPage() {
           {notifications.length === 0 && (
             <div className="glass-panel rounded-xl p-12 text-center">
               <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4">notifications_none</span>
-              <p className="text-[#45474b]">No notifications yet</p>
+              <p className="text-[#45474b]">
+                {activeTab === 'social' && 'No social notifications'}
+                {activeTab === 'app' && 'No app notifications'}
+                {activeTab === 'all' && 'No notifications yet'}
+              </p>
             </div>
           )}
 
@@ -283,7 +318,12 @@ export default function NotificationsPage() {
 
                 <div className="flex-grow min-w-0">
                   <div className="flex justify-between items-start mb-1">
-                    <h2 className="font-bold truncate text-[#1c1b1b]">{n.title}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-bold truncate text-[#1c1b1b]">{n.title}</h2>
+                      {n.category === 'social' && (
+                        <span className="px-2 py-0.5 rounded-full bg-[#ffd1dc] text-[#78555e] text-[10px] font-semibold">Social</span>
+                      )}
+                    </div>
                     <span className="flex-shrink-0 ml-2 text-xs font-semibold text-[#76777b]">
                       {n.sentAt ? getTimeAgo(n.sentAt) : getTimeAgo(n.createdAt)}
                     </span>

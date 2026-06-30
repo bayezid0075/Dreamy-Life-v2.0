@@ -220,7 +220,17 @@ export class PostController {
   }
 
   @Get('users/search/all')
-  async searchAllUsers(@Query('q') query: string, @Req() req: any) {
-    return this.postService.searchAllUsers(req.user.userId, query);
+  async searchAllUsers(
+    @Query('q') query: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Req() req: any,
+  ) {
+    return this.postService.searchAllUsers(
+      req.user.userId,
+      query,
+      parseInt(page || '1'),
+      parseInt(limit || '30'),
+    );
   }
 }

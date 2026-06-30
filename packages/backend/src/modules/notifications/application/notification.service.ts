@@ -15,6 +15,7 @@ export class NotificationService {
     body: string;
     icon?: string;
     type?: string;
+    category?: string;
     scheduledAt?: Date;
     createdBy: string;
   }) {
@@ -25,6 +26,7 @@ export class NotificationService {
         body: data.body,
         icon: data.icon,
         type: data.type || 'broadcast',
+        category: data.category || 'app',
         status: data.scheduledAt ? 'scheduled' : 'draft',
         scheduledAt: data.scheduledAt,
         createdBy: data.createdBy,
@@ -38,6 +40,7 @@ export class NotificationService {
     title: string;
     body: string;
     icon?: string;
+    category?: string;
     createdBy: string;
   }) {
     const [notification] = await this.db
@@ -47,6 +50,7 @@ export class NotificationService {
         body: data.body,
         icon: data.icon,
         type: 'targeted',
+        category: data.category || 'app',
         status: 'sent',
         sentAt: new Date(),
         totalRecipients: 1,
@@ -216,8 +220,13 @@ export class NotificationService {
     };
   }
 
-  async getUserNotifications(userId: string, page = 1, limit = 20) {
+  async getUserNotifications(userId: string, page = 1, limit = 20, category?: string) {
     const offset = (page - 1) * limit;
+
+    const conditions = [eq(schema.notificationRecipients.userId, userId)];
+    if (category && category !== 'all') {
+      conditions.push(eq(schema.notifications.category, category));
+    }
 
     const items = await this.db
       .select({
@@ -226,6 +235,7 @@ export class NotificationService {
         body: schema.notifications.body,
         icon: schema.notifications.icon,
         type: schema.notifications.type,
+        category: schema.notifications.category,
         sentAt: schema.notifications.sentAt,
         createdAt: schema.notifications.createdAt,
         read: schema.notificationRecipients.read,
@@ -237,10 +247,19 @@ export class NotificationService {
         schema.notificationRecipients,
         eq(schema.notifications.id, schema.notificationRecipients.notificationId),
       )
-      .where(eq(schema.notificationRecipients.userId, userId))
+      .where(and(...conditions))
       .orderBy(desc(schema.notifications.createdAt))
       .limit(limit)
       .offset(offset);
+
+    const unreadConditions = [
+      eq(schema.notificationRecipients.userId, userId),
+      eq(schema.notificationRecipients.read, false),
+      eq(schema.notifications.status, 'sent'),
+    ];
+    if (category && category !== 'all') {
+      unreadConditions.push(eq(schema.notifications.category, category));
+    }
 
     const unreadCount = await this.db
       .select({ count: count() })
@@ -249,13 +268,7 @@ export class NotificationService {
         schema.notifications,
         eq(schema.notificationRecipients.notificationId, schema.notifications.id),
       )
-      .where(
-        and(
-          eq(schema.notificationRecipients.userId, userId),
-          eq(schema.notificationRecipients.read, false),
-          eq(schema.notifications.status, 'sent'),
-        ),
-      );
+      .where(and(...unreadConditions));
 
     return {
       items,
@@ -290,22 +303,54 @@ export class NotificationService {
     return { success: true };
   }
 
-  async markAllAsRead(userId: string) {
-    const recipients = await this.db
-      .select()
+  async getUnreadCount(userId: string, category?: string) {
+    const conditions = [
+      eq(schema.notificationRecipients.userId, userId),
+      eq(schema.notificationRecipients.read, false),
+      eq(schema.notifications.status, 'sent'),
+    ];
+    if (category && category !== 'all') {
+      conditions.push(eq(schema.notifications.category, category));
+    }
+
+    const result = await this.db
+      .select({ count: count() })
       .from(schema.notificationRecipients)
-      .where(
-        and(
-          eq(schema.notificationRecipients.userId, userId),
-          eq(schema.notificationRecipients.read, false),
-        ),
-      );
+      .innerJoin(
+        schema.notifications,
+        eq(schema.notificationRecipients.notificationId, schema.notifications.id),
+      )
+      .where(and(...conditions));
+
+    return result[0]?.count || 0;
+  }
+
+  async markAllAsRead(userId: string, category?: string) {
+    const conditions = [
+      eq(schema.notificationRecipients.userId, userId),
+      eq(schema.notificationRecipients.read, false),
+    ];
+    if (category && category !== 'all') {
+      conditions.push(eq(schema.notifications.category, category));
+    }
+
+    const recipients = await this.db
+      .select({
+        recipientId: schema.notificationRecipients.id,
+        notificationId: schema.notificationRecipients.notificationId,
+      })
+      .from(schema.notificationRecipients)
+      .innerJoin(
+        schema.notifications,
+        eq(schema.notificationRecipients.notificationId, schema.notifications.id),
+      )
+      .where(and(...conditions));
 
     for (const r of recipients) {
       await this.db
         .update(schema.notificationRecipients)
         .set({ read: true, readAt: new Date() })
-        .where(eq(schema.notificationRecipients.id, r.id));
+        .where(eq(schema.notificationRecipients.id, r.recipientId));
 
       await this.db
         .update(schema.notifications)
@@ -314,24 +359,5 @@ export class NotificationService {
     }
 
     return { updated: recipients.length };
-  }
-
-  async getUnreadCount(userId: string) {
-    const result = await this.db
-      .select({ count: count() })
-      .from(schema.notificationRecipients)
-      .innerJoin(
-        schema.notifications,
-        eq(schema.notificationRecipients.notificationId, schema.notifications.id),
-      )
-      .where(
-        and(
-          eq(schema.notificationRecipients.userId, userId),
-          eq(schema.notificationRecipients.read, false),
-          eq(schema.notifications.status, 'sent'),
-        ),
-      );
-
-    return result[0]?.count || 0;
   }
 }
