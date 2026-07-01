@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NotificationService } from './application/notification.service';
+import { NotificationGateway } from './application/notification.gateway';
 import { PushService } from './application/push.service';
 import { PushTokenService } from './application/push-token.service';
 import { NotificationController } from './interfaces/notification.controller';
@@ -23,7 +24,7 @@ import { UserGuard } from './guards/user.guard';
     }),
   ],
   controllers: [NotificationController, PushController],
-  providers: [NotificationService, PushService, PushTokenService, UserGuard],
-  exports: [NotificationService, PushService, PushTokenService, UserGuard],
+  providers: [NotificationService, NotificationGateway, PushService, PushTokenService, UserGuard],
+  exports: [NotificationService, NotificationGateway, PushService, PushTokenService, UserGuard],
 })
 export class NotificationsModule {}

@@ -104,6 +104,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .to(`conversation:${data.conversationId}`)
       .emit('message:new', message);
 
+    setTimeout(async () => {
+      await this.chatService.markAsDelivered(data.conversationId, userId);
+      this.server
+        .to(`conversation:${data.conversationId}`)
+        .emit('message:status', { messageId: message.id, status: 'delivered' });
+    }, 500);
+
     return message;
   }
 
@@ -147,6 +154,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       conversationId: data.conversationId,
       userId,
       messageId: data.messageId,
+    });
+
+    this.server.to(`conversation:${data.conversationId}`).emit('message:status', {
+      messageId: data.messageId,
+      status: 'read',
     });
   }
 

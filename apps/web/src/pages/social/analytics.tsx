@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
 
@@ -15,6 +16,7 @@ interface UserStats {
 export default function AnalyticsPage() {
   const router = useRouter();
   const { accessToken, isAuthenticated, user: authUser } = useAuthStore();
+  const { unreadCount: unreadNotifCount } = useNotificationStore();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -179,17 +181,22 @@ export default function AnalyticsPage() {
               <span className="material-symbols-outlined mb-1">home</span>
               <span className="text-[10px] font-semibold">Home</span>
             </Link>
-            <Link href="/social-feed" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
-              <span className="material-symbols-outlined mb-1">search</span>
-              <span className="text-[10px] font-semibold">Explore</span>
+            <Link href="/friends" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
+              <span className="material-symbols-outlined mb-1">group</span>
+              <span className="text-[10px] font-semibold">Friends</span>
             </Link>
             <Link href="/posts/create" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
               <span className="material-symbols-outlined mb-1">add_circle</span>
               <span className="text-[10px] font-semibold">Create</span>
             </Link>
-            <Link href="/notifications" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300">
-              <span className="material-symbols-outlined mb-1">auto_awesome</span>
-              <span className="text-[10px] font-semibold">Vibe</span>
+            <Link href="/notifications" className="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-all duration-300 relative">
+              <span className="material-symbols-outlined mb-1">notifications</span>
+              <span className="text-[10px] font-semibold">Alerts</span>
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-0.5 right-1 min-w-[16px] h-4 bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center px-1">
+                  {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                </span>
+              )}
             </Link>
             <Link
               href="/social/profile"

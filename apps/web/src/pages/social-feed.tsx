@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useNotificationSocket } from '@/hooks/useNotificationSocket';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
@@ -45,6 +46,7 @@ function formatCount(n: number): string {
 export default function FeedPage() {
   const router = useRouter();
   const { accessToken, isAuthenticated, user } = useAuthStore();
+  useNotificationSocket();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -474,14 +476,19 @@ export default function FeedPage() {
           <Link href="/social-feed" className="flex flex-col items-center justify-center text-[#5d5e64] font-bold bg-[#f8f8ff]/60 rounded-xl px-5 py-2 relative">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
           </Link>
-          <Link href="/dashboard" className="flex flex-col items-center justify-center text-[#45474b]/70 hover:bg-[#e5e2e1]/40 transition-colors px-5 py-2 rounded-xl">
-            <span className="material-symbols-outlined">ondemand_video</span>
+          <Link href="/friends" className="flex flex-col items-center justify-center text-[#45474b]/70 hover:bg-[#e5e2e1]/40 transition-colors px-5 py-2 rounded-xl">
+            <span className="material-symbols-outlined">group</span>
           </Link>
           <Link href="/posts/create" className="flex flex-col items-center justify-center text-[#45474b]/70 hover:bg-[#e5e2e1]/40 transition-colors px-5 py-2 rounded-xl">
             <span className="material-symbols-outlined">add_circle</span>
           </Link>
-          <Link href="/notifications" className="flex flex-col items-center justify-center text-[#45474b]/70 hover:bg-[#e5e2e1]/40 transition-colors px-5 py-2 rounded-xl">
-            <span className="material-symbols-outlined">auto_awesome</span>
+          <Link href="/notifications" className="flex flex-col items-center justify-center text-[#45474b]/70 hover:bg-[#e5e2e1]/40 transition-colors px-5 py-2 rounded-xl relative">
+            <span className="material-symbols-outlined">notifications</span>
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center px-1">
+                {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+              </span>
+            )}
           </Link>
           <Link href="/social/profile" className="flex flex-col items-center justify-center hover:opacity-80 transition-opacity px-3 py-2 rounded-xl">
             <div className="w-7 h-7 rounded-full bg-[#e5e2e1] flex items-center justify-center border border-[#c6c6cb]">

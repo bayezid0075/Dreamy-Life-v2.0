@@ -21,6 +21,7 @@ export class MarketplaceService {
     amount: number;
     unitPay: number;
     totalUnits?: number;
+    mediaUrls?: string[];
   }) {
     if (data.amount <= 0) throw new BadRequestException('Amount must be positive');
     if (data.unitPay <= 0) throw new BadRequestException('Unit pay must be positive');
@@ -50,6 +51,7 @@ export class MarketplaceService {
         amount: String(data.amount),
         unitPay: String(data.unitPay),
         totalUnits,
+        mediaUrls: data.mediaUrls || [],
       })
       .returning();
 
@@ -110,6 +112,7 @@ export class MarketplaceService {
         filledUnits: schema.jobPosts.filledUnits,
         status: schema.jobPosts.status,
         adminApproved: schema.jobPosts.adminApproved,
+        mediaUrls: schema.jobPosts.mediaUrls,
         createdAt: schema.jobPosts.createdAt,
         updatedAt: schema.jobPosts.updatedAt,
         posterUsername: schema.users.username,
@@ -146,6 +149,7 @@ export class MarketplaceService {
         filledUnits: schema.jobPosts.filledUnits,
         status: schema.jobPosts.status,
         adminApproved: schema.jobPosts.adminApproved,
+        mediaUrls: schema.jobPosts.mediaUrls,
         createdAt: schema.jobPosts.createdAt,
         updatedAt: schema.jobPosts.updatedAt,
         posterUsername: schema.users.username,
@@ -298,6 +302,7 @@ export class MarketplaceService {
         filledUnits: schema.jobPosts.filledUnits,
         status: schema.jobPosts.status,
         adminApproved: schema.jobPosts.adminApproved,
+        mediaUrls: schema.jobPosts.mediaUrls,
         createdAt: schema.jobPosts.createdAt,
         updatedAt: schema.jobPosts.updatedAt,
         posterUsername: schema.users.username,
@@ -339,7 +344,48 @@ export class MarketplaceService {
       .where(eq(schema.jobAssignments.workerId, workerId))
       .orderBy(desc(schema.jobAssignments.createdAt));
 
-    return assignments;
+    const assignmentJobIds = new Set(assignments.map((a) => a.jobId));
+
+    const acceptedBids = await this.db
+      .select({
+        id: schema.jobBids.id,
+        jobId: schema.jobBids.jobId,
+        workerId: schema.jobBids.bidderId,
+        units: sql<number>`1`.as('units'),
+        status: schema.jobBids.status,
+        createdAt: schema.jobBids.createdAt,
+        updatedAt: schema.jobBids.updatedAt,
+        jobTitle: schema.jobPosts.title,
+        jobAmount: schema.jobPosts.amount,
+        jobUnitPay: schema.jobPosts.unitPay,
+        jobType: schema.jobPosts.type,
+        jobStatus: schema.jobPosts.status,
+        posterUsername: schema.users.username,
+        posterFullName: schema.userInfo.fullName,
+        posterAvatarUrl: schema.userInfo.avatarUrl,
+      })
+      .from(schema.jobBids)
+      .innerJoin(schema.jobPosts, eq(schema.jobBids.jobId, schema.jobPosts.id))
+      .innerJoin(schema.users, eq(schema.jobPosts.posterId, schema.users.id))
+      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+      .where(
+        and(
+          eq(schema.jobBids.bidderId, workerId),
+          eq(schema.jobBids.status, 'accepted'),
+        ),
+      )
+      .orderBy(desc(schema.jobBids.createdAt));
+
+    const merged = [...assignments];
+    for (const bid of acceptedBids) {
+      if (!assignmentJobIds.has(bid.jobId)) {
+        merged.push(bid);
+      }
+    }
+
+    return merged.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }
 
   // ─── Bidding (Single Unit) ─────────────────────────────────────────────
@@ -434,7 +480,17 @@ export class MarketplaceService {
         )
       );
 
-    return { success: true, bid };
+    const [assignment] = await this.db
+      .insert(schema.jobAssignments)
+      .values({
+        jobId,
+        workerId: bid.bidderId,
+        units: 1,
+        status: 'in_progress',
+      })
+      .returning();
+
+    return { success: true, bid, assignment };
   }
 
   async rejectBid(jobId: string, bidId: string, posterId: string) {
@@ -584,6 +640,23 @@ export class MarketplaceService {
           proofMediaUrls: proofMediaUrls || [],
         })
         .returning();
+
+      const [singleAssignment] = await this.db
+        .select()
+        .from(schema.jobAssignments)
+        .where(
+          and(
+            eq(schema.jobAssignments.jobId, jobId),
+            eq(schema.jobAssignments.workerId, workerId),
+          ),
+        );
+
+      if (singleAssignment) {
+        await this.db
+          .update(schema.jobAssignments)
+          .set({ status: 'submitted', updatedAt: new Date() })
+          .where(eq(schema.jobAssignments.id, singleAssignment.id));
+      }
 
       return submission;
     } else {

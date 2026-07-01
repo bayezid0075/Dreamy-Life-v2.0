@@ -29,7 +29,11 @@ interface Message {
   content: string | null;
   mediaUrl: string | null;
   mediaType: string | null;
+  replyTo: string | null;
+  isEdited: boolean;
+  isDeleted: boolean;
   createdAt: string;
+  updatedAt: string;
   senderName: string;
   senderAvatar: string | null;
 }
@@ -39,6 +43,7 @@ interface Conversation {
   type: string;
   name: string | null;
   displayName: string | null;
+  avatarUrl: string | null;
   members: { id: string; username: string; fullName: string; avatarUrl: string; role: string }[];
 }
 
@@ -127,6 +132,9 @@ export default function ChatDetailPage() {
           return [...prev, message];
         });
         scrollToBottom();
+        if (message.senderId !== authUser?.id) {
+          markRead(id as string, message.id);
+        }
       }
     });
 
@@ -152,7 +160,7 @@ export default function ChatDetailPage() {
       unsubTypingStart();
       unsubTypingStop();
     };
-  }, [id, isConnected, joinConversation, leaveConversation, onMessage, onTypingStart, onTypingStop, scrollToBottom, authUser?.id]);
+  }, [id, isConnected, joinConversation, leaveConversation, onMessage, onTypingStart, onTypingStop, scrollToBottom, authUser?.id, markRead]);
 
   useEffect(() => {
     scrollToBottom();
@@ -191,8 +199,14 @@ export default function ChatDetailPage() {
   };
 
   const otherMember = conversation?.members?.find((m) => m.id !== authUser?.id);
-  const displayName = conversation?.displayName || conversation?.name || otherMember?.fullName || otherMember?.username || 'Unknown';
-  const isOnline = otherMember ? onlineUsers.has(otherMember.id) : false;
+  const isGroup = conversation?.type === 'group';
+  const displayName = isGroup
+    ? (conversation?.name || 'Group')
+    : (conversation?.displayName || otherMember?.fullName || otherMember?.username || 'Unknown');
+  const headerAvatar = isGroup
+    ? (conversation?.avatarUrl || null)
+    : (otherMember?.avatarUrl || null);
+  const isOnline = !isGroup && otherMember ? onlineUsers.has(otherMember.id) : false;
   const typingText = typingUsers.size > 0 ? `${Array.from(typingUsers).length} typing...` : '';
 
   if (loading) {
@@ -221,8 +235,10 @@ export default function ChatDetailPage() {
               </button>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-surface-container flex items-center justify-center">
-                  {otherMember?.avatarUrl ? (
-                    <img alt={displayName} className="w-full h-full object-cover" src={otherMember.avatarUrl} />
+                  {headerAvatar ? (
+                    <img alt={displayName} className="w-full h-full object-cover" src={headerAvatar} />
+                  ) : isGroup ? (
+                    <span className="material-symbols-outlined text-primary">group</span>
                   ) : (
                     <span className="text-primary font-bold">{displayName[0]?.toUpperCase()}</span>
                   )}
@@ -230,7 +246,7 @@ export default function ChatDetailPage() {
                 <div className="flex flex-col">
                   <h1 className="text-[20px] font-bold text-primary leading-tight">{displayName}</h1>
                   <span className="text-[12px] text-tertiary-fixed-dim font-semibold tracking-wide">
-                    {typingText || (isOnline ? 'Online' : '')}
+                    {typingText || (isGroup ? `${conversation?.members?.length || 0} members` : (isOnline ? 'Online' : ''))}
                   </span>
                 </div>
               </div>
@@ -271,6 +287,18 @@ export default function ChatDetailPage() {
                   <div className={`flex items-end gap-2 max-w-[85%] md:max-w-[70%] ${isSent ? 'self-end' : 'self-start'}`}>
                     {!isSent && (
                       <div className="flex flex-col gap-1">
+                        {isGroup && (
+                          <div className="flex items-center gap-2 ml-1 mb-0.5">
+                            <div className="w-5 h-5 rounded-full overflow-hidden bg-surface-container flex items-center justify-center flex-shrink-0">
+                              {msg.senderAvatar ? (
+                                <img alt={msg.senderName} className="w-full h-full object-cover" src={msg.senderAvatar} />
+                              ) : (
+                                <span className="text-primary text-[8px] font-bold">{msg.senderName?.[0]?.toUpperCase()}</span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-semibold text-tertiary">{msg.senderName}</span>
+                          </div>
+                        )}
                         <div className="chat-bubble-received p-4 rounded-2xl rounded-bl-sm shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                           {msg.content && <p className="text-[16px] text-on-surface leading-relaxed">{msg.content}</p>}
                           {msg.mediaUrl && (
@@ -292,10 +320,7 @@ export default function ChatDetailPage() {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 mr-1">
-                          <span className="text-[11px] text-on-surface-variant/50 font-semibold tracking-wider">{formatTime(msg.createdAt)}</span>
-                          <span className="material-symbols-outlined text-[14px] text-tertiary-fixed-dim" style={{ fontVariationSettings: "'FILL' 0" }}>done_all</span>
-                        </div>
+                        <span className="text-[11px] text-on-surface-variant/50 mr-1 font-semibold tracking-wider">{formatTime(msg.createdAt)}</span>
                       </div>
                     )}
                   </div>

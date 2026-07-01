@@ -2,13 +2,52 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq, desc, count, and, sql, or, inArray } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { NotificationService } from '../../../notifications/application/notification.service';
+import { NotificationGateway } from '../../../notifications/application/notification.gateway';
 
 @Injectable()
 export class PostService {
   constructor(
     @Inject('DATABASE_CONNECTION')
     private db: NodePgDatabase<typeof schema>,
+    private notificationService: NotificationService,
+    private notificationGateway: NotificationGateway,
   ) {}
+
+  private async sendSocialNotification(
+    recipientId: string,
+    senderId: string,
+    title: string,
+    body: string,
+    icon: string,
+  ) {
+    if (recipientId === senderId) return;
+
+    const sender = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, senderId),
+    });
+    const senderInfo = await this.db.query.userInfo.findFirst({
+      where: eq(schema.userInfo.userId, senderId),
+    });
+    const displayName = senderInfo?.fullName || sender?.username || 'Someone';
+
+    const notification = await this.notificationService.sendToUser(recipientId, {
+      title,
+      body: displayName + ' ' + body,
+      icon,
+      category: 'social',
+      createdBy: senderId,
+    });
+
+    this.notificationGateway.notifyUser(recipientId, {
+      id: notification.id,
+      title,
+      body: displayName + ' ' + body,
+      icon,
+      category: 'social',
+      createdAt: notification.createdAt?.toISOString() || new Date().toISOString(),
+    });
+  }
 
   async create(authorId: string, content: string, mediaUrls: string[] = []) {
     const [post] = await this.db
@@ -119,6 +158,14 @@ export class PostService {
         .update(schema.posts)
         .set({ likesCount: sql`${schema.posts.likesCount} + 1` })
         .where(eq(schema.posts.id, postId));
+
+      const post = await this.db.query.posts.findFirst({
+        where: eq(schema.posts.id, postId),
+      });
+      if (post) {
+        this.sendSocialNotification(post.authorId, userId, 'New Like', 'liked your post', 'favorite');
+      }
+
       return { liked: true };
     }
   }
@@ -151,6 +198,13 @@ export class PostService {
       .update(schema.posts)
       .set({ commentsCount: sql`${schema.posts.commentsCount} + 1` })
       .where(eq(schema.posts.id, postId));
+
+    const post = await this.db.query.posts.findFirst({
+      where: eq(schema.posts.id, postId),
+    });
+    if (post) {
+      this.sendSocialNotification(post.authorId, authorId, 'New Comment', 'commented on your post', 'chat_bubble');
+    }
 
     const results = await this.db
       .select({
@@ -347,6 +401,9 @@ export class PostService {
       return { following: false };
     } else {
       await this.db.insert(schema.follows).values({ followerId, followingId });
+
+      this.sendSocialNotification(followingId, followerId, 'New Follower', 'started following you', 'person_add');
+
       return { following: true };
     }
   }
@@ -468,6 +525,8 @@ export class PostService {
       .values({ senderId, receiverId })
       .returning();
 
+    this.sendSocialNotification(receiverId, senderId, 'Friend Request', 'sent you a friend request', 'person_add');
+
     return request;
   }
 
@@ -488,6 +547,8 @@ export class PostService {
       { userId: request.senderId, friendId: request.receiverId },
       { userId: request.receiverId, friendId: request.senderId },
     ]);
+
+    this.sendSocialNotification(request.senderId, userId, 'Friend Request Accepted', 'accepted your friend request', 'check_circle');
 
     return { success: true };
   }

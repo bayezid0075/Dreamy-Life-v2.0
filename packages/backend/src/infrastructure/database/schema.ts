@@ -433,6 +433,7 @@ export const jobPosts = pgTable('job_posts', {
   status: varchar('status', { length: 20 }).notNull().default('pending_approval'),
   // pending_approval, active, in_progress, completed, cancelled, rejected
   adminApproved: boolean('admin_approved').notNull().default(false),
+  mediaUrls: text('media_urls').array().default([]),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({

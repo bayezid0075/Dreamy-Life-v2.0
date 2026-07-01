@@ -108,6 +108,13 @@ export function useSocket() {
     };
   }, []);
 
+  const onMessageStatus = useCallback((callback: (data: { messageId: string; status: string }) => void) => {
+    socketRef.current?.on('message:status', callback);
+    return () => {
+      socketRef.current?.off('message:status', callback);
+    };
+  }, []);
+
   return {
     socket: socketRef.current,
     isConnected,
@@ -123,5 +130,6 @@ export function useSocket() {
     onTypingStop,
     onMessageRead,
     onConversationCreated,
+    onMessageStatus,
   };
 }

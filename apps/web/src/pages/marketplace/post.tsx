@@ -72,6 +72,21 @@ export default function PostJobPage() {
 
     setLoading(true);
     try {
+      const mediaUrls: string[] = [];
+      for (const file of images) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch(`${API_URL}/media/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          mediaUrls.push(uploadData.url);
+        }
+      }
+
       const payload = {
         title: title.trim(),
         description: description.trim(),
@@ -79,6 +94,7 @@ export default function PostJobPage() {
         amount: amountNum,
         unitPay: amountNum / unitCountNum,
         totalUnits: unitCountNum,
+        mediaUrls,
       };
 
       const res = await fetch(`${API_URL}/marketplace/jobs`, {

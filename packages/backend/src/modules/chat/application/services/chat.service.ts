@@ -292,6 +292,10 @@ export class ChatService {
     }
   }
 
+  async markAsDelivered(_conversationId: string, _senderId: string) {
+    // Status column does not exist in database; no-op
+  }
+
   async searchUsers(query: string, currentUserId: string) {
     if (!query || query.length < 2) return [];
 

@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
@@ -24,6 +24,12 @@ export default function CreateGroupPage() {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [activeTab, setActiveTab] = useState<'search' | 'downline'>('search');
+  const [error, setError] = useState<string | null>(null);
+  const [downlineError, setDownlineError] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -39,9 +45,13 @@ export default function CreateGroupPage() {
       if (res.ok) {
         const data = await res.json();
         setDownlineUsers(data.filter((u: User) => !selectedUsers.find((s) => s.id === u.id)));
+        setDownlineError(null);
+      } else {
+        setDownlineError('Failed to load downline members');
       }
     } catch (err) {
       console.error('Failed to fetch downline users', err);
+      setDownlineError('Network error. Please try again.');
     }
   }, [accessToken, selectedUsers]);
 
@@ -57,6 +67,7 @@ export default function CreateGroupPage() {
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`${API_URL}/chat/users/search?q=${encodeURIComponent(q)}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -64,9 +75,12 @@ export default function CreateGroupPage() {
       if (res.ok) {
         const data = await res.json();
         setUsers(data.filter((u: User) => !selectedUsers.find((s) => s.id === u.id)));
+      } else {
+        setError('Failed to search users');
       }
     } catch (err) {
       console.error('Failed to search users', err);
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -77,10 +91,43 @@ export default function CreateGroupPage() {
     return () => clearTimeout(timer);
   }, [query, searchUsers]);
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be under 10MB');
+      return;
+    }
+    setUploadingAvatar(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/media/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAvatarUrl(data.url);
+        setAvatarPreview(URL.createObjectURL(file));
+      } else {
+        setError('Failed to upload image');
+      }
+    } catch (err) {
+      console.error('Failed to upload avatar', err);
+      setError('Network error uploading image');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const addMember = (user: User) => {
     setSelectedUsers((prev) => [...prev, user]);
     setQuery('');
     setUsers([]);
+    setError(null);
   };
 
   const removeMember = (userId: string) => {
@@ -90,24 +137,32 @@ export default function CreateGroupPage() {
   const createGroup = async () => {
     if (!groupName.trim() || selectedUsers.length === 0) return;
     setCreating(true);
+    setError(null);
     try {
+      const body: Record<string, unknown> = {
+        name: groupName.trim(),
+        memberIds: selectedUsers.map((u) => u.id),
+      };
+      if (avatarUrl) body.avatarUrl = avatarUrl;
+
       const res = await fetch(`${API_URL}/chat/conversations/group`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          name: groupName.trim(),
-          memberIds: selectedUsers.map((u) => u.id),
-        }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         const data = await res.json();
         router.push(`/chat/${data.id}`);
+      } else {
+        const errData = await res.json().catch(() => null);
+        setError(errData?.message || 'Failed to create group');
       }
     } catch (err) {
       console.error('Failed to create group', err);
+      setError('Network error. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -141,16 +196,56 @@ export default function CreateGroupPage() {
         </header>
 
         <main className="pt-24 px-4 md:px-6 max-w-2xl mx-auto">
-          {/* Group Name */}
+          {/* Error Toast */}
+          {error && (
+            <div className="mb-4 flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-600 text-[14px] font-medium">
+              <span className="material-symbols-outlined text-[18px]">error</span>
+              <span className="flex-1">{error}</span>
+              <button onClick={() => setError(null)} className="hover:opacity-70 transition-opacity">
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+          )}
+
+          {/* Group Avatar + Name */}
           <div className="glass-panel rounded-2xl p-6 mb-6">
-            <label className="block text-[14px] font-semibold text-on-surface-variant mb-2">Group Name</label>
-            <input
-              type="text"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              placeholder="Enter group name..."
-              className="w-full bg-surface-container-lowest/80 border border-white/40 rounded-xl px-4 py-3 text-[16px] text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-tertiary/30"
-            />
+            <div className="flex items-center gap-5 mb-4">
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white/60 bg-surface-container flex items-center justify-center flex-shrink-0 hover:ring-2 hover:ring-tertiary/30 transition-all group"
+                disabled={uploadingAvatar}
+              >
+                {avatarPreview ? (
+                  <img alt="Group avatar" className="w-full h-full object-cover" src={avatarPreview} />
+                ) : (
+                  <span className="material-symbols-outlined text-3xl text-primary/60">group</span>
+                )}
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploadingAvatar ? (
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+                  )}
+                </div>
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+              <div className="flex-1">
+                <label className="block text-[14px] font-semibold text-on-surface-variant mb-2">Group Name</label>
+                <input
+                  type="text"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Enter group name..."
+                  className="w-full bg-surface-container-lowest/80 border border-white/40 rounded-xl px-4 py-3 text-[16px] text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-tertiary/30"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Selected Members */}
@@ -183,6 +278,7 @@ export default function CreateGroupPage() {
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
+                setError(null);
                 if (e.target.value.length >= 2) setActiveTab('search');
               }}
               className="bg-transparent border-none outline-none w-full text-on-surface placeholder:text-outline-variant text-[16px] p-0"
@@ -245,6 +341,7 @@ export default function CreateGroupPage() {
             ))}
           </div>
 
+          {/* Empty states */}
           {selectedUsers.length === 0 && query.length < 2 && activeTab === 'search' && (
             <div className="text-center py-12">
               <span className="material-symbols-outlined text-5xl text-outline-variant mb-4 block">group_add</span>
@@ -252,7 +349,20 @@ export default function CreateGroupPage() {
             </div>
           )}
 
-          {activeTab === 'downline' && downlineUsers.length === 0 && (
+          {activeTab === 'downline' && downlineError && (
+            <div className="text-center py-12">
+              <span className="material-symbols-outlined text-5xl text-red-400 mb-4 block">error</span>
+              <p className="text-red-500 mb-3">{downlineError}</p>
+              <button
+                onClick={fetchDownline}
+                className="px-4 py-2 rounded-full bg-primary text-on-primary text-[14px] font-semibold hover:opacity-90 transition-opacity"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'downline' && !downlineError && downlineUsers.length === 0 && (
             <div className="text-center py-12">
               <span className="material-symbols-outlined text-5xl text-outline-variant mb-4 block">group</span>
               <p className="text-on-surface-variant">No downline members yet.</p>
