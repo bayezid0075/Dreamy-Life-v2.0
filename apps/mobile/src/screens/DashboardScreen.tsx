@@ -20,7 +20,7 @@ import GlassPanel from '@/shared/components/GlassPanel';
 import BottomNav from '@/shared/components/BottomNav';
 import { useNotificationStore } from '@/shared/stores/notificationStore';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 const PRIMARY_ACTIONS = [
   { icon: '📦', label: 'Add Parcel', bg: '#e9fdff', activeBg: '#2d666d' },

@@ -43,7 +43,7 @@ export class FundPaymentService {
     this.apiKey = this.configService.get<string>('UDDOKTAPAY_API_KEY') || '';
     this.successUrl = this.configService.get<string>('UDDOKTAPAY_FUND_SUCCESS_URL') || 'http://localhost:3000/wallet/payment-success';
     this.cancelUrl = this.configService.get<string>('UDDOKTAPAY_FUND_CANCEL_URL') || 'http://localhost:3000/wallet';
-    this.webhookUrl = this.configService.get<string>('UDDOKTAPAY_FUND_WEBHOOK_URL') || 'http://localhost:4080/wallet/payment-webhook';
+    this.webhookUrl = this.configService.get<string>('UDDOKTAPAY_FUND_WEBHOOK_URL') || 'http://localhost:4000/wallet/payment-webhook';
   }
 
   async createFundPayment(userId: string, amount: number, userEmail?: string, userName?: string): Promise<{ paymentUrl: string; invoiceId: string }> {

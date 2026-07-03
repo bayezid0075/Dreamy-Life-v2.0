@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function PostJobScreen() {
   const router = useRouter();

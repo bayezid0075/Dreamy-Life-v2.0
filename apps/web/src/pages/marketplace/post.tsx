@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function PostJobPage() {
   const router = useRouter();
@@ -12,8 +12,9 @@ export default function PostJobPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [amount, setAmount] = useState('');
+  const [unitPay, setUnitPay] = useState('');
   const [unitCount, setUnitCount] = useState('');
+  const amount = unitPay && unitCount ? String(parseFloat(unitPay) * parseInt(unitCount)) : '';
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [fundsBalance, setFundsBalance] = useState(0);
@@ -63,10 +64,12 @@ export default function PostJobPage() {
   const handlePost = async (asDraft = false) => {
     if (!title.trim()) return alert('Title is required');
     if (!description.trim()) return alert('Description is required');
-    if (!amount || parseFloat(amount) <= 0) return alert('Valid amount is required');
+    if (!unitPay || parseFloat(unitPay) <= 0) return alert('Valid per unit price is required');
+    if (!unitCount || parseInt(unitCount) <= 0) return alert('Unit count is required');
 
-    const amountNum = parseFloat(amount);
-    const unitCountNum = parseInt(unitCount) || 1;
+    const unitPayNum = parseFloat(unitPay);
+    const unitCountNum = parseInt(unitCount);
+    const amountNum = unitPayNum * unitCountNum;
 
     if (!asDraft && amountNum > fundsBalance) return alert('Insufficient funds balance');
 
@@ -92,7 +95,7 @@ export default function PostJobPage() {
         description: description.trim(),
         type: unitCountNum > 1 ? 'multiple' as const : 'single' as const,
         amount: amountNum,
-        unitPay: amountNum / unitCountNum,
+        unitPay: unitPayNum,
         totalUnits: unitCountNum,
         mediaUrls,
       };
@@ -273,18 +276,18 @@ export default function PostJobPage() {
             <h2 className="text-xl font-bold text-[#1c1b1b]">Compensation</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="glass-input rounded-3xl p-5 flex flex-col justify-center group">
-                <label className="text-xs font-semibold text-[#45474b] mb-2 ml-1 transition-colors group-focus-within:text-[#2d666d]" htmlFor="price">Amount</label>
+                <label className="text-xs font-semibold text-[#45474b] mb-2 ml-1 transition-colors group-focus-within:text-[#2d666d]" htmlFor="unit-pay">Per Unit Price</label>
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-[#5d5e64]">$</span>
                   <input
                     className="bg-transparent border-none outline-none text-xl font-bold text-[#1c1b1b] w-full placeholder-[#c6c6cb]/50"
-                    id="price"
+                    id="unit-pay"
                     min="0"
                     placeholder="0.00"
                     step="0.01"
                     type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    value={unitPay}
+                    onChange={(e) => setUnitPay(e.target.value)}
                   />
                 </div>
               </div>
@@ -313,19 +316,19 @@ export default function PostJobPage() {
               </Link>
             </div>
 
-            {amount && (
+            {unitPay && (
               <div className="bg-[#e9fdff]/30 rounded-2xl p-4 border border-[#e9fdff]/30">
                 <p className="text-sm font-bold text-[#2d666d] mb-2">Cost Summary</p>
-                <div className="flex justify-between text-sm text-[#45474b]">
-                  <span>Total Amount:</span>
-                  <span className="font-bold text-[#1c1b1b]">৳{parseFloat(amount || '0').toFixed(2)}</span>
-                </div>
-                {parseInt(unitCount) > 1 && (
+                {parseInt(unitCount || '1') > 1 && (
                   <div className="flex justify-between text-sm text-[#45474b]">
                     <span>Per Unit:</span>
-                    <span className="font-bold text-[#1c1b1b]">৳{(parseFloat(amount || '0') / parseInt(unitCount || '1')).toFixed(2)}</span>
+                    <span className="font-bold text-[#1c1b1b]">৳{parseFloat(unitPay || '0').toFixed(2)}</span>
                   </div>
                 )}
+                <div className="flex justify-between text-sm text-[#45474b]">
+                  <span>Total Amount:</span>
+                  <span className="font-bold text-[#1c1b1b]">৳{(parseFloat(unitPay || '0') * parseInt(unitCount || '1')).toFixed(2)}</span>
+                </div>
               </div>
             )}
           </section>

@@ -132,7 +132,7 @@ export class MarketplaceService {
       .from(schema.jobPosts)
       .where(whereClause);
 
-    return { jobs, total: count, page, limit };
+    return { jobs: jobs.map((j) => this.normalizeJobMediaUrls(j)), total: count, page, limit };
   }
 
   async getJobById(jobId: string) {
@@ -236,7 +236,7 @@ export class MarketplaceService {
       .where(eq(schema.jobSubmissions.jobId, jobId))
       .orderBy(desc(schema.jobSubmissions.createdAt));
 
-    return { ...job, escrow, bids, assignments, submissions };
+    return { ...this.normalizeJobMediaUrls(job), escrow, bids, assignments, submissions };
   }
 
   async getPostedJobs(posterId: string) {
@@ -258,7 +258,7 @@ export class MarketplaceService {
       );
 
     return {
-      jobs,
+      jobs: jobs.map((j) => this.normalizeJobMediaUrls(j)),
       pendingSubmissions: pendingSubmissions[0]?.count || 0,
     };
   }
@@ -315,7 +315,7 @@ export class MarketplaceService {
       .where(and(...conditions))
       .orderBy(desc(schema.jobPosts.createdAt));
 
-    return jobs;
+    return jobs.map((j) => this.normalizeJobMediaUrls(j));
   }
 
   async getAssignedJobs(workerId: string) {
@@ -1043,5 +1043,19 @@ export class MarketplaceService {
       .where(eq(schema.jobPosts.id, jobId));
 
     return job?.type || null;
+  }
+
+  private normalizeJobMediaUrls(job: any) {
+    if (job.mediaUrls && Array.isArray(job.mediaUrls)) {
+      const port = process.env.PORT || '4000';
+      const uploadBaseUrl = process.env.UPLOAD_BASE_URL || `http://localhost:${port}`;
+      job.mediaUrls = job.mediaUrls.map((url: string) => {
+        if (url && url.startsWith('http://localhost:')) {
+          return url.replace(/http:\/\/localhost:\d+/, uploadBaseUrl);
+        }
+        return url;
+      });
+    }
+    return job;
   }
 }

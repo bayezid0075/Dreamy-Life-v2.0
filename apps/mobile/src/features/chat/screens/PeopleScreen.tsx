@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface User {
   id: string;

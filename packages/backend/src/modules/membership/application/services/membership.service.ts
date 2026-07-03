@@ -46,7 +46,7 @@ export class MembershipService implements OnModuleInit {
     this.apiKey = this.configService.get<string>('UDDOKTAPAY_API_KEY') || '';
     this.successUrl = this.configService.get<string>('UDDOKTAPAY_MEMBERSHIP_SUCCESS_URL') || 'http://localhost:3000/membership/payment-success';
     this.cancelUrl = this.configService.get<string>('UDDOKTAPAY_MEMBERSHIP_CANCEL_URL') || 'http://localhost:3000/membership';
-    this.webhookUrl = this.configService.get<string>('UDDOKTAPAY_MEMBERSHIP_WEBHOOK_URL') || 'http://localhost:4080/membership/payment-webhook';
+    this.webhookUrl = this.configService.get<string>('UDDOKTAPAY_MEMBERSHIP_WEBHOOK_URL') || 'http://localhost:4000/membership/payment-webhook';
   }
 
   async onModuleInit() {

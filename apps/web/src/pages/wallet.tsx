@@ -45,7 +45,7 @@ export default function WalletPage() {
     const { token, filter: currentFilter } = fetchDataRef.current;
     if (!token) return;
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       const [walletRes, allTxRes, filteredTxRes] = await Promise.all([
         fetch(`${apiUrl}/wallet`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -94,7 +94,7 @@ export default function WalletPage() {
       return;
     }
     fetchData();
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     fetch(`${apiUrl}/auth/profile`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -161,7 +161,7 @@ export default function WalletPage() {
     if (!amount || amount <= 0 || !accessToken) return;
     setAdding(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/create-payment`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/create-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ amount }),

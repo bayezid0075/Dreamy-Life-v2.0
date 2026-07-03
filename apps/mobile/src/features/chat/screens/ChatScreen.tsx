@@ -61,7 +61,7 @@ export default function ChatScreen({ conversationId }: Props) {
     AsyncStorage.getItem('accessToken').then((t) => {
       setToken(t);
       if (t) {
-        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
         Promise.all([
           fetchMessages(t, conversationId),
           fetchConversationById(t, conversationId),

@@ -14,7 +14,7 @@ import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 import { useNotificationStore } from '@/shared/stores/notificationStore';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface UserNotification {
   id: string;

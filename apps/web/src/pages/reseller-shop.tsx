@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ShopPage() {
   const router = useRouter();

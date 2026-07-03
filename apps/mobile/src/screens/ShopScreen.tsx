@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 const CATEGORIES = [
   { key: '', label: 'All' },

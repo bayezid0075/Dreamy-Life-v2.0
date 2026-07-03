@@ -28,7 +28,7 @@ export default function PointsHistoryPage() {
     const { token, timeRange: currentRange } = fetchRef.current;
     if (!token) return;
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       const [walletRes, txRes] = await Promise.all([
         fetch(`${apiUrl}/wallet`, {
           headers: { Authorization: `Bearer ${token}` },

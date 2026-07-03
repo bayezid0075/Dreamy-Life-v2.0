@@ -62,7 +62,7 @@ export default function NotificationsPage() {
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'social' | 'app'>('all');
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   const fetchNotifications = useCallback(
     async (pageNum: number, append = false, tab?: string) => {

@@ -48,7 +48,7 @@ pnpm drizzle-kit push:pg
 ```bash
 pnpm --filter @dreamy-life/backend run dev
 ```
-The API will be available at `http://localhost:3000`.
+The API will be available at `http://localhost:4000`.
 
 ### 2. Mobile App (Expo)
 ```bash

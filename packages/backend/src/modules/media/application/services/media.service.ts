@@ -11,7 +11,7 @@ export class MediaService {
 
   constructor(private readonly configService: ConfigService) {
     this.uploadDir = path.join(process.cwd(), 'uploads');
-    this.baseUrl = this.configService.get<string>('UPLOAD_BASE_URL') || `http://localhost:${this.configService.get<string>('PORT') || 4080}`;
+    this.baseUrl = this.configService.get<string>('UPLOAD_BASE_URL') || `http://localhost:${this.configService.get<string>('PORT') || 4000}`;
     if (!fs.existsSync(this.uploadDir)) {
       fs.mkdirSync(this.uploadDir, { recursive: true });
     }

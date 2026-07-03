@@ -18,7 +18,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import TopBar from '@/shared/components/TopBar';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 const CATEGORIES = [
   { value: 'home_decor', label: 'Home Decor' },

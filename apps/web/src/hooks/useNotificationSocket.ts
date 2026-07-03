@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useAuthStore } from '@/store/authStore';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export function useNotificationSocket() {
   const socketRef = useRef<Socket | null>(null);

@@ -28,7 +28,7 @@ export default function FundsHistoryPage() {
     if (!token) return;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/transactions?type=funds&filter=${currentRange}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/transactions?type=funds&filter=${currentRange}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.status === 401) { clearAuth(); router.replace('/login'); return; }

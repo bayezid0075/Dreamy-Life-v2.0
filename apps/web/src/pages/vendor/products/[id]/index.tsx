@@ -8,7 +8,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ProductDetailPage() {
   const router = useRouter();

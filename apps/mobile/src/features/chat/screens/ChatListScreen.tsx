@@ -47,7 +47,7 @@ export default function ChatListScreen() {
     AsyncStorage.getItem('accessToken').then((t) => {
       setToken(t);
       if (t) {
-        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
         Promise.all([
           fetchConversations(t).catch(() => []),
           fetchDownlineUsers(t).catch(() => []),

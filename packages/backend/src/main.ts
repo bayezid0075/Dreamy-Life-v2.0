@@ -19,7 +19,7 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: (['http://localhost:3000', 'http://localhost:3001', 'http://localhost:8081', process.env.FRONTEND_URL].filter(Boolean) as string[]),
+    origin: (['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4000', process.env.FRONTEND_URL].filter(Boolean) as string[]),
     credentials: true,
   });
 

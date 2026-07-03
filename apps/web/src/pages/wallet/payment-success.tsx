@@ -21,7 +21,7 @@ export default function PaymentSuccessPage() {
       setInvoiceId(id);
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/wallet/payment-success`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/payment-success`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ invoice_id: id }),

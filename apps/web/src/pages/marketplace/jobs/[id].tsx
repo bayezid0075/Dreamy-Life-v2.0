@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface Job {
   id: string;
@@ -247,7 +247,7 @@ export default function JobDetailPage() {
                 {job.mediaUrls.map((url, i) => (
                   <div key={i} className="min-w-full aspect-video flex items-center justify-center">
                     <img
-                      src={url}
+                      src={url.startsWith('/') ? `${API_URL}${url}` : url}
                       alt={`Job image ${i + 1}`}
                       className="w-full h-full object-cover cursor-pointer"
                       onClick={() => setLightboxImage(url)}
@@ -414,7 +414,7 @@ export default function JobDetailPage() {
           onClick={() => setLightboxImage(null)}
         >
           <img
-            src={lightboxImage}
+            src={lightboxImage.startsWith('/') ? `${API_URL}${lightboxImage}` : lightboxImage}
             alt="Full size"
             className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
           />

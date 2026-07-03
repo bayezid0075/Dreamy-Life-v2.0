@@ -24,7 +24,7 @@ export default function ProfilePage() {
       return;
     }
     fetchProfile(accessToken);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     fetch(`${apiUrl}/notifications/unread-count`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -41,7 +41,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/auth/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) {

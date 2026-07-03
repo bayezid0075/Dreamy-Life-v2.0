@@ -6,7 +6,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#f9a825', confirmed: '#2d666d', shipped: '#1565c0', delivered: '#2e7d32', cancelled: '#93000a',

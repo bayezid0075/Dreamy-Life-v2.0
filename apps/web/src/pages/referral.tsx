@@ -31,7 +31,7 @@ export default function ReferralPage() {
       return;
     }
     fetchData(accessToken);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     fetch(`${apiUrl}/notifications/unread-count`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -49,16 +49,16 @@ export default function ReferralPage() {
   const fetchData = async (token: string) => {
     try {
       const [profileRes, statsRes, downlineRes, treeRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/auth/profile`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/referral/stats`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/referral/downline`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/downline`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/referral/downline/tree`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/downline/tree`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);

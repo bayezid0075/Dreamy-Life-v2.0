@@ -8,7 +8,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
   pending: { bg: 'bg-[#fffde7]', text: 'text-[#f9a825]', icon: 'schedule' },

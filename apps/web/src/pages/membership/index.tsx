@@ -47,7 +47,7 @@ export default function MembershipPage() {
       return;
     }
     fetchData(accessToken);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     fetch(`${apiUrl}/auth/profile`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -71,10 +71,10 @@ export default function MembershipPage() {
   const fetchData = async (token: string) => {
     try {
       const [plansRes, myRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/membership/plans`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/membership/plans`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/membership/my`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/membership/my`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -107,7 +107,7 @@ export default function MembershipPage() {
     setPurchasing(planId);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4080'}/membership/purchase`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/membership/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ planId }),

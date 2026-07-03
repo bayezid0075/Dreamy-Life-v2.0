@@ -92,13 +92,13 @@ SENTRY_ENVIRONMENT=development
 **Web Frontend** — `apps/web/.env`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
 
 **Mobile** — `apps/mobile/.env`:
 
 ```env
-EXPO_PUBLIC_API_URL=http://localhost:3000
+EXPO_PUBLIC_API_URL=http://localhost:4000
 ```
 
 ### 2.3 Start Infrastructure (Database & Redis)
@@ -135,8 +135,8 @@ pnpm --filter @dreamy-life/backend dev
 
 Expected output:
 ```
-Backend is running on: http://localhost:3000
-Swagger docs: http://localhost:3000/api/docs
+Backend is running on: http://localhost:4000
+Swagger docs: http://localhost:4000/api/docs
 ```
 
 > ⚠️ **Important:** On startup, the backend will auto-seed membership plans (basic, standard, smart, vvip). You should see: `Membership plans seeded successfully`
@@ -186,13 +186,13 @@ Expected output:
 Once the backend is running, open Swagger UI at:
 
 ```
-http://localhost:3000/api/docs
+http://localhost:4000/api/docs
 ```
 
 Or via Docker:
 
 ```
-http://localhost:4000/api/docs
+http://localhost:4700/api/docs
 ```
 
 ### 4.2 What You See
@@ -265,12 +265,12 @@ Common error codes:
 
 ## 5. Testing the Backend API
 
-All API endpoints are served at `http://localhost:3000` (locally) or `http://localhost:4000` (Docker).
+All API endpoints are served at `http://localhost:4000` (locally) or `http://localhost:4700` (Docker).
 
 ### 5.1 Health Check
 
 ```bash
-curl http://localhost:3000/
+curl http://localhost:4000/
 ```
 
 **Expected response:**
@@ -314,7 +314,7 @@ All error responses follow a standard format:
 ### 5.1 User Registration (without referral)
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "johndoe",
@@ -345,7 +345,7 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```bash
 # First, register a user to get their referral code
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "referrer",
@@ -355,7 +355,7 @@ curl -X POST http://localhost:3000/auth/register \
 # Note the ownRefercode from the response, e.g. "87654321"
 
 # Then register a second user using that referral code
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "referee",
@@ -370,7 +370,7 @@ curl -X POST http://localhost:3000/auth/register \
 ### 5.3 User Login
 
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:4000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "johndoe",
@@ -401,14 +401,14 @@ curl -X POST http://localhost:3000/auth/login \
 ### 5.4 Token Refresh
 
 ```bash
-curl -X POST http://localhost:3000/auth/refresh \
+curl -X POST http://localhost:4000/auth/refresh \
   -H "Cookie: refresh_token=<your-refresh-token>"
 ```
 
 Or:
 
 ```bash
-curl -X POST http://localhost:3000/auth/refresh \
+curl -X POST http://localhost:4000/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{"refreshToken": "<your-refresh-token>"}'
 ```
@@ -426,7 +426,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 ### 5.5 Get User Profile
 
 ```bash
-curl http://localhost:3000/auth/profile \
+curl http://localhost:4000/auth/profile \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -466,31 +466,31 @@ curl http://localhost:3000/auth/profile \
 
 ```bash
 # Missing fields
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "short"}'
 # Expected: 400 Bad Request with validation error
 
 # Duplicate username
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "johndoe", "phoneNumber": "01799999999", "password": "TestP@ss1"}'
 # Expected: 409 Conflict - "Username already taken"
 
 # Duplicate phone number
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "another", "phoneNumber": "01712345678", "password": "TestP@ss1"}'
 # Expected: 409 Conflict - "Phone number already registered"
 
 # Invalid referral code
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "testuser", "phoneNumber": "01733333333", "password": "TestP@ss1", "referCode": "00000000"}'
 # Expected: 409 Conflict - "Invalid referral code"
 
 # Wrong credentials
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:4000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "johndoe", "password": "wrongpassword"}'
 # Expected: 401 Unauthorized - "Invalid credentials"
@@ -504,7 +504,7 @@ curl -X POST http://localhost:3000/auth/login \
 
 ```bash
 # Get stats for any logged-in user
-curl http://localhost:3000/referral/stats \
+curl http://localhost:4000/referral/stats \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -527,7 +527,7 @@ curl http://localhost:3000/referral/stats \
 ### 6.2 Downline Members (Flat List)
 
 ```bash
-curl http://localhost:3000/referral/downline \
+curl http://localhost:4000/referral/downline \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -555,7 +555,7 @@ curl http://localhost:3000/referral/downline \
 ### 6.3 Downline Tree (Hierarchical)
 
 ```bash
-curl http://localhost:3000/referral/downline/tree \
+curl http://localhost:4000/referral/downline/tree \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -593,7 +593,7 @@ curl http://localhost:3000/referral/downline/tree \
 ### 6.4 Upline (Who referred me)
 
 ```bash
-curl http://localhost:3000/referral/upline \
+curl http://localhost:4000/referral/upline \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -637,7 +637,7 @@ curl -X POST ...  # Register user 2 → note refercode
 ### 7.1 View Membership Plans
 
 ```bash
-curl http://localhost:3000/membership/plans \
+curl http://localhost:4000/membership/plans \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -685,7 +685,7 @@ curl http://localhost:3000/membership/plans \
 ### 7.2 View Current Membership
 
 ```bash
-curl http://localhost:3000/membership/my \
+curl http://localhost:4000/membership/my \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -708,7 +708,7 @@ curl http://localhost:3000/membership/my \
 ```bash
 # First, get the plan ID from /membership/plans
 # Then purchase it
-curl -X POST http://localhost:3000/membership/purchase \
+curl -X POST http://localhost:4000/membership/purchase \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <access-token>" \
   -d '{"planId": "<plan-uuid>"}'
@@ -767,7 +767,7 @@ After purchase commissions have been distributed, check commission history:
 
 ```bash
 # Get membership details (includes commission history)
-curl http://localhost:3000/membership/my \
+curl http://localhost:4000/membership/my \
   -H "Authorization: Bearer <access-token>"
 ```
 
@@ -981,57 +981,57 @@ Open the Expo Go app on your device and scan the QR code from the Metro bundler.
 
 ```bash
 # 1. Health check
-curl http://localhost:3000/          # Should return OK
+curl http://localhost:4000/          # Should return OK
 
 # 2. Register first user (referrer)
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "grandparent", "phoneNumber": "01710000001", "password": "TestP@ss1"}'
 # Save ownRefercode: e.g. "11111111"
 
 # 3. Register second user (with referrer's code)
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "parent", "phoneNumber": "01710000002", "password": "TestP@ss1", "referCode": "11111111"}'
 # Save ownRefercode: e.g. "22222222"
 
 # 4. Register third user (with parent's code)
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "child", "phoneNumber": "01710000003", "password": "TestP@ss1", "referCode": "22222222"}'
 
 # 5. Login as child
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:4000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "child", "password": "TestP@ss1"}'
 # Save accessToken
 
 # 6. Check child's upline
-curl http://localhost:3000/referral/upline -H "Authorization: Bearer <child-token>"
+curl http://localhost:4000/referral/upline -H "Authorization: Bearer <child-token>"
 # Should show: parent (L1), grandparent (L2)
 
 # 7. Login as grandparent
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:4000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "grandparent", "password": "TestP@ss1"}'
 # Save accessToken
 
 # 8. Check grandparent's downline
-curl http://localhost:3000/referral/stats -H "Authorization: Bearer <gp-token>"
+curl http://localhost:4000/referral/stats -H "Authorization: Bearer <gp-token>"
 # Should show: totalReferrals=2, level1Count=1, level2Count=1
 
 # 9. Get downline tree
-curl http://localhost:3000/referral/downline/tree -H "Authorization: Bearer <gp-token>"
+curl http://localhost:4000/referral/downline/tree -H "Authorization: Bearer <gp-token>"
 
 # 10. Purchase membership (as child)
-curl -X POST http://localhost:3000/membership/purchase \
+curl -X POST http://localhost:4000/membership/purchase \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <child-token>" \
   -d '{"planId": "<basic-plan-uuid>"}'
 # Should return commissions to parent (L1) and grandparent (L2)
 
 # 11. Check parent's commission
-curl http://localhost:3000/membership/my -H "Authorization: Bearer <parent-token>"
+curl http://localhost:4000/membership/my -H "Authorization: Bearer <parent-token>"
 # Should show commissionEarned > 0
 ```
 
@@ -1112,20 +1112,20 @@ Expected containers:
 |----------------|---------|------|
 | `dreamy-life-db` | PostgreSQL 15 | 5432 |
 | `dreamy-life-redis` | Redis 7 | 6379 |
-| `dreamy-life-backend` | NestJS API | **4000** |
+| `dreamy-life-backend` | NestJS API | **4700** (maps to 4000) |
 | `dreamy-life-web` | Next.js User Web | 3000 |
 | `dreamy-life-admin` | Next.js Admin | 3001 |
 
 ### 12.3 Test Docker Services
 
 ```bash
-# Backend API (port 4000 in Docker)
-curl http://localhost:4000/
+# Backend API (port 4700 in Docker, maps to 4000 internally)
+curl http://localhost:4700/
 
-# User Web Frontend
+# User Web Frontend (port 8080 in Docker, maps to 3000 internally)
 curl http://localhost:3000/
 
-# Admin Panel
+# Admin Panel (port 8081 in Docker, maps to 3001 internally)
 curl http://localhost:3001/
 ```
 
