@@ -80,7 +80,11 @@ export class AuthService {
 
     // If referred, build referral tree (up to 10 levels)
     if (referredBy) {
-      await this.referralService.buildReferralTree(newUser.id, referredBy);
+      try {
+        await this.referralService.buildReferralTree(newUser.id, referredBy);
+      } catch (err) {
+        console.error('Referral tree build failed (non-fatal):', err);
+      }
     }
 
     // Generate tokens
@@ -209,20 +213,30 @@ export class AuthService {
     address?: string;
     city?: string;
     country?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    fatherName?: string;
+    motherName?: string;
+    preferredLanguage?: string;
   }) {
     const existing = await this.db.query.userInfo.findFirst({
       where: eq(schema.userInfo.userId, userId),
     });
 
+    const updateData: Record<string, any> = { ...data, updatedAt: new Date() };
+    if (data.dateOfBirth) {
+      updateData.dateOfBirth = new Date(data.dateOfBirth);
+    }
+
     if (existing) {
       await this.db
         .update(schema.userInfo)
-        .set({ ...data, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(schema.userInfo.userId, userId));
     } else {
       await this.db.insert(schema.userInfo).values({
         userId,
-        ...data,
+        ...updateData,
       });
     }
 

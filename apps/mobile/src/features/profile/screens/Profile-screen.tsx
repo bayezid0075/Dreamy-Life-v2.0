@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  FlatList,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -14,6 +14,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 import PostCard from '@/features/feed/components/PostCard';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -30,16 +31,18 @@ export default function ProfileScreen() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [username, setUsername] = useState('');
+  const [profile, setProfile] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
     const token = await AsyncStorage.getItem('accessToken');
     if (!token) return;
     const userId = id || (await AsyncStorage.getItem('userId'));
 
-    const [statsRes, postsRes, userRes] = await Promise.all([
+    const [statsRes, postsRes, userRes, meRes] = await Promise.all([
       fetch(`${API_URL}/users/${userId}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
       fetch(`${API_URL}/users/${userId}/posts?page=1&limit=50`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${API_URL}/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } }),
       fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } }),
     ]);
 
@@ -50,8 +53,23 @@ export default function ProfileScreen() {
 
     if (userRes.ok) {
       const userData = await userRes.json();
-      setUsername(userData.data?.user?.username || 'User');
+      setProfile(userData);
     }
+
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      const myId = meData.data?.user?.id;
+      setCurrentUserId(myId);
+
+      if (myId && userId && myId !== userId) {
+        const followRes = await fetch(`${API_URL}/users/${userId}/followers`, { headers: { Authorization: `Bearer ${token}` } });
+        if (followRes.ok) {
+          const followers = await followRes.json();
+          setIsFollowing(followers.some((f: any) => f.id === myId));
+        }
+      }
+    }
+
     setLoading(false);
   }, [id]);
 
@@ -87,6 +105,13 @@ export default function ProfileScreen() {
     );
   }
 
+  const username = profile?.username || 'User';
+  const fullName = profile?.info?.fullName;
+  const bio = profile?.info?.bio;
+  const avatarUrl = profile?.info?.avatarUrl;
+  const coverImage = profile?.info?.coverImage;
+  const isOwnProfile = currentUserId && id && currentUserId === id;
+
   return (
     <View style={styles.container}>
       <AuroraBackground />
@@ -94,18 +119,27 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Cover */}
-        <View style={styles.cover} />
+        {coverImage ? (
+          <Image source={{ uri: resolveMediaUrl(coverImage) }} style={styles.cover} resizeMode="cover" />
+        ) : (
+          <View style={styles.cover} />
+        )}
 
         {/* Avatar */}
         <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{username[0]?.toUpperCase()}</Text>
-          </View>
+          {avatarUrl ? (
+            <Image source={{ uri: resolveMediaUrl(avatarUrl) }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{username[0]?.toUpperCase()}</Text>
+            </View>
+          )}
         </View>
 
         {/* Info */}
         <Text style={styles.username}>{username}</Text>
-        <Text style={styles.bio}>Digital creator exploring the intersection of minimalist design and everyday magic.</Text>
+        {fullName ? <Text style={styles.fullName}>{fullName}</Text> : null}
+        {bio ? <Text style={styles.bio}>{bio}</Text> : null}
 
         {/* Stats */}
         <GlassPanel borderRadius={12} style={styles.statsBar}>
@@ -126,11 +160,13 @@ export default function ProfileScreen() {
         </GlassPanel>
 
         {/* Follow Button */}
-        <TouchableOpacity style={[styles.followBtn, isFollowing && styles.followingBtn]} onPress={handleFollow}>
-          <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
-            {isFollowing ? 'Following' : 'Follow'}
-          </Text>
-        </TouchableOpacity>
+        {!isOwnProfile && (
+          <TouchableOpacity style={[styles.followBtn, isFollowing && styles.followingBtn]} onPress={handleFollow}>
+            <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
+              {isFollowing ? 'Following' : 'Follow'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Posts */}
         <Text style={styles.sectionTitle}>Recent Activity</Text>
@@ -169,7 +205,8 @@ const styles = StyleSheet.create({
   avatarContainer: { alignItems: 'center', marginTop: -50, marginBottom: 16 },
   avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#e9fdff', alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: 'rgba(255,255,255,0.6)' },
   avatarText: { color: '#2d666d', fontWeight: 'bold', fontSize: 32 },
-  username: { fontSize: 24, fontWeight: '700', color: '#1c1b1b', marginBottom: 8 },
+  username: { fontSize: 24, fontWeight: '700', color: '#1c1b1b', marginBottom: 4 },
+  fullName: { fontSize: 16, fontWeight: '500', color: '#45474b', marginBottom: 4 },
   bio: { fontSize: 14, color: '#45474b', textAlign: 'center', marginBottom: 24, paddingHorizontal: 24 },
   statsBar: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', padding: 16, marginBottom: 20 },
   statItem: { alignItems: 'center' },

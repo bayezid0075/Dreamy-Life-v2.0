@@ -47,8 +47,12 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
           >
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-full bg-[#f8f8ff] border-2 border-white shadow-md flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[#5d5e64] text-3xl">person</span>
+                <div className="w-14 h-14 rounded-full bg-[#f8f8ff] border-2 border-white shadow-md flex items-center justify-center overflow-hidden">
+                  {user?.info?.avatarUrl ? (
+                    <img alt="Avatar" className="w-full h-full object-cover" src={user.info.avatarUrl} />
+                  ) : (
+                    <span className="material-symbols-outlined text-[#5d5e64] text-3xl">person</span>
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">

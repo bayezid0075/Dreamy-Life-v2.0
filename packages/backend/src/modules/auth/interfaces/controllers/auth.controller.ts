@@ -132,7 +132,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateProfile(@Req() req: Request, @Body() body: Record<string, any>) {
     const userId = this.extractUserId(req);
-    const allowedFields = ['fullName', 'bio', 'avatarUrl', 'coverImage', 'email', 'address', 'city', 'country'];
+    const allowedFields = ['fullName', 'bio', 'avatarUrl', 'coverImage', 'email', 'address', 'city', 'country', 'dateOfBirth', 'gender', 'fatherName', 'motherName', 'preferredLanguage'];
     const updateData: Record<string, any> = {};
     for (const key of allowedFields) {
       if (body[key] !== undefined) {

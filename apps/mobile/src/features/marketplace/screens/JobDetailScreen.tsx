@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { MediaTypeOptions } from 'expo-image-picker';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -480,13 +481,13 @@ export default function JobDetailScreen() {
                 <TouchableOpacity
                   key={i}
                   activeOpacity={0.9}
-                  onPress={() => setJobLightboxUrl(url)}
+                  onPress={() => setJobLightboxUrl(resolveMediaUrl(url))}
                   style={[
                     styles.imageSliderSlide,
                     { transform: [{ translateX: -currentSlide * (Dimensions.get('window').width - 32) }] },
                   ]}
                 >
-                  <Image source={{ uri: url }} style={styles.imageSliderImage} resizeMode="cover" />
+                  <Image source={{ uri: resolveMediaUrl(url) }} style={styles.imageSliderImage} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -690,8 +691,8 @@ export default function JobDetailScreen() {
                   >
                     {submission.proofMediaUrls.map((url: string, idx: number) => (
                       isImageUrl(url) ? (
-                        <TouchableOpacity key={idx} onPress={() => setLightboxUrl(url)}>
-                          <Image source={{ uri: url }} style={styles.mediaThumb} />
+                        <TouchableOpacity key={idx} onPress={() => setLightboxUrl(resolveMediaUrl(url))}>
+                          <Image source={{ uri: resolveMediaUrl(url) }} style={styles.mediaThumb} />
                         </TouchableOpacity>
                       ) : (
                         <TouchableOpacity

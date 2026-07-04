@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -215,7 +216,7 @@ export default function FriendsScreen() {
     <View style={styles.userItem}>
       <TouchableOpacity onPress={() => router.push(`/users/${item.id}`)} style={styles.avatarContainer}>
         {item.avatarUrl ? (
-          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+          <Image source={{ uri: resolveMediaUrl(item.avatarUrl) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Text style={styles.avatarText}>{item.username[0]?.toUpperCase()}</Text>
@@ -245,7 +246,7 @@ export default function FriendsScreen() {
     <View style={styles.userItem}>
       <TouchableOpacity onPress={() => router.push(`/users/${item.userId || item.id}`)} style={styles.avatarContainer}>
         {item.avatarUrl ? (
-          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+          <Image source={{ uri: resolveMediaUrl(item.avatarUrl) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.requestAvatar]}>
             <Text style={styles.avatarText}>{item.username[0]?.toUpperCase()}</Text>
@@ -279,7 +280,7 @@ export default function FriendsScreen() {
     <View style={styles.userItem}>
       <TouchableOpacity onPress={() => router.push(`/users/${item.userId || item.id}`)} style={styles.avatarContainer}>
         {item.avatarUrl ? (
-          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+          <Image source={{ uri: resolveMediaUrl(item.avatarUrl) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Text style={styles.avatarText}>{item.username[0]?.toUpperCase()}</Text>
@@ -304,7 +305,7 @@ export default function FriendsScreen() {
     <View style={styles.userItem}>
       <TouchableOpacity onPress={() => router.push(`/users/${item.id}`)} style={styles.avatarContainer}>
         {item.avatarUrl ? (
-          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+          <Image source={{ uri: resolveMediaUrl(item.avatarUrl) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Text style={styles.avatarText}>{item.username[0]?.toUpperCase()}</Text>

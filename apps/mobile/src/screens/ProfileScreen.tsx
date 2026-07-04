@@ -15,20 +15,14 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import BottomNav from '@/shared/components/BottomNav';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '@/shared/i18n';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
-const SETTINGS_ITEMS = [
-  { icon: '👤', label: 'Personal Information' },
-  { icon: '📍', label: 'Shipping Address' },
-  { icon: '🧾', label: 'Order History' },
-  { icon: '💳', label: 'Payment Methods' },
-  { icon: '👛', label: 'Wallet', href: '/wallet' as const },
-  { icon: '🔔', label: 'Notifications', href: '/notifications' as const },
-];
-
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -63,6 +57,17 @@ export default function ProfileScreen() {
 
   const displayName = user?.info?.fullName || user?.username || 'User';
   const displayEmail = user?.info?.email || 'No email set';
+  const avatarUrl = user?.info?.avatarUrl;
+
+  const settingsItems = [
+    { icon: '👤', label: t('personalInformation'), href: '/edit-profile' as const },
+    { icon: '⚙️', label: t('settings'), href: '/settings' as const },
+    { icon: '📍', label: t('shippingAddress') },
+    { icon: '🧾', label: t('orderHistory') },
+    { icon: '💳', label: t('paymentMethods') },
+    { icon: '👛', label: t('wallet'), href: '/wallet' as const },
+    { icon: '🔔', label: t('notifications'), href: '/notifications' as const },
+  ];
 
   if (loading) {
     return (
@@ -83,14 +88,18 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrap}>
             <Animated.View style={[styles.avatarRing, { transform: [{ scale: pulseAnim }] }]} />
-            <View style={[styles.avatar, styles.avatarFallback]}>
-              <Text style={styles.avatarFallbackText}>👤</Text>
-            </View>
+            {avatarUrl ? (
+              <Image source={{ uri: resolveMediaUrl(avatarUrl) }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarFallbackText}>{user?.username?.[0]?.toUpperCase() || '👤'}</Text>
+              </View>
+            )}
           </View>
           <Text style={styles.displayName}>{displayName}</Text>
           <Text style={styles.displayEmail}>{displayEmail}</Text>
-          <TouchableOpacity style={styles.editBtn}>
-            <Text style={styles.editBtnText}>Edit Profile</Text>
+          <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
+            <Text style={styles.editBtnText}>{t('editProfile')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -99,22 +108,22 @@ export default function ProfileScreen() {
           <View style={styles.statsRow}>
             <View style={[styles.statItem, { borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.3)' }]}>
               <Text style={styles.statValue}>12</Text>
-              <Text style={styles.statLabel}>Orders</Text>
+              <Text style={styles.statLabel}>{t('orders')}</Text>
             </View>
             <View style={[styles.statItem, { borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.3)' }]}>
               <Text style={styles.statValue}>48</Text>
-              <Text style={styles.statLabel}>Wishlist</Text>
+              <Text style={styles.statLabel}>{t('wishlist')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>3</Text>
-              <Text style={styles.statLabel}>Coupons</Text>
+              <Text style={styles.statLabel}>{t('coupons')}</Text>
             </View>
           </View>
         </GlassPanel>
 
         {/* Settings List */}
         <View style={styles.settingsCard}>
-          {SETTINGS_ITEMS.map((item, i) => (
+          {settingsItems.map((item, i) => (
             <React.Fragment key={item.label}>
               <TouchableOpacity
                 style={styles.settingsItem}
@@ -126,14 +135,14 @@ export default function ProfileScreen() {
                 </View>
                 <Text style={styles.settingsArrow}>›</Text>
               </TouchableOpacity>
-              {i < SETTINGS_ITEMS.length - 1 && <View style={styles.divider} />}
+              {i < settingsItems.length - 1 && <View style={styles.divider} />}
             </React.Fragment>
           ))}
         </View>
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutText}>🚪 Log Out</Text>
+          <Text style={styles.logoutText}>🚪 {t('logOut')}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 100 }} />

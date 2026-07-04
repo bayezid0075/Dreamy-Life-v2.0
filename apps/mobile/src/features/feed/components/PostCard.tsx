@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import GlassPanel from '@/shared/components/GlassPanel';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 interface PostCardProps {
   id: string;
@@ -65,7 +64,7 @@ export default function PostCard({
         <Text style={styles.content}>{content}</Text>
         {mediaUrls?.length > 0 && (
           <Image
-            source={{ uri: mediaUrls[0].startsWith('/') ? `${API_URL}${mediaUrls[0]}` : mediaUrls[0] }}
+            source={{ uri: resolveMediaUrl(mediaUrls[0]) }}
             style={styles.image}
             resizeMode="cover"
           />

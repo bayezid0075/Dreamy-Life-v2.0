@@ -13,6 +13,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -99,7 +100,7 @@ export default function PostDetailScreen() {
           <Text style={styles.postContent}>{post.content}</Text>
           {post.mediaUrls?.length > 0 && (
             <Image
-              source={{ uri: post.mediaUrls[0].startsWith('/') ? `${API_URL}${post.mediaUrls[0]}` : post.mediaUrls[0] }}
+              source={{ uri: resolveMediaUrl(post.mediaUrls[0]) }}
               style={styles.postImage}
               resizeMode="cover"
             />

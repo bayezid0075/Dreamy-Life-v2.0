@@ -35,6 +35,10 @@ export const userInfo = pgTable('user_info', {
   city: varchar('city', { length: 100 }),
   country: varchar('country', { length: 100 }),
   dateOfBirth: timestamp('date_of_birth'),
+  gender: varchar('gender', { length: 20 }),
+  fatherName: varchar('father_name', { length: 255 }),
+  motherName: varchar('mother_name', { length: 255 }),
+  preferredLanguage: varchar('preferred_language', { length: 5 }).default('en'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -43,7 +47,7 @@ export const userInfo = pgTable('user_info', {
 export const referrals = pgTable('referrals', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
   referrerId: uuid('referrer_id').references(() => users.id).notNull(),
-  referredId: uuid('referred_id').references(() => users.id).notNull().unique(),
+  referredId: uuid('referred_id').references(() => users.id).notNull(),
   level: integer('level').notNull(), // 1-10: direct (1) to 10 levels deep
   commissionRate: decimal('commission_rate', { precision: 5, scale: 2 }).default('0.00'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

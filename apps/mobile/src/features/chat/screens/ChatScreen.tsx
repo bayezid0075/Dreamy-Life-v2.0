@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchMessages, fetchConversationById } from '../api';
 import { useSocket } from '../hooks/useSocket';
 import AuroraBackground from '@/shared/components/AuroraBackground';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -71,7 +72,7 @@ export default function ChatScreen({ conversationId }: Props) {
         ]).then(([msgData, convData, profile]) => {
           setMessages(msgData.messages);
           setConversation(convData);
-          if (profile?.id) setUserId(profile.id);
+          if (profile?.data?.id) setUserId(profile.data.id);
         }).catch(console.error);
       }
     });
@@ -154,7 +155,7 @@ export default function ChatScreen({ conversationId }: Props) {
               <View style={[styles.bubble, styles.receivedBubble]}>
                 {item.content && <Text style={styles.receivedText}>{item.content}</Text>}
                 {item.mediaUrl && (
-                  <Image source={{ uri: item.mediaUrl }} style={styles.messageImage} resizeMode="cover" />
+                  <Image source={{ uri: resolveMediaUrl(item.mediaUrl) }} style={styles.messageImage} resizeMode="cover" />
                 )}
               </View>
               <Text style={styles.receivedTime}>{formatTime(item.createdAt)}</Text>
@@ -165,7 +166,7 @@ export default function ChatScreen({ conversationId }: Props) {
               <View style={[styles.bubble, styles.sentBubble]}>
                 {item.content && <Text style={styles.sentText}>{item.content}</Text>}
                 {item.mediaUrl && (
-                  <Image source={{ uri: item.mediaUrl }} style={styles.messageImage} resizeMode="cover" />
+                  <Image source={{ uri: resolveMediaUrl(item.mediaUrl) }} style={styles.messageImage} resizeMode="cover" />
                 )}
               </View>
               <View style={styles.sentTimeRow}>

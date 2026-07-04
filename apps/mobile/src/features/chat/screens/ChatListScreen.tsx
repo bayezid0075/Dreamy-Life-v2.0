@@ -57,7 +57,7 @@ export default function ChatListScreen() {
         ]).then(([convs, downline, profile]) => {
           setConversations(convs);
           setDownlineUsers(downline);
-          if (profile?.id) setUserId(profile.id);
+          if (profile?.data?.id) setUserId(profile.data.id);
         }).finally(() => setLoading(false));
       }
     });

@@ -15,6 +15,7 @@ export default function ReferralPage() {
   const [downline, setDownline] = useState<any[]>([]);
   const [tree, setTree] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
+  const [upline, setUpline] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedLevels, setExpandedLevels] = useState<Record<number, boolean>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -48,7 +49,7 @@ export default function ReferralPage() {
 
   const fetchData = async (token: string) => {
     try {
-      const [profileRes, statsRes, downlineRes, treeRes] = await Promise.all([
+      const [profileRes, statsRes, downlineRes, treeRes, uplineRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
@@ -59,6 +60,9 @@ export default function ReferralPage() {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/downline/tree`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/referral/upline`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -84,6 +88,10 @@ export default function ReferralPage() {
       if (treeRes.ok) {
         const treeData = await treeRes.json();
         setTree(treeData.data);
+      }
+      if (uplineRes.ok) {
+        const uplineData = await uplineRes.json();
+        setUpline(uplineData.data?.upline || []);
       }
     } catch (err) {
       console.error('Failed to fetch data', err);
@@ -175,6 +183,30 @@ export default function ReferralPage() {
         </header>
 
         <main className="max-w-[1280px] mx-auto px-6 pt-20 md:pt-28 pb-24 space-y-6 relative z-10">
+          {/* Direct Upline */}
+          {upline.length > 0 && (
+            <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
+              <h2 className="text-lg font-bold mb-4">Referred By</h2>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#2d666d] to-[#98d0d7] flex items-center justify-center text-white font-bold text-lg shadow-md">
+                  {upline[0].username?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-semibold text-base">{upline[0].username}</p>
+                  <p className="text-xs text-[#45474b]">Level 1 &middot; Direct Referrer</p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* No Upline Message */}
+          {upline.length === 0 && !loading && (
+            <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
+              <h2 className="text-lg font-bold mb-2">Referred By</h2>
+              <p className="text-sm text-[#45474b]">No one. You are at the top of the chain!</p>
+            </section>
+          )}
+
           {/* Referral Link Card */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <h2 className="text-lg font-bold mb-3">Your Referral Link</h2>

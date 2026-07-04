@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 import GlassPanel from '@/shared/components/GlassPanel';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
@@ -135,7 +136,7 @@ export default function FeedScreen() {
       {/* Image */}
       {item.mediaUrls?.length > 0 && (
         <Image
-          source={{ uri: item.mediaUrls[0].startsWith('/') ? `${API_URL}${item.mediaUrls[0]}` : item.mediaUrls[0] }}
+          source={{ uri: resolveMediaUrl(item.mediaUrls[0]) }}
           style={styles.postImage}
           resizeMode="cover"
         />

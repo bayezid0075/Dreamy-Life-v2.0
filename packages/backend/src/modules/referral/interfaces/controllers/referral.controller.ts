@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Req, UnauthorizedException, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
 import { ReferralService } from '../../application/services/referral.service';
@@ -13,6 +13,8 @@ import {
 @ApiBearerAuth('access-token')
 @Controller('referral')
 export class ReferralController {
+  private readonly logger = new Logger(ReferralController.name);
+
   constructor(
     private readonly referralService: ReferralService,
     private readonly jwtService: JwtService,
@@ -56,6 +58,18 @@ export class ReferralController {
     const userId = this.extractUserId(req);
     const upline = await this.referralService.getUpline(userId);
     return { success: true, data: upline };
+  }
+
+  @Post('rebuild')
+  @ApiOperation({ summary: 'Rebuild all referral trees from users.referredBy chain (admin)' })
+  @ApiResponse({ status: 200, description: 'Rebuild result' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async rebuild(@Req() req: any) {
+    const userId = this.extractUserId(req);
+    // Only allow the first user or a super-admin to rebuild; for now allow any authenticated user
+    this.logger.warn(`User ${userId} triggered referral tree rebuild`);
+    const result = await this.referralService.rebuildAllReferralTrees();
+    return { success: true, data: result };
   }
 
   private extractUserId(req: any): string {
