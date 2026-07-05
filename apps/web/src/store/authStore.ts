@@ -28,6 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (token: string, user: AuthUser) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('accessToken', token);
+      localStorage.setItem('authUser', JSON.stringify(user));
     }
     set({ accessToken: token, user, isAuthenticated: true });
   },
@@ -35,6 +36,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearAuth: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('authUser');
     }
     set({ accessToken: null, user: null, isAuthenticated: false });
   },
@@ -42,8 +44,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   hydrate: () => {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('accessToken');
+      const userStr = localStorage.getItem('authUser');
+      const user = userStr ? JSON.parse(userStr) : null;
       if (token) {
-        set({ accessToken: token, isAuthenticated: true, hydrated: true });
+        set({ accessToken: token, user, isAuthenticated: true, hydrated: true });
       } else {
         set({ hydrated: true });
       }

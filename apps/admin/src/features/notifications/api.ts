@@ -13,7 +13,10 @@ export interface Notification {
   title: string;
   body: string;
   icon?: string;
+  imageUrl?: string;
+  link?: string;
   type: string;
+  category?: string;
   status: string;
   scheduledAt?: string;
   sentAt?: string;
@@ -44,8 +47,25 @@ export interface CreateNotificationInput {
   title: string;
   body: string;
   icon?: string;
+  imageUrl?: string;
+  link?: string;
   type?: string;
+  category?: string;
   scheduledAt?: string;
+}
+
+export async function uploadMedia(file: File): Promise<string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${API_URL}/media/upload`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (!res.ok) throw new Error('Failed to upload media');
+  const data = await res.json();
+  return data.url || data.data?.url;
 }
 
 export async function createNotification(input: CreateNotificationInput): Promise<Notification> {

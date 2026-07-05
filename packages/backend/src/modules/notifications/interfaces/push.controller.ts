@@ -46,6 +46,13 @@ export class PushController {
     return { count };
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const notification = await this.notificationService.findOne(id);
+    if (!notification) return { data: null };
+    return { data: notification };
+  }
+
   @Patch(':id/read')
   async markAsRead(@Param('id') id: string, @Req() req: any) {
     return this.notificationService.markAsRead(id, req.user.userId);

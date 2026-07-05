@@ -36,6 +36,7 @@ export class NotificationController {
         title: dto.title,
         body: dto.body,
         icon: dto.icon,
+        imageUrl: dto.imageUrl,
         notificationId: notification.id,
       });
 

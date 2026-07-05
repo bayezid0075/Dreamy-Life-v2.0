@@ -424,41 +424,45 @@ export class ChatService {
   }
 
   async getDownlineUsers(userId: string) {
-    const downlineRefs = await this.db
-      .select({
-        referredId: schema.referrals.referredId,
-        level: schema.referrals.level,
-      })
-      .from(schema.referrals)
-      .where(eq(schema.referrals.referrerId, userId))
-      .orderBy(schema.referrals.level);
-
-    if (downlineRefs.length === 0) return [];
-
-    const userIds = [...new Set(downlineRefs.map((r) => r.referredId))];
-
-    const users = await this.db
-      .select({
-        id: schema.users.id,
-        username: schema.users.username,
-        fullName: schema.userInfo.fullName,
-        avatarUrl: schema.userInfo.avatarUrl,
-      })
-      .from(schema.users)
-      .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
-      .where(sql`${schema.users.id} IN ${userIds}`);
-
-    const levelMap = new Map<string, number>();
-    downlineRefs.forEach((r) => {
-      const existing = levelMap.get(r.referredId);
-      if (!existing || r.level < existing) {
-        levelMap.set(r.referredId, r.level);
-      }
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
     });
+    if (!user) return [];
 
-    return users.map((u) => ({
-      ...u,
-      level: levelMap.get(u.id) || 1,
-    }));
+    type DownlineUser = { id: string; username: string; fullName: string | null; avatarUrl: string | null; level: number };
+    const members: DownlineUser[] = [];
+
+    const collectMembers = async (parentReferCode: string, currentLevel: number) => {
+      if (currentLevel > 10) return;
+
+      const children = await this.db
+        .select({
+          id: schema.users.id,
+          username: schema.users.username,
+          fullName: schema.userInfo.fullName,
+          avatarUrl: schema.userInfo.avatarUrl,
+          ownRefercode: schema.users.ownRefercode,
+        })
+        .from(schema.users)
+        .leftJoin(schema.userInfo, eq(schema.users.id, schema.userInfo.userId))
+        .where(eq(schema.users.referredBy, parentReferCode));
+
+      for (const child of children) {
+        members.push({
+          id: child.id,
+          username: child.username,
+          fullName: child.fullName,
+          avatarUrl: child.avatarUrl,
+          level: currentLevel,
+        });
+
+        if (child.ownRefercode) {
+          await collectMembers(child.ownRefercode, currentLevel + 1);
+        }
+      }
+    };
+
+    await collectMembers(user.ownRefercode, 1);
+    return members;
   }
 }

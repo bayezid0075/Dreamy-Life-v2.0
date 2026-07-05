@@ -14,6 +14,8 @@ export class NotificationService {
     title: string;
     body: string;
     icon?: string;
+    imageUrl?: string;
+    link?: string;
     type?: string;
     category?: string;
     scheduledAt?: Date;
@@ -25,6 +27,8 @@ export class NotificationService {
         title: data.title,
         body: data.body,
         icon: data.icon,
+        imageUrl: data.imageUrl,
+        link: data.link,
         type: data.type || 'broadcast',
         category: data.category || 'app',
         status: data.scheduledAt ? 'scheduled' : 'draft',
@@ -40,6 +44,8 @@ export class NotificationService {
     title: string;
     body: string;
     icon?: string;
+    imageUrl?: string;
+    link?: string;
     category?: string;
     createdBy: string;
   }) {
@@ -49,6 +55,8 @@ export class NotificationService {
         title: data.title,
         body: data.body,
         icon: data.icon,
+        imageUrl: data.imageUrl,
+        link: data.link,
         type: 'targeted',
         category: data.category || 'app',
         status: 'sent',
@@ -234,6 +242,8 @@ export class NotificationService {
         title: schema.notifications.title,
         body: schema.notifications.body,
         icon: schema.notifications.icon,
+        imageUrl: schema.notifications.imageUrl,
+        link: schema.notifications.link,
         type: schema.notifications.type,
         category: schema.notifications.category,
         sentAt: schema.notifications.sentAt,

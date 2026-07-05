@@ -276,17 +276,17 @@ export default function ChatDetailPage() {
                 formatDate(msg.createdAt) !== formatDate(messages[idx - 1].createdAt);
 
               return (
-                <div key={msg.id}>
+                <div key={msg.id} className={`flex flex-col ${isSent ? 'items-end' : 'items-start'}`}>
                   {showDateDivider && (
-                    <div className="flex justify-center my-2">
+                    <div className="flex justify-center my-2 w-full">
                       <span className="px-4 py-1.5 rounded-full glass-panel text-[12px] font-semibold text-on-surface-variant/70 tracking-widest uppercase shadow-sm">
                         {formatDate(msg.createdAt)}
                       </span>
                     </div>
                   )}
-                  <div className={`flex items-end gap-2 max-w-[85%] md:max-w-[70%] ${isSent ? 'self-end' : 'self-start'}`}>
+                  <div className={`flex items-end gap-2 ${isSent ? 'flex-row-reverse' : ''}`}>
                     {!isSent && (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 max-w-[85%] md:max-w-[70%]">
                         {isGroup && (
                           <div className="flex items-center gap-2 ml-1 mb-0.5">
                             <div className="w-5 h-5 rounded-full overflow-hidden bg-surface-container flex items-center justify-center flex-shrink-0">
@@ -311,7 +311,7 @@ export default function ChatDetailPage() {
                       </div>
                     )}
                     {isSent && (
-                      <div className="flex flex-col gap-1 items-end">
+                      <div className="flex flex-col gap-1 items-end max-w-[85%] md:max-w-[70%]">
                         <div className="chat-bubble-sent p-4 rounded-2xl rounded-br-sm">
                           {msg.content && <p className="text-[16px] leading-relaxed">{msg.content}</p>}
                           {msg.mediaUrl && (

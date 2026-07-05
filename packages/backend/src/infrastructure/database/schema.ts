@@ -119,6 +119,8 @@ export const notifications = pgTable('notifications', {
   title: varchar('title', { length: 255 }).notNull(),
   body: text('body').notNull(),
   icon: varchar('icon', { length: 50 }),
+  imageUrl: text('image_url'),
+  link: text('link'),
   type: varchar('type', { length: 20 }).notNull().default('broadcast'), // broadcast, targeted
   category: varchar('category', { length: 20 }).notNull().default('app'), // social, app
   status: varchar('status', { length: 20 }).notNull().default('draft'), // draft, scheduled, sent

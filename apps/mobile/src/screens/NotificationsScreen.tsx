@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -21,6 +22,8 @@ interface UserNotification {
   title: string;
   body: string;
   icon?: string;
+  imageUrl?: string;
+  link?: string;
   type: string;
   category: string;
   sentAt?: string;
@@ -219,7 +222,7 @@ export default function NotificationsScreen() {
             return (
               <TouchableOpacity
                 key={n.recipientId}
-                onPress={() => !n.read && handleMarkAsRead(n.recipientId)}
+                onPress={() => router.push(`/notifications/${n.id}` as any)}
                 activeOpacity={0.7}
               >
                 <GlassPanel
@@ -230,7 +233,11 @@ export default function NotificationsScreen() {
                     {!n.read && <View style={styles.unreadBar} />}
 
                     <View style={[styles.notifIcon, { backgroundColor: iconData.bg }]}>
-                      <Text style={styles.notifEmoji}>{iconData.emoji}</Text>
+                      {n.imageUrl ? (
+                        <Image source={{ uri: n.imageUrl }} style={styles.notifIconImage} />
+                      ) : (
+                        <Text style={styles.notifEmoji}>{iconData.emoji}</Text>
+                      )}
                     </View>
 
                     <View style={styles.notifContent}>
@@ -242,6 +249,7 @@ export default function NotificationsScreen() {
                               <Text style={styles.socialBadgeText}>Social</Text>
                             </View>
                           )}
+                          {n.link ? <Text style={styles.linkIcon}>🔗</Text> : null}
                         </View>
                         <Text style={styles.notifTime}>
                           {n.sentAt ? getTimeAgo(n.sentAt) : getTimeAgo(n.createdAt)}
@@ -302,6 +310,8 @@ const styles = StyleSheet.create({
   socialBadgeText: { fontSize: 10, fontWeight: '600', color: '#78555e' },
   notifTime: { fontSize: 12, fontWeight: '600', color: '#76777b', marginLeft: 8, flexShrink: 0 },
   notifMessage: { fontSize: 13, color: '#45474b' },
+  notifIconImage: { width: 48, height: 48, borderRadius: 24 },
+  linkIcon: { fontSize: 10, marginLeft: 4 },
   loadMoreBtn: { marginTop: 4 },
   loadMoreCard: { paddingVertical: 12, alignItems: 'center' },
   loadMoreText: { fontSize: 14, fontWeight: '600', color: '#2d666d' },

@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { VendorProfile } from '@/features/vendor/api';
+import { useNotificationStore } from '@/store/notificationStore';
 
 interface SideDrawerProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ interface SideDrawerProps {
 export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handleLogout, copyReferCode }: SideDrawerProps) {
   const [vendorExpanded, setVendorExpanded] = useState(false);
   const hasVendor = !!vendorProfile;
+  const { unreadCount } = useNotificationStore();
+  const isAdmin = user?.role === 'admin';
 
   return (
     <div className={`fixed inset-0 z-[60] transition-all duration-500 ease-in-out ${isOpen ? '' : 'pointer-events-none'}`}>
@@ -143,8 +146,27 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                   <span className="material-symbols-outlined">account_balance_wallet</span>
                   <span>Wallet</span>
                 </Link>
+                <Link href="/notifications" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
+                  <span className="material-symbols-outlined">notifications</span>
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="ml-auto bg-[#ff6b6b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>
+                  )}
+                </Link>
               </div>
             </div>
+
+            {isAdmin && (
+              <div>
+                <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">Admin</h4>
+                <div className="space-y-1">
+                  <Link href="/admin/notifications" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
+                    <span className="material-symbols-outlined">campaign</span>
+                    <span>Manage Notifications</span>
+                  </Link>
+                </div>
+              </div>
+            )}
 
             <div>
               <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">Vendor</h4>

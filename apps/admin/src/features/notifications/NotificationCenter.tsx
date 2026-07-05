@@ -7,6 +7,7 @@ import {
   deleteNotification,
   getNotifications,
   getNotificationStats,
+  uploadMedia,
   type Notification,
   type NotificationStats,
   type CreateNotificationInput,
@@ -39,10 +40,15 @@ export default function NotificationCenter() {
     title: '',
     body: '',
     icon: 'campaign',
+    imageUrl: '',
+    link: '',
     type: 'broadcast',
+    category: 'app',
   });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -85,7 +91,8 @@ export default function NotificationCenter() {
         await sendNotification(created.id);
         setSending(null);
       }
-      setForm({ title: '', body: '', icon: 'campaign', type: 'broadcast' });
+      setForm({ title: '', body: '', icon: 'campaign', imageUrl: '', link: '', type: 'broadcast', category: 'app' });
+      setImagePreview('');
       setActiveTab('history');
       setPage(1);
     } catch (err) {
@@ -115,6 +122,25 @@ export default function NotificationCenter() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError('Image must be under 5MB');
+      return;
+    }
+    setUploadingImage(true);
+    setFormError('');
+    try {
+      const url = await uploadMedia(file);
+      setForm((prev) => ({ ...prev, imageUrl: url }));
+      setImagePreview(url);
+    } catch {
+      setFormError('Failed to upload image');
+    }
+    setUploadingImage(false);
   };
 
   const tabs: { key: Tab; label: string; icon: string }[] = [
@@ -169,7 +195,7 @@ export default function NotificationCenter() {
               className="w-full bg-surface-container-high/50 border border-outline-variant rounded-lg px-md py-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
             />
           </div>
-          <div className="grid grid-cols-2 gap-md">
+           <div className="grid grid-cols-2 gap-md">
             <div className="space-y-sm">
               <label className="text-on-surface-variant font-body-sm text-body-sm font-medium">Icon</label>
               <select
@@ -183,6 +209,21 @@ export default function NotificationCenter() {
               </select>
             </div>
             <div className="space-y-sm">
+              <label className="text-on-surface-variant font-body-sm text-body-sm font-medium">Category</label>
+              <select
+                value={form.category || 'app'}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full bg-surface-container-high/50 border border-outline-variant rounded-lg px-md py-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              >
+                <option value="app">App</option>
+                <option value="social">Social</option>
+                <option value="marketing">Marketing</option>
+                <option value="system">System</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-md">
+            <div className="space-y-sm">
               <label className="text-on-surface-variant font-body-sm text-body-sm font-medium">Type</label>
               <select
                 value={form.type}
@@ -192,6 +233,41 @@ export default function NotificationCenter() {
                 <option value="broadcast">Broadcast (All Users)</option>
               </select>
             </div>
+            <div className="space-y-sm">
+              <label className="text-on-surface-variant font-body-sm text-body-sm font-medium">Link (optional)</label>
+              <input
+                value={form.link || ''}
+                onChange={(e) => setForm({ ...form, link: e.target.value })}
+                placeholder="https://example.com"
+                className="w-full bg-surface-container-high/50 border border-outline-variant rounded-lg px-md py-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              />
+            </div>
+          </div>
+          <div className="space-y-sm">
+            <label className="text-on-surface-variant font-body-sm text-body-sm font-medium">Image (optional)</label>
+            {imagePreview ? (
+              <div className="relative rounded-lg overflow-hidden">
+                <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover" />
+                <button
+                  onClick={() => { setImagePreview(''); setForm((prev) => ({ ...prev, imageUrl: '' })); }}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors">
+                {uploadingImage ? (
+                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-3xl text-on-surface-variant mb-1">add_photo_alternate</span>
+                    <span className="text-body-sm text-on-surface-variant">Click to upload (max 5MB)</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              </label>
+            )}
           </div>
           <div className="flex gap-sm pt-sm">
             <button
@@ -248,8 +324,12 @@ export default function NotificationCenter() {
             <div className="space-y-sm">
               {notifications.map((n) => (
                 <div key={n.id} className="glass-panel rounded-xl p-md flex items-center gap-md">
-                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-on-primary">{n.icon || 'notifications'}</span>
+                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {n.imageUrl ? (
+                      <img src={n.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-on-primary">{n.icon || 'notifications'}</span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-sm">
@@ -261,6 +341,7 @@ export default function NotificationCenter() {
                       }`}>
                         {n.status}
                       </span>
+                      {n.link && <span className="material-symbols-outlined text-sm text-primary">link</span>}
                     </div>
                     <p className="text-on-surface-variant text-body-sm truncate">{n.body}</p>
                     <div className="flex items-center gap-md mt-xs text-on-surface-variant text-body-sm">

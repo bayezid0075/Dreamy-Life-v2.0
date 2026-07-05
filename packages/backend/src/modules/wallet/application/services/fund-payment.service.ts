@@ -63,8 +63,8 @@ export class FundPaymentService {
       where: eq(schema.userInfo.userId, userId),
     });
 
-    const fullName = userName || userInfo?.fullName || user.username;
-    const email = userEmail || userInfo?.email || `${user.username}@dreamy-life.com`;
+    const fullName = (userName || userInfo?.fullName || user.username || 'User').trim();
+    const email = (userEmail && userEmail.trim()) || (userInfo?.email && userInfo.email.trim()) || `${(user.phoneNumber || user.username || 'user').replace(/[^a-zA-Z0-9]/g, '')}@dreamy-life.com`;
 
     const response = await fetch(`${this.baseUrl}/api/checkout-v2`, {
       method: 'POST',

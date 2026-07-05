@@ -12,6 +12,8 @@ interface UserNotification {
   title: string;
   body: string;
   icon?: string;
+  imageUrl?: string;
+  link?: string;
   type: string;
   category: string;
   sentAt?: string;
@@ -303,7 +305,7 @@ export default function NotificationsPage() {
             return (
               <div
                 key={n.recipientId}
-                onClick={() => !n.read && handleMarkAsRead(n.recipientId)}
+                onClick={() => router.push(`/notifications/${n.id}`)}
                 className={`glass-panel rounded-lg p-4 flex items-center gap-4 relative overflow-hidden group hover:bg-white/20 transition-all duration-300 cursor-pointer ${
                   !n.read ? 'opacity-100' : 'opacity-70'
                 }`}
@@ -313,7 +315,11 @@ export default function NotificationsPage() {
                 )}
 
                 <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: colors.bg, color: colors.color }}>
-                  <span className="material-symbols-outlined">{n.icon || 'notifications'}</span>
+                  {n.imageUrl ? (
+                    <img src={n.imageUrl} alt="" className="w-12 h-12 rounded-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined">{n.icon || 'notifications'}</span>
+                  )}
                 </div>
 
                 <div className="flex-grow min-w-0">
@@ -322,6 +328,9 @@ export default function NotificationsPage() {
                       <h2 className="font-bold truncate text-[#1c1b1b]">{n.title}</h2>
                       {n.category === 'social' && (
                         <span className="px-2 py-0.5 rounded-full bg-[#ffd1dc] text-[#78555e] text-[10px] font-semibold">Social</span>
+                      )}
+                      {n.link && (
+                        <span className="material-symbols-outlined text-xs text-[#2d666d]">link</span>
                       )}
                     </div>
                     <span className="flex-shrink-0 ml-2 text-xs font-semibold text-[#76777b]">

@@ -14,8 +14,20 @@ export class CreateNotificationDto {
   icon?: string;
 
   @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  link?: string;
+
+  @IsOptional()
   @IsIn(['broadcast', 'targeted'])
   type?: string = 'broadcast';
+
+  @IsOptional()
+  @IsIn(['social', 'app', 'marketing', 'system'])
+  category?: string = 'app';
 
   @IsOptional()
   @IsDateString()

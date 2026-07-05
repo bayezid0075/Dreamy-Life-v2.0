@@ -473,7 +473,7 @@ export default function FriendsPage() {
               ) : (
                 receivedRequests.map((req) => (
                   <div key={req.id} className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-4 flex items-center gap-4 border border-white/30 hover:bg-white/70 hover:shadow-lg hover:shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 group">
-                    <Link href={`/users/${req.userId || req.id}`} className="flex-shrink-0">
+                    <Link href={`/users/${req.id}`} className="flex-shrink-0">
                       {req.avatarUrl ? (
                         <img src={req.avatarUrl} alt={req.username} className="w-14 h-14 rounded-full object-cover ring-2 ring-white group-hover:ring-rose-200 transition-all duration-300" />
                       ) : (
@@ -483,7 +483,7 @@ export default function FriendsPage() {
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/users/${req.userId || req.id}`}>
+                      <Link href={`/users/${req.id}`}>
                         <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate hover:underline">{req.fullName || req.username}</h3>
                       </Link>
                       <p className="text-[13px] text-[#45474b] truncate">@{req.username}</p>
@@ -526,7 +526,7 @@ export default function FriendsPage() {
               ) : (
                 sentRequests.map((req) => (
                   <div key={req.id} className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-4 flex items-center gap-4 border border-white/30 hover:bg-white/70 hover:shadow-lg hover:shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 group">
-                    <Link href={`/users/${req.userId || req.id}`} className="flex-shrink-0">
+                    <Link href={`/users/${req.id}`} className="flex-shrink-0">
                       {req.avatarUrl ? (
                         <img src={req.avatarUrl} alt={req.username} className="w-14 h-14 rounded-full object-cover ring-2 ring-white group-hover:ring-violet-200 transition-all duration-300" />
                       ) : (
@@ -536,7 +536,7 @@ export default function FriendsPage() {
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/users/${req.userId || req.id}`}>
+                      <Link href={`/users/${req.id}`}>
                         <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate hover:underline">{req.fullName || req.username}</h3>
                       </Link>
                       <p className="text-[13px] text-[#45474b] truncate">@{req.username}</p>

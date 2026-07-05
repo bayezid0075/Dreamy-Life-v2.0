@@ -162,8 +162,8 @@ export class MembershipService implements OnModuleInit {
       where: eq(schema.userInfo.userId, userId),
     });
 
-    const fullName = userInfo?.fullName || user.username;
-    const email = userInfo?.email || `${user.username}@dreamy-life.com`;
+    const fullName = (userInfo?.fullName || user.username || 'User').trim();
+    const email = (userInfo?.email && userInfo.email.trim()) || `${(user.phoneNumber || user.username || 'user').replace(/[^a-zA-Z0-9]/g, '')}@dreamy-life.com`;
     const amount = Number(plan.price);
 
     if (amount <= 0) {

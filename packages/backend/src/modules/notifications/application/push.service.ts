@@ -53,6 +53,7 @@ export class PushService {
     title: string;
     body: string;
     icon?: string;
+    imageUrl?: string;
     notificationId: string;
   }): Promise<{ total: number; success: number; failed: number }> {
     if (!this.firebaseApp) {

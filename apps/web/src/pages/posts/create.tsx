@@ -1,7 +1,9 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+
+export const dynamic = 'force-dynamic';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -13,7 +15,11 @@ export default function CreatePostPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  if (!isAuthenticated) { router.replace('/login'); return null; }
+  useEffect(() => {
+    if (!isAuthenticated) router.replace('/login');
+  }, [isAuthenticated, router]);
+
+  if (!isAuthenticated) return null;
 
   const handlePost = async () => {
     if (!content.trim() && !selectedFile) return;

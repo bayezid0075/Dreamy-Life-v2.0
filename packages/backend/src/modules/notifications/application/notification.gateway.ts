@@ -56,6 +56,8 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     title: string;
     body: string;
     icon?: string;
+    imageUrl?: string;
+    link?: string;
     category: string;
     createdAt: string;
   }) {
