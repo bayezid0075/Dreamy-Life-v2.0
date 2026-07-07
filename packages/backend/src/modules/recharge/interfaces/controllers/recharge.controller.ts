@@ -76,6 +76,15 @@ export class RechargeController {
   }
 
   // Admin endpoints
+  @Get('offer-packs')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get available offer packs (Drive Pack)' })
+  async getOfferPacks() {
+    this.logger.log('GET /recharge/offer-packs');
+    const result = await this.rechargeService.getOfferPacks();
+    return { success: true, data: result };
+  }
+
   @Get('admin/config')
   @ApiBearerAuth('access-token')
   @UseGuards(AdminGuard)

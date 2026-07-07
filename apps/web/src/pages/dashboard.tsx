@@ -222,7 +222,7 @@ export default function DashboardPage() {
                   { icon: 'business', label: 'Vendorship', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]', href: '/vendor/apply' },
                   { icon: 'shopping_cart', label: 'Cart', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]', href: '/cart' },
                   { icon: 'local_shipping', label: 'My Orders', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/reselling/orders' },
-                  { icon: 'groups', label: 'Drive Pack', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
+                  { icon: 'groups', label: 'Drive Pack', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/drive-pack' },
                   { icon: 'receipt_long', label: 'Pay Bill', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
                   { icon: 'send', label: 'Telegram Sell', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
                   { icon: 'mail', label: 'Gmail Sell', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },

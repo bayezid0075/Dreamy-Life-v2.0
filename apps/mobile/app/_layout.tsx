@@ -58,6 +58,7 @@ export default function RootLayout() {
             <Stack.Screen name="reselling/tracking/[id]" />
             <Stack.Screen name="recharge" />
             <Stack.Screen name="recharge-history" />
+            <Stack.Screen name="drive-pack" />
           </Stack>
         </NotificationSocketProvider>
       </I18nProvider>

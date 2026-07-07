@@ -37,11 +37,13 @@ export class RechargeService {
   }
 
   private getResolvedConfig(config: any) {
+    const rawBaseUrl = config.apiBaseUrl || this.config.get('RECHARGE_API_BASE_URL') || 'http://118.179.129.98/myportal/api/rechargeapi';
+    const apiBaseUrl = rawBaseUrl.replace(/\/recharge_api_thirdparty\.php$/i, '');
     return {
       ...config,
       apiKey: config.apiKey || this.config.get('RECHARGE_ACCESS_ID') || '',
       apiSecret: config.apiSecret || this.config.get('RECHARGE_ACCESS_PASS') || '',
-      apiBaseUrl: config.apiBaseUrl || this.config.get('RECHARGE_API_BASE_URL') || 'http://118.179.129.98/myportal/api/rechargeapi',
+      apiBaseUrl,
     };
   }
 
@@ -416,6 +418,51 @@ export class RechargeService {
       page,
       limit,
     };
+  }
+
+  async getOfferPacks() {
+    this.logger.log('Fetching offer packs from API');
+
+    const dbConfig = await this.getConfig();
+    const config = this.getResolvedConfig(dbConfig);
+
+    const params = new URLSearchParams({
+      access_id: config.apiKey,
+      access_pass: config.apiSecret,
+      service: 'OFFERPACK',
+    });
+
+    const fullUrl = `${config.apiBaseUrl}/recharge_api_thirdparty.php?${params.toString()}`;
+    const maskedUrl = fullUrl.replace(/access_pass=[^&]+/, 'access_pass=****');
+    this.logger.debug(`Offer packs URL: ${maskedUrl}`);
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(fullUrl, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      this.logger.debug(`Offer packs HTTP status: ${response.status}`);
+
+      const rawText = await response.text();
+      this.logger.debug(`Offer packs raw response length: ${rawText.length}`);
+
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        this.logger.error(`Offer packs returned non-JSON: ${rawText.substring(0, 200)}`);
+        return { status: 'error', message: 'Invalid response from API', packs: [] };
+      }
+
+      const packs = Array.isArray(data) ? data : Array.isArray(data?.packs) ? data.packs : [];
+      this.logger.log(`Offer packs received: ${packs.length} items`);
+      return { status: 'ok', packs };
+    } catch (error) {
+      this.logger.error(`Offer packs failed: ${error.message}`, error.stack);
+      return { status: 'error', message: error.message, packs: [] };
+    }
   }
 
   async getBalance() {

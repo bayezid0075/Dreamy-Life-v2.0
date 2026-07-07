@@ -38,7 +38,7 @@ const FEATURES = [
   { icon: '🏢', label: 'Vendorship', bg: '#e8eaf6', href: '/vendor/apply' },
    { icon: '🛒', label: 'Reseller Shop', bg: '#ffd1dc', href: '/reseller-shop' },
   { icon: '📦', label: 'My Orders', bg: '#e9fdff', href: '/reselling/orders' },
-  { icon: '👥', label: 'Drive Pack', bg: '#e0f7fa' },
+  { icon: '👥', label: 'Drive Pack', bg: '#e0f7fa', href: '/drive-pack' },
   { icon: '🧾', label: 'Pay Bill', bg: '#ffd1dc' },
   { icon: '✈️', label: 'Telegram Sell', bg: '#e3f2fd' },
   { icon: '📧', label: 'Gmail Sell', bg: '#fce4ec' },
