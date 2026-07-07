@@ -12,7 +12,8 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import TopBar from '@/shared/components/TopBar';
@@ -37,6 +38,7 @@ interface LocalImage {
 export default function EditProductScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { isAuthenticated, accessToken } = useAuthStore();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -48,18 +50,23 @@ export default function EditProductScreen() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !id) return;
     (async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) { router.replace('/login'); return; }
-      if (id) loadProduct(token);
+      if (!accessToken) { router.replace('/login'); return; }
+      loadProduct(accessToken);
     })();
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   const loadProduct = async (token: string) => {
     try {
-      const res = await fetch(`${API_URL}/vendor/products/detail/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`${API_URL}/vendor/products/detail/${id}`);
       if (res.ok) {
         const data = await res.json();
         const p = data.data;
@@ -113,10 +120,9 @@ export default function EditProductScreen() {
       } as any);
 
       try {
-        const token = await AsyncStorage.getItem('accessToken');
         const res = await fetch(`${API_URL}/media/upload`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           body: formData,
         });
         const data = await res.json();
@@ -160,7 +166,6 @@ export default function EditProductScreen() {
     setSaving(true);
     setError('');
     try {
-      const token = await AsyncStorage.getItem('accessToken');
       const uploadedUrls = images.filter(img => img.url).map(img => img.url!);
       const body: any = {
         name: name.trim(),
@@ -170,9 +175,8 @@ export default function EditProductScreen() {
       };
       if (description.trim()) body.description = description.trim();
       if (uploadedUrls.length > 0) body.imageUrls = uploadedUrls;
-      const res = await fetch(`${API_URL}/vendor/products/${id}`, {
+      const res = await authFetch(`${API_URL}/vendor/products/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
       });
       if (!res.ok) {

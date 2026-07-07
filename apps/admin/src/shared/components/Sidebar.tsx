@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: 'dashboard', filled: true },
   { label: 'Users', href: '/dashboard/users', icon: 'group' },
   { label: 'Membership', href: '/dashboard/membership', icon: 'workspace_premium' },
+  { label: 'Recharge', href: '/dashboard/recharge', icon: 'phone_iphone' },
   { label: 'Funds', href: '/dashboard/funds', icon: 'account_balance' },
   { label: 'Marketplace', href: '/dashboard/marketplace', icon: 'storefront' },
   { label: 'Messages', href: '/dashboard/messages', icon: 'chat' },

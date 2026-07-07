@@ -7,6 +7,7 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 interface WalletData {
   walletBalance: number;
@@ -24,7 +25,7 @@ interface Transaction {
 
 export default function WalletPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -61,8 +62,7 @@ export default function WalletPage() {
       ]);
 
       if (walletRes.status === 401 || allTxRes.status === 401) {
-        clearAuth();
-        router.replace('/login');
+        await logout();
         return;
       }
 
@@ -86,37 +86,35 @@ export default function WalletPage() {
     } finally {
       setLoading(false);
     }
-  }, [clearAuth, router]);
+  }, [logout]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchData();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      fetch(`${apiUrl}/auth/profile`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.data?.user) setUser(data.data.user); })
+        .catch(() => {});
+      fetch(`${apiUrl}/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+        .catch(() => {});
+      fetch(`${apiUrl}/vendor/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { setVendorProfile(data.data || null); })
+        .catch(() => { setVendorProfile(null); });
     }
-    fetchData();
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-    fetch(`${apiUrl}/auth/profile`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { if (data.data?.user) setUser(data.data.user); })
-      .catch(() => {});
-    fetch(`${apiUrl}/notifications/unread-count`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
-      .catch(() => {});
-    fetch(`${apiUrl}/vendor/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { setVendorProfile(data.data || null); })
-      .catch(() => { setVendorProfile(null); });
-  }, [isAuthenticated, accessToken, filter, fetchData]);
+  }, [accessToken, filter, fetchData]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!accessToken) return;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -143,11 +141,10 @@ export default function WalletPage() {
       window.removeEventListener('focus', handleFocus);
       router.events.off('routeChangeComplete', handleRouteChange);
     };
-  }, [isAuthenticated, accessToken, fetchData]);
+  }, [accessToken, fetchData]);
 
-  const handleLogout = () => {
-    clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const copyReferCode = () => {
@@ -210,7 +207,7 @@ export default function WalletPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Wallet</title>
       </Head>
@@ -507,6 +504,6 @@ export default function WalletPage() {
           </div>
         )}
       </div>
-    </>
+    </AuthGuard>
   );
 }

@@ -10,7 +10,8 @@ import {
   Modal,
   Linking,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -33,29 +34,36 @@ const BUTTON_COLORS: Record<string, string> = {
 
 export default function MembershipScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [plans, setPlans] = useState<any[]>([]);
   const [myMembership, setMyMembership] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadData(); }, [isAuthenticated]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!loading) loadData();
-    }, [])
+      if (!loading && isAuthenticated) loadData();
+    }, [isAuthenticated])
   );
 
   const loadData = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
       const [plansRes, myRes] = await Promise.all([
-        fetch(`${API_URL}/membership/plans`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/membership/my`, { headers: { Authorization: `Bearer ${token}` } }),
+        authFetch(`${API_URL}/membership/plans`),
+        authFetch(`${API_URL}/membership/my`),
       ]);
-      if (plansRes.status === 401 || myRes.status === 401) { await AsyncStorage.removeItem('accessToken'); router.replace('/login'); return; }
+      if (plansRes.status === 401 || myRes.status === 401) { await logout(); router.replace('/login'); return; }
       if (plansRes.ok) { const d = await plansRes.json(); setPlans(d.data || []); }
       if (myRes.ok) { const d = await myRes.json(); setMyMembership(d.data); }
     } catch (err) { console.error('Failed to load', err); }
@@ -65,10 +73,8 @@ export default function MembershipScreen() {
   const purchasePlan = async (planId: string) => {
     setPurchasing(planId);
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      const res = await fetch(`${API_URL}/membership/purchase`, {
+      const res = await authFetch(`${API_URL}/membership/purchase`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ planId }),
       });
       const data = await res.json();

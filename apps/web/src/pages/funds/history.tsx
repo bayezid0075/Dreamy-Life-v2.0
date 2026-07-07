@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 interface Transaction {
   id: string;
@@ -14,7 +15,7 @@ interface Transaction {
 
 export default function FundsHistoryPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -31,25 +32,23 @@ export default function FundsHistoryPage() {
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/wallet/transactions?type=funds&filter=${currentRange}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.status === 401) { clearAuth(); router.replace('/login'); return; }
+      if (res.status === 401) { await logout(); return; }
       if (res.ok) {
         const data = await res.json();
         setTransactions(data.data.transactions);
       }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  }, [clearAuth, router]);
+  }, [logout]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchTransactions();
     }
-    fetchTransactions();
-  }, [isAuthenticated, accessToken, filter, timeRange, fetchTransactions]);
+  }, [accessToken, filter, timeRange, fetchTransactions]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!accessToken) return;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') fetchTransactions();
@@ -68,7 +67,7 @@ export default function FundsHistoryPage() {
       window.removeEventListener('focus', handleFocus);
       router.events.off('routeChangeComplete', handleRouteChange);
     };
-  }, [isAuthenticated, accessToken, fetchTransactions]);
+  }, [accessToken, fetchTransactions]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -91,7 +90,7 @@ export default function FundsHistoryPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Funds History - Dreamy Life</title>
       </Head>
@@ -199,6 +198,6 @@ export default function FundsHistoryPage() {
           </div>
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

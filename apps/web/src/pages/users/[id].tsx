@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -53,7 +54,7 @@ function formatCount(n: number): string {
 export default function ProfilePage() {
   const router = useRouter();
   const { id } = router.query;
-  const { accessToken, isAuthenticated, user } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats>({ postsCount: 0, followersCount: 0, followingCount: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
@@ -92,9 +93,10 @@ export default function ProfilePage() {
   }, [userId, accessToken, user?.id]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) { router.replace('/login'); return; }
-    fetchProfile();
-  }, [isAuthenticated, accessToken, router, fetchProfile]);
+    if (accessToken) {
+      fetchProfile();
+    }
+  }, [accessToken, fetchProfile]);
 
   const handleFollow = async () => {
     if (!userId) return;
@@ -119,7 +121,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Dreamy Life - Profile</title></Head>
       <style>{`
         body { background-color: #fcf9f8; background-image: radial-gradient(circle at 15% 50%, rgba(186,230,253,0.4) 0%, transparent 50%), radial-gradient(circle at 85% 30%, rgba(253,164,175,0.3) 0%, transparent 50%), radial-gradient(circle at 50% 80%, rgba(167,243,208,0.4) 0%, transparent 50%); background-attachment: fixed; min-height: 100vh; }
@@ -235,6 +237,6 @@ export default function ProfilePage() {
           ))}
         </section>
       </main>
-    </>
+    </AuthGuard>
   );
 }

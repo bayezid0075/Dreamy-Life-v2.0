@@ -8,6 +8,7 @@ import { useNotificationSocket } from '@/hooks/useNotificationSocket';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -45,7 +46,7 @@ function formatCount(n: number): string {
 
 export default function FeedPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, user } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
   useNotificationSocket();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,25 +87,23 @@ export default function FeedPage() {
   );
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      setPage(1);
+      fetchPosts(1).finally(() => setLoading(false));
+      fetch(`${API_URL}/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+        .catch(() => {});
+      fetch(`${API_URL}/vendor/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { setVendorProfile(data.data || null); })
+        .catch(() => { setVendorProfile(null); });
     }
-    setPage(1);
-    fetchPosts(1).finally(() => setLoading(false));
-    fetch(`${API_URL}/notifications/unread-count`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
-      .catch(() => {});
-    fetch(`${API_URL}/vendor/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { setVendorProfile(data.data || null); })
-      .catch(() => { setVendorProfile(null); });
-  }, [isAuthenticated, accessToken, router, fetchPosts, feedType]);
+  }, [accessToken, fetchPosts, feedType]);
 
   const handleCreatePost = async () => {
     if (!postContent.trim() && !selectedFile) return;
@@ -174,9 +173,8 @@ export default function FeedPage() {
     }
   };
 
-  const handleLogout = () => {
-    useAuthStore.getState().clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await useAuthStore.getState().logout();
   };
 
   const copyReferCode = () => {
@@ -194,7 +192,7 @@ export default function FeedPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Feed</title>
       </Head>
@@ -497,6 +495,6 @@ export default function FeedPage() {
           </Link>
         </div>
       </nav>
-    </>
+    </AuthGuard>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,8 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useAuthStore } from '@/shared/stores/authStore';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
 
@@ -20,11 +20,19 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { returnUrl } = useLocalSearchParams<{ returnUrl?: string }>();
+  const { setAuth, isAuthenticated, hydrated } = useAuthStore();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (hydrated && isAuthenticated) {
+      router.replace(returnUrl ? (returnUrl as any) : '/dashboard');
+    }
+  }, [isAuthenticated, hydrated, returnUrl, router]);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -45,8 +53,8 @@ export default function LoginScreen() {
         setLoading(false);
         return;
       }
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      router.replace('/dashboard');
+      setAuth(data.data.accessToken, data.data.refreshToken, data.data.user);
+      router.replace(returnUrl ? (returnUrl as any) : '/dashboard');
     } catch (err) {
       setError('Connection error. Please try again.');
       setLoading(false);

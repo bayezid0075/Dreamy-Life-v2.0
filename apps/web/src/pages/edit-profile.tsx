@@ -3,10 +3,11 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useI18n } from '@/i18n';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -26,12 +27,10 @@ export default function EditProfilePage() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchProfile(accessToken);
     }
-    fetchProfile(accessToken);
-  }, [isAuthenticated, accessToken, router]);
+  }, [accessToken]);
 
   const fetchProfile = async (token: string) => {
     try {
@@ -39,8 +38,7 @@ export default function EditProfilePage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) {
-        clearAuth();
-        router.replace('/login');
+        await logout();
         return;
       }
       if (res.ok) {
@@ -62,8 +60,7 @@ export default function EditProfilePage() {
       }
     } catch (err) {
       console.error('Failed to fetch profile', err);
-      clearAuth();
-      router.replace('/login');
+      await logout();
     } finally {
       setLoading(false);
     }
@@ -161,7 +158,7 @@ export default function EditProfilePage() {
   })();
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - {t('personalInformation')}</title>
       </Head>
@@ -407,6 +404,6 @@ export default function EditProfilePage() {
           </button>
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

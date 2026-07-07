@@ -7,7 +7,8 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -17,22 +18,29 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ReferralScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken } = useAuthStore();
   const [user, setUser] = useState<any>(null);
   const [downline, setDownline] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [expandedLevels, setExpandedLevels] = useState<Record<number, boolean>>({});
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadData(); }, [isAuthenticated]);
 
   const loadData = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
       const [profileRes, statsRes, downlineRes] = await Promise.all([
-        fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/referral/stats`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/referral/downline`, { headers: { Authorization: `Bearer ${token}` } }),
+        authFetch(`${API_URL}/auth/profile`),
+        authFetch(`${API_URL}/referral/stats`),
+        authFetch(`${API_URL}/referral/downline`),
       ]);
       if (profileRes.ok) { const d = await profileRes.json(); setUser(d.data.user); }
       if (statsRes.ok) { const d = await statsRes.json(); setStats(d.data); }

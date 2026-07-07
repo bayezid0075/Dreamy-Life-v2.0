@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -62,6 +63,7 @@ function getTimeAgo(dateStr: string): string {
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -71,13 +73,10 @@ export default function NotificationsScreen() {
 
   const fetchNotifications = useCallback(async (pageNum: number, append = false, tab?: string) => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) return;
+      if (!accessToken) return;
 
       const category = tab || activeTab;
-      const res = await fetch(`${API_URL}/notifications?page=${pageNum}&limit=20&category=${category}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`${API_URL}/notifications?page=${pageNum}&limit=20&category=${category}`);
       const data = await res.json();
       if (res.ok) {
         if (append) {
@@ -91,19 +90,26 @@ export default function NotificationsScreen() {
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
-  }, [activeTab]);
+  }, [activeTab, accessToken]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     (async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) {
+      if (!accessToken) {
         router.replace('/login');
         return;
       }
       await fetchNotifications(1);
       setLoading(false);
     })();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!loading && unreadCount > 0) {
@@ -118,12 +124,10 @@ export default function NotificationsScreen() {
 
   const handleMarkAsRead = async (recipientId: string) => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) return;
+      if (!accessToken) return;
 
-      await fetch(`${API_URL}/notifications/${recipientId}/read`, {
+      await authFetch(`${API_URL}/notifications/${recipientId}/read`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications((prev) =>
         prev.map((n) => (n.recipientId === recipientId ? { ...n, read: true } : n)),
@@ -137,12 +141,10 @@ export default function NotificationsScreen() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) return;
+      if (!accessToken) return;
 
-      await fetch(`${API_URL}/notifications/read-all?category=${activeTab}`, {
+      await authFetch(`${API_URL}/notifications/read-all?category=${activeTab}`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);

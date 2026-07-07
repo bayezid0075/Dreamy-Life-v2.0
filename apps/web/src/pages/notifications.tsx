@@ -6,6 +6,7 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 interface UserNotification {
   id: string;
@@ -52,7 +53,7 @@ function getTimeAgo(dateStr: string): string {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const { unreadCount: globalUnreadCount, setUnreadCount: setGlobalUnreadCount, resetCount } = useNotificationStore();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
@@ -91,24 +92,22 @@ export default function NotificationsPage() {
   );
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchNotifications(1).finally(() => setLoading(false));
+      fetch(`${API_URL}/auth/profile`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.data?.user) setUser(data.data.user); })
+        .catch(() => {});
+      fetch(`${API_URL}/vendor/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { setVendorProfile(data.data || null); })
+        .catch(() => { setVendorProfile(null); });
     }
-    fetchNotifications(1).finally(() => setLoading(false));
-    fetch(`${API_URL}/auth/profile`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { if (data.data?.user) setUser(data.data.user); })
-      .catch(() => {});
-    fetch(`${API_URL}/vendor/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { setVendorProfile(data.data || null); })
-      .catch(() => { setVendorProfile(null); });
-  }, [isAuthenticated, accessToken, router, fetchNotifications]);
+  }, [accessToken, fetchNotifications]);
 
   useEffect(() => {
     if (!loading && unreadCount > 0) {
@@ -157,9 +156,8 @@ export default function NotificationsPage() {
     fetchNotifications(nextPage, true);
   };
 
-  const handleLogout = () => {
-    useAuthStore.getState().clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await useAuthStore.getState().logout();
   };
 
   const copyReferCode = () => {
@@ -183,7 +181,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Notifications</title>
       </Head>
@@ -353,6 +351,6 @@ export default function NotificationsPage() {
           )}
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

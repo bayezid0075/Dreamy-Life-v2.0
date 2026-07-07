@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 import { VendorProfile } from '@/features/vendor/api';
 
 interface NotificationDetail {
@@ -26,7 +27,7 @@ interface NotificationDetail {
 export default function AdminNotificationDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<NotificationDetail | null>(null);
   const [stats, setStats] = useState<{ sent: number; read: number } | null>(null);
@@ -38,10 +39,7 @@ export default function AdminNotificationDetailPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
+    if (!accessToken) return;
     if (!id) return;
 
     fetch(`${API_URL}/admin/notifications/${id}`, {
@@ -68,7 +66,7 @@ export default function AdminNotificationDetailPage() {
       .then((res) => res.json())
       .then((data) => setVendorProfile(data.data || null))
       .catch(() => setVendorProfile(null));
-  }, [id, isAuthenticated, accessToken, router]);
+  }, [id, accessToken]);
 
   const handleSend = async () => {
     if (!notification || !accessToken) return;
@@ -101,9 +99,8 @@ export default function AdminNotificationDetailPage() {
     setActionLoading(false);
   };
 
-  const handleLogout = () => {
-    useAuthStore.getState().clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const copyReferCode = () => {
@@ -143,7 +140,7 @@ export default function AdminNotificationDetailPage() {
   const sc = statusColors[notification.status] || statusColors.draft;
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>{notification.title} - Admin Notifications</title>
       </Head>
@@ -253,6 +250,6 @@ export default function AdminNotificationDetailPage() {
           </button>
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

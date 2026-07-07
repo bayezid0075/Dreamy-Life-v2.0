@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,8 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useAuthStore } from '@/shared/stores/authStore';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
 
@@ -20,7 +20,8 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { ref } = useLocalSearchParams<{ ref?: string }>();
+  const { ref, returnUrl } = useLocalSearchParams<{ ref?: string; returnUrl?: string }>();
+  const { setAuth, isAuthenticated, hydrated } = useAuthStore();
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +31,12 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (hydrated && isAuthenticated) {
+      router.replace(returnUrl ? (returnUrl as any) : '/dashboard');
+    }
+  }, [isAuthenticated, hydrated, returnUrl, router]);
 
   const handleRegister = async () => {
     const newErrors: Record<string, string> = {};
@@ -57,8 +64,8 @@ export default function RegisterScreen() {
         setLoading(false);
         return;
       }
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      router.replace('/dashboard');
+      await setAuth(data.data.accessToken, data.data.refreshToken, data.data.user);
+      router.replace(returnUrl ? (returnUrl as any) : '/dashboard');
     } catch (err) {
       setErrors({ general: 'Connection error. Please try again.' });
       setLoading(false);

@@ -5,7 +5,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, and } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { PasswordService } from '../../domain/services/password.service';
 import { TokenService } from '../../infrastructure/jwt.service';
@@ -164,9 +164,39 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    // Validate session exists in DB
+    const session = await this.db.query.sessions.findFirst({
+      where: and(
+        eq(schema.sessions.userId, payload.userId),
+        eq(schema.sessions.refreshToken, refreshToken),
+      ),
+    });
+    if (!session) {
+      throw new UnauthorizedException('Session expired or invalidated');
+    }
+
     const newAccessToken = await this.tokenService.generateAccessToken(user.id, user.username);
 
     return { accessToken: newAccessToken };
+  }
+
+  async logout(userId: string, refreshToken?: string) {
+    if (refreshToken) {
+      // Delete specific session by refresh token
+      await this.db
+        .delete(schema.sessions)
+        .where(
+          and(
+            eq(schema.sessions.userId, userId),
+            eq(schema.sessions.refreshToken, refreshToken),
+          ),
+        );
+    } else {
+      // Delete all sessions for the user
+      await this.db
+        .delete(schema.sessions)
+        .where(eq(schema.sessions.userId, userId));
+    }
   }
 
   async getProfile(userId: string) {

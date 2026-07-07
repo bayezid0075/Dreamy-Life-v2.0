@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -74,7 +75,7 @@ export default function ShopProductDetailPage() {
   if (!product) return <div className="min-h-screen bg-[#f8f8ff] flex flex-col items-center justify-center gap-4"><span className="material-symbols-outlined text-6xl text-[#5d5e64]/30">error</span><h2 className="text-xl font-bold text-[#1c1b1b]">Product Not Found</h2></div>;
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>{product.name} - Dreamy Life</title></Head>
       <div className="min-h-screen bg-[#f8f8ff]">
         <div className="fixed inset-0 z-[-1] pointer-events-none">
@@ -257,6 +258,6 @@ export default function ShopProductDetailPage() {
           </div>
         )}
       </div>
-    </>
+    </AuthGuard>
   );
 }

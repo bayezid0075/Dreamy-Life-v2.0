@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 import { VendorProfile } from '@/features/vendor/api';
 
 export default function AdminNotificationCreatePage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, user: authUser } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
@@ -32,10 +33,7 @@ export default function AdminNotificationCreatePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
+    if (!accessToken) return;
     fetch(`${API_URL}/auth/profile`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -48,7 +46,7 @@ export default function AdminNotificationCreatePage() {
       .then((res) => res.json())
       .then((data) => setVendorProfile(data.data || null))
       .catch(() => setVendorProfile(null));
-  }, [isAuthenticated, accessToken, router]);
+  }, [accessToken]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,9 +121,8 @@ export default function AdminNotificationCreatePage() {
     setSubmitting(false);
   };
 
-  const handleLogout = () => {
-    useAuthStore.getState().clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const copyReferCode = () => {
@@ -145,7 +142,7 @@ export default function AdminNotificationCreatePage() {
   ];
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Create Notification - Dreamy Life Admin</title>
       </Head>
@@ -382,6 +379,6 @@ export default function AdminNotificationCreatePage() {
           </button>
         </form>
       </main>
-    </>
+    </AuthGuard>
   );
 }

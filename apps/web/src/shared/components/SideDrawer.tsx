@@ -126,6 +126,10 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
                   <span className="font-semibold">Dashboard</span>
                 </Link>
+                <Link href="/recharge" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
+                  <span className="material-symbols-outlined">phone_iphone</span>
+                  <span className="font-semibold">Mobile Recharge</span>
+                </Link>
                 <Link href="/social-feed" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">public</span>
                   <span>Social Feed</span>

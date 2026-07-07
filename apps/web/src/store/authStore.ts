@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
 export interface AuthUser {
   id: string;
   username: string;
@@ -17,9 +19,10 @@ interface AuthState {
   setAuth: (token: string, user: AuthUser) => void;
   clearAuth: () => void;
   hydrate: () => void;
+  logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
@@ -52,5 +55,22 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ hydrated: true });
       }
     }
+  },
+
+  logout: async () => {
+    const { accessToken } = get();
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        credentials: 'include',
+      });
+    } catch {
+      // Best-effort: clear locally even if backend call fails
+    }
+    get().clearAuth();
   },
 }));

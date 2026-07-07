@@ -7,6 +7,7 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 interface PlanFeature {
   text: string;
@@ -30,7 +31,7 @@ interface MembershipPlan {
 
 export default function MembershipPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [myMembership, setMyMembership] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -42,31 +43,29 @@ export default function MembershipPage() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchData(accessToken);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      fetch(`${apiUrl}/auth/profile`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.data?.user) setUser(data.data.user); })
+        .catch(() => {});
+      fetch(`${apiUrl}/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+        .catch(() => {});
+      fetch(`${apiUrl}/vendor/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { setVendorProfile(data.data || null); })
+        .catch(() => { setVendorProfile(null); });
     }
-    fetchData(accessToken);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-    fetch(`${apiUrl}/auth/profile`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { if (data.data?.user) setUser(data.data.user); })
-      .catch(() => {});
-    fetch(`${apiUrl}/notifications/unread-count`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
-      .catch(() => {});
-    fetch(`${apiUrl}/vendor/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { setVendorProfile(data.data || null); })
-      .catch(() => { setVendorProfile(null); });
-  }, [isAuthenticated, accessToken, router]);
+  }, [accessToken]);
 
   const fetchData = async (token: string) => {
     try {
@@ -80,8 +79,7 @@ export default function MembershipPage() {
       ]);
 
       if (plansRes.status === 401 || myRes.status === 401) {
-        clearAuth();
-        router.replace('/login');
+        await logout();
         return;
       }
 
@@ -95,8 +93,7 @@ export default function MembershipPage() {
       }
     } catch (err) {
       console.error('Failed to fetch', err);
-      clearAuth();
-      router.replace('/login');
+      await logout();
     } finally {
       setLoading(false);
     }
@@ -113,8 +110,7 @@ export default function MembershipPage() {
         body: JSON.stringify({ planId }),
       });
       if (res.status === 401) {
-        clearAuth();
-        router.replace('/login');
+        await logout();
         return;
       }
       const data = await res.json();
@@ -130,9 +126,8 @@ export default function MembershipPage() {
     }
   };
 
-  const handleLogout = () => {
-    clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const copyReferCode = () => {
@@ -154,7 +149,7 @@ export default function MembershipPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Membership</title>
         <style>{`
@@ -412,6 +407,6 @@ export default function MembershipPage() {
           </div>
         </div>
       )}
-    </>
+    </AuthGuard>
   );
 }

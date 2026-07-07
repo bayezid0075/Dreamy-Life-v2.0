@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,17 +10,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function CreatePostPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, user } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
   const [content, setContent] = useState('');
   const [posting, setPosting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isAuthenticated) router.replace('/login');
-  }, [isAuthenticated, router]);
-
-  if (!isAuthenticated) return null;
+  if (!accessToken) return null;
 
   const handlePost = async () => {
     if (!content.trim() && !selectedFile) return;
@@ -56,7 +53,7 @@ export default function CreatePostPage() {
   };
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Dreamy Life - Create Post</title></Head>
       <style>{`
         body { background-color: #fcf9f8; min-height: 100vh; }
@@ -105,6 +102,6 @@ export default function CreatePostPage() {
           </label>
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

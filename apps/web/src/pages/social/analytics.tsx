@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -15,20 +16,15 @@ interface UserStats {
 
 export default function AnalyticsPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, user: authUser } = useAuthStore();
+  const { accessToken, user: authUser } = useAuthStore();
   const { unreadCount: unreadNotifCount } = useNotificationStore();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
-    if (authUser?.id) {
-      fetchStats(authUser.id);
-    }
-  }, [isAuthenticated, accessToken, authUser, router]);
+    if (!accessToken || !authUser?.id) return;
+    fetchStats(authUser.id);
+  }, [accessToken, authUser]);
 
   const fetchStats = async (userId: string) => {
     try {
@@ -55,7 +51,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Professional Dashboard</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -208,6 +204,6 @@ export default function AnalyticsPage() {
           </div>
         </nav>
       </body>
-    </>
+    </AuthGuard>
   );
 }

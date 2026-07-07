@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AuroraBackground from '@/shared/components/AuroraBackground';
@@ -12,16 +13,23 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 export default function VendorProductsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isAuthenticated, accessToken } = useAuthStore();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadProducts(); }, []);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadProducts(); }, [isAuthenticated]);
 
   const loadProducts = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
-      const res = await fetch(`${API_URL}/vendor/products`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await authFetch(`${API_URL}/vendor/products`);
       if (res.ok) { const data = await res.json(); setProducts(data.data || []); }
     } catch { /* error */ }
     finally { setLoading(false); }
@@ -31,8 +39,7 @@ export default function VendorProductsScreen() {
     Alert.alert('Delete Product', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        const token = await AsyncStorage.getItem('accessToken');
-        await fetch(`${API_URL}/vendor/products/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+        await authFetch(`${API_URL}/vendor/products/${id}`, { method: 'DELETE' });
         loadProducts();
       }},
     ]);

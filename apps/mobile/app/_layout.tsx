@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { I18nProvider } from '@/shared/i18n';
 import { useNotificationSocket } from '@/shared/hooks/useNotificationSocket';
+import { useAuthStore } from '@/shared/stores/authStore';
 
 function NotificationSocketProvider({ children }: { children: React.ReactNode }) {
   useNotificationSocket();
@@ -10,6 +12,10 @@ function NotificationSocketProvider({ children }: { children: React.ReactNode })
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    useAuthStore.getState().hydrate();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <I18nProvider>
@@ -50,6 +56,8 @@ export default function RootLayout() {
             <Stack.Screen name="reseller-shop/[id]" />
             <Stack.Screen name="reselling/orders" />
             <Stack.Screen name="reselling/tracking/[id]" />
+            <Stack.Screen name="recharge" />
+            <Stack.Screen name="recharge-history" />
           </Stack>
         </NotificationSocketProvider>
       </I18nProvider>

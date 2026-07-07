@@ -7,10 +7,11 @@ import { useNotificationStore } from '@/store/notificationStore';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import { VendorProfile } from '@/features/vendor/api';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -22,7 +23,7 @@ export default function DashboardPage() {
   const [avatarUrl, setAvatarUrl] = useState<string>('');
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) {
+    if (accessToken) {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       fetch(`${apiUrl}/notifications/unread-count`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -37,15 +38,13 @@ export default function DashboardPage() {
         .then((data) => { setVendorProfile(data.data || null); })
         .catch(() => { setVendorProfile(null); });
     }
-  }, [isAuthenticated, accessToken]);
+  }, [accessToken]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchUser(accessToken);
     }
-    fetchUser(accessToken);
-  }, [isAuthenticated, accessToken, router]);
+  }, [accessToken]);
 
   const fetchUser = async (token: string) => {
     try {
@@ -57,21 +56,18 @@ export default function DashboardPage() {
         setUser(data.data.user);
         setAvatarUrl(data.data.user?.avatarUrl || '');
       } else {
-        clearAuth();
-        router.replace('/login');
+        await logout();
       }
     } catch (err) {
       console.error('Failed to fetch user', err);
-      clearAuth();
-      router.replace('/login');
+      await logout();
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const copyReferCode = () => {
@@ -89,7 +85,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Dashboard</title>
       </Head>
@@ -220,7 +216,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-4 gap-y-8 gap-x-4">
               {(() => {
                 const features = [
-                  { icon: 'phone_iphone', label: 'Mobile Recharge', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                  { icon: 'phone_iphone', label: 'Mobile Recharge', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/recharge' },
                   { icon: 'directions_car', label: 'Easy Drive', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
                   { icon: 'storefront', label: 'Reselling', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]', href: '/reseller-shop' },
                   { icon: 'business', label: 'Vendorship', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]', href: '/vendor/apply' },
@@ -470,6 +466,6 @@ export default function DashboardPage() {
           copyReferCode={copyReferCode}
         />
       </div>
-    </>
+    </AuthGuard>
   );
 }

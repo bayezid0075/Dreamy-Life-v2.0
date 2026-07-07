@@ -8,12 +8,13 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function CartPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const { items, updateQuantity, updateResellerPrice, removeItem, clearCart, getTotalCost, getTotalProfit } = useCartStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -26,13 +27,14 @@ export default function CartPage() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) { router.replace('/login'); return; }
-    Promise.all([
-      fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => setUser(d.data?.user)).catch(() => {}),
-      fetch(`${API_URL}/notifications/unread-count`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => { if (d.count !== undefined) setUnreadNotifCount(d.count); }).catch(() => {}),
-      fetch(`${API_URL}/vendor/me`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => setVendorProfile(d.data || null)).catch(() => setVendorProfile(null)),
-    ]);
-  }, [isAuthenticated, accessToken]);
+    if (accessToken) {
+      Promise.all([
+        fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => setUser(d.data?.user)).catch(() => {}),
+        fetch(`${API_URL}/notifications/unread-count`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => { if (d.count !== undefined) setUnreadNotifCount(d.count); }).catch(() => {}),
+        fetch(`${API_URL}/vendor/me`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => setVendorProfile(d.data || null)).catch(() => setVendorProfile(null)),
+      ]);
+    }
+  }, [accessToken]);
 
   const handlePlaceOrders = async () => {
     if (!customerInfo.name || !customerInfo.phone || !customerInfo.address) {
@@ -71,11 +73,11 @@ export default function CartPage() {
     finally { setOrdering(false); }
   };
 
-  const handleLogout = () => { clearAuth(); router.replace('/login'); };
+  const handleLogout = async () => { await logout(); };
   const copyReferCode = () => { if (user?.ownRefercode) navigator.clipboard.writeText(user.ownRefercode); };
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Cart - Dreamy Life</title></Head>
       <div
         className="min-h-screen overflow-x-hidden pb-32 selection:bg-[#ffd1dc] selection:text-[#1c1b1b]"
@@ -222,6 +224,6 @@ export default function CartPage() {
           )}
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

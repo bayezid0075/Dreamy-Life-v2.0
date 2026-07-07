@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { uploadMedia } from '@/features/media/upload';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -56,7 +57,7 @@ const VENDOR_TERMS = [
 
 export default function VendorApplyPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<'terms' | 'form'>('terms');
   const [agreed, setAgreed] = useState(false);
@@ -71,14 +72,10 @@ export default function VendorApplyPage() {
   const [vvipStatus, setVvipStatus] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
-    if (step === 'form') {
+    if (step === 'form' && accessToken) {
       checkVvipStatus();
     }
-  }, [isAuthenticated, accessToken, step]);
+  }, [accessToken, step]);
 
   const checkVvipStatus = async () => {
     try {
@@ -188,7 +185,7 @@ export default function VendorApplyPage() {
   };
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Become a Vendor - Dreamy Life</title>
       </Head>
@@ -416,6 +413,6 @@ export default function VendorApplyPage() {
           )}
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

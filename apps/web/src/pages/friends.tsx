@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -23,7 +24,7 @@ interface FriendRequest extends FriendUser {
 
 export default function FriendsPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const { unreadCount: unreadNotifCount } = useNotificationStore();
   const [activeTab, setActiveTab] = useState<'find' | 'friends' | 'requests' | 'sent'>('find');
   const [friends, setFriends] = useState<FriendUser[]>([]);
@@ -37,12 +38,10 @@ export default function FriendsPage() {
   const [searchFocused, setSearchFocused] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchAll();
     }
-    fetchAll();
-  }, [isAuthenticated, accessToken]);
+  }, [accessToken]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -244,7 +243,7 @@ export default function FriendsPage() {
   };
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Friends - Dreamy Life</title>
       </Head>
@@ -583,6 +582,6 @@ export default function FriendsPage() {
           </Link>
         </div>
       </nav>
-    </>
+    </AuthGuard>
   );
 }

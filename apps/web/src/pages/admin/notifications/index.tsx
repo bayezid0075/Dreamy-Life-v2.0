@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 import { VendorProfile } from '@/features/vendor/api';
 
 interface AdminNotification {
@@ -24,7 +25,7 @@ interface AdminNotification {
 
 export default function AdminNotificationsPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [page, setPage] = useState(1);
@@ -72,10 +73,7 @@ export default function AdminNotificationsPage() {
   }, [API_URL, accessToken]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
+    if (!accessToken) return;
     Promise.all([fetchNotifications(1), fetchStats()]).finally(() => setLoading(false));
     fetch(`${API_URL}/auth/profile`, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -89,7 +87,7 @@ export default function AdminNotificationsPage() {
       .then((res) => res.json())
       .then((data) => setVendorProfile(data.data || null))
       .catch(() => setVendorProfile(null));
-  }, [isAuthenticated, accessToken, router]);
+  }, [accessToken]);
 
   useEffect(() => {
     setPage(1);
@@ -119,9 +117,8 @@ export default function AdminNotificationsPage() {
     } catch {}
   };
 
-  const handleLogout = () => {
-    useAuthStore.getState().clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const copyReferCode = () => {
@@ -145,7 +142,7 @@ export default function AdminNotificationsPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Manage Notifications - Dreamy Life Admin</title>
       </Head>
@@ -300,6 +297,6 @@ export default function AdminNotificationsPage() {
           )}
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

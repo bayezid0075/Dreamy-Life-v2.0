@@ -4,21 +4,15 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useI18n, Locale } from '@/i18n';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { isAuthenticated, accessToken } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const { locale, t, setLocale } = useI18n();
   const [selectedLang, setSelectedLang] = useState<Locale>(locale);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-
-  useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
-  }, [isAuthenticated, accessToken, router]);
 
   useEffect(() => {
     setSelectedLang(locale);
@@ -52,7 +46,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - {t('settingsTitle')}</title>
       </Head>
@@ -123,6 +117,6 @@ export default function SettingsPage() {
           </button>
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

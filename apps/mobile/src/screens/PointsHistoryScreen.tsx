@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -18,23 +19,30 @@ interface Transaction {
 
 export default function PointsHistoryScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [wallet, setWallet] = useState<{ pointsBalance: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
 
-  useEffect(() => { loadData(); }, [filter, timeRange]);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadData(); }, [filter, timeRange, isAuthenticated]);
 
   const loadData = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
       const [walletRes, txRes] = await Promise.all([
-        fetch(`${API_URL}/wallet`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/wallet/transactions?type=points&filter=${timeRange}`, { headers: { Authorization: `Bearer ${token}` } }),
+        authFetch(`${API_URL}/wallet`),
+        authFetch(`${API_URL}/wallet/transactions?type=points&filter=${timeRange}`),
       ]);
-      if (walletRes.status === 401 || txRes.status === 401) { await AsyncStorage.removeItem('accessToken'); router.replace('/login'); return; }
+      if (walletRes.status === 401 || txRes.status === 401) { await logout(); router.replace('/login'); return; }
       if (walletRes.ok) { const d = await walletRes.json(); setWallet(d.data.wallet); }
       if (txRes.ok) { const d = await txRes.json(); setTransactions(d.data.transactions); }
     } catch (err) { console.error(err); }

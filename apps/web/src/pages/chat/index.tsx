@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useSocket } from '@/hooks/useSocket';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -46,7 +47,7 @@ interface OnlineUser {
 
 export default function ChatPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, user: authUser } = useAuthStore();
+  const { accessToken, user: authUser } = useAuthStore();
   const { isConnected, onlineUsers, onMessage, onConversationCreated } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,12 +80,9 @@ export default function ChatPage() {
   }, [accessToken, authUser?.id, onlineUsers]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
+    if (!accessToken) return;
     fetchConversations();
-  }, [isAuthenticated, accessToken, router, fetchConversations]);
+  }, [accessToken, fetchConversations]);
 
   useEffect(() => {
     const unsubMessage = onMessage((message: any) => {
@@ -132,7 +130,7 @@ export default function ChatPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Messages</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -311,6 +309,6 @@ export default function ChatPage() {
           </div>
         </nav>
       </body>
-    </>
+    </AuthGuard>
   );
 }

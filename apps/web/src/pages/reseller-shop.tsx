@@ -4,12 +4,13 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ShopPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const { items, addItem } = useCartStore();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,13 +25,12 @@ export default function ShopPage() {
   useEffect(() => { loadProducts(); }, [category]);
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) {
-      fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then(r => r.json())
-        .then(d => { if (d.data?.user) setUser(d.data.user); })
-        .catch(() => {});
-    }
-  }, [isAuthenticated, accessToken]);
+    if (!accessToken) return;
+    fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.json())
+      .then(d => { if (d.data?.user) setUser(d.data.user); })
+      .catch(() => {});
+  }, [accessToken]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -73,7 +73,7 @@ export default function ShopPage() {
   ];
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Shop - Dreamy Life</title></Head>
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -246,6 +246,6 @@ export default function ShopPage() {
           </Link>
         </nav>
       </div>
-    </>
+    </AuthGuard>
   );
 }

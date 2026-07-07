@@ -93,21 +93,52 @@ export const commissions = pgTable('commissions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-// ─── Wallets Table (one per user, tracks all 3 balances) ──────────────────
-export const wallets = pgTable('wallets', {
+// ─── User Wallet (earnings - commissions, app payments - WITHDRAWABLE) ────
+export const userWallets = pgTable('user_wallets', {
   userId: uuid('user_id').references(() => users.id).primaryKey(),
-  walletBalance: decimal('wallet_balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
-  fundsBalance: decimal('funds_balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
-  pointsBalance: decimal('points_balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// ─── Transactions Table (all financial movements) ─────────────────────────
-export const transactions = pgTable('transactions', {
+// ─── User Funds (deposited money for purchases, recharges, job posting) ───
+export const userFunds = pgTable('user_funds', {
+  userId: uuid('user_id').references(() => users.id).primaryKey(),
+  balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── User Points (rewards for app actions) ────────────────────────────────
+export const userPoints = pgTable('user_points', {
+  userId: uuid('user_id').references(() => users.id).primaryKey(),
+  balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Wallet Transactions (earnings history) ───────────────────────────────
+export const walletTransactions = pgTable('wallet_transactions', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
   userId: uuid('user_id').references(() => users.id).notNull(),
-  type: varchar('type', { length: 20 }).notNull(), // wallet_credit, wallet_debit, fund_credit, fund_debit, point_earned, point_spent
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  description: text('description').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Fund Transactions (spending history) ─────────────────────────────────
+export const fundTransactions = pgTable('fund_transactions', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  description: text('description').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Point Transactions (rewards history) ─────────────────────────────────
+export const pointTransactions = pgTable('point_transactions', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
   description: text('description').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -519,6 +550,50 @@ export const sessions = pgTable('sessions', {
   userId: uuid('user_id').references(() => users.id).notNull(),
   refreshToken: text('refresh_token').notNull().unique(),
   expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Mobile Recharge: Orders Table ─────────────────────────────────────
+export const rechargeOrders = pgTable('recharge_orders', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  phoneNumber: varchar('phone_number', { length: 15 }).notNull(),
+  operator: varchar('operator', { length: 10 }).notNull(), // GP, BL, RB, AT, TT, ST
+  connectionType: varchar('connection_type', { length: 10 }).notNull().default('prepaid'), // prepaid, postpaid
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, processing, success, failed
+  apiTransactionId: varchar('api_transaction_id', { length: 100 }),
+  apiResponse: text('api_response'),
+  userCommission: decimal('user_commission', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  rechargeUserIdx: index('recharge_user_idx').on(table.userId),
+  rechargeStatusIdx: index('recharge_status_idx').on(table.status),
+}));
+
+// ─── Mobile Recharge: Commission Distribution Table ────────────────────
+export const rechargeCommissions = pgTable('recharge_commissions', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  rechargeOrderId: uuid('recharge_order_id').references(() => rechargeOrders.id).notNull(),
+  fromUserId: uuid('from_user_id').references(() => users.id).notNull(),
+  toUserId: uuid('to_user_id').references(() => users.id).notNull(),
+  level: integer('level').notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  percentage: decimal('percentage', { precision: 5, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Mobile Recharge: Config Table (singleton) ────────────────────────
+export const rechargeConfig = pgTable('recharge_config', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  apiKey: varchar('api_key', { length: 255 }).notNull().default(''),
+  apiSecret: varchar('api_secret', { length: 255 }).notNull().default(''),
+  apiBaseUrl: varchar('api_base_url', { length: 255 }).notNull().default('http://118.179.129.98/myportal/api/rechargeapi'),
+  userCommissionRate: decimal('user_commission_rate', { precision: 5, scale: 2 }).notNull().default('2.00'),
+  commissionRates: jsonb('commission_rates').notNull().default([2, 1, 0.5, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1]),
+  isActive: boolean('is_active').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Switch } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -58,6 +59,7 @@ const VENDOR_TERMS = [
 
 export default function VendorApplyScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken } = useAuthStore();
   const [step, setStep] = useState<'terms' | 'form'>('terms');
   const [agreed, setAgreed] = useState(false);
   const [shopName, setShopName] = useState('');
@@ -67,16 +69,22 @@ export default function VendorApplyScreen() {
   const [vvipStatus, setVvipStatus] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     if (step === 'form') {
       checkVvip();
     }
   }, [step]);
 
   const checkVvip = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
-      const res = await fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await authFetch(`${API_URL}/auth/profile`);
       if (res.ok) {
         const data = await res.json();
         setVvipStatus(data.data.user.memberStatus === 'vvip');
@@ -88,10 +96,8 @@ export default function VendorApplyScreen() {
     if (!shopName.trim() || !address.trim()) { Alert.alert('Error', 'Please fill in all required fields'); return; }
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      const res = await fetch(`${API_URL}/vendor/apply`, {
+      const res = await authFetch(`${API_URL}/vendor/apply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ shopName, address, bannerUrl: bannerUrl || undefined }),
       });
       const data = await res.json();

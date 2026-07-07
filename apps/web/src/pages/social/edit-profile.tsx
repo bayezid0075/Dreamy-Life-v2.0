@@ -2,12 +2,13 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, user: authUser } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -19,12 +20,9 @@ export default function EditProfilePage() {
   const [country, setCountry] = useState('');
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
+    if (!accessToken) return;
     fetchProfile();
-  }, [isAuthenticated, accessToken, router]);
+  }, [accessToken]);
 
   const fetchProfile = async () => {
     try {
@@ -81,7 +79,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Edit Profile</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -216,6 +214,6 @@ export default function EditProfilePage() {
           </div>
         </main>
       </body>
-    </>
+    </AuthGuard>
   );
 }

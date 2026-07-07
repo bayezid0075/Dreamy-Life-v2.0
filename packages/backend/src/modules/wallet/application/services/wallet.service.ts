@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, desc, and, gte, lte, sql } from 'drizzle-orm';
+import { eq, desc, and, gte, sql } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 
 @Injectable()
@@ -9,215 +9,81 @@ export class WalletService {
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
+  // ─── Get Balances ─────────────────────────────────────────────────────
+
   async getWallet(userId: string) {
-    let wallet = await this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
+    let wallet = await this.db.query.userWallets.findFirst({
+      where: eq(schema.userWallets.userId, userId),
     });
-
     if (!wallet) {
-      const [created] = await this.db
-        .insert(schema.wallets)
-        .values({ userId })
-        .returning();
+      const [created] = await this.db.insert(schema.userWallets).values({ userId }).returning();
       wallet = created;
     }
+    return { walletBalance: Number(wallet.balance) };
+  }
 
-    const txns = await this.db
-      .select({ type: schema.transactions.type, amount: schema.transactions.amount })
-      .from(schema.transactions)
-      .where(eq(schema.transactions.userId, userId));
-
-    if (txns.length > 0) {
-      let computedWallet = 0;
-      let computedFunds = 0;
-      let computedPoints = 0;
-
-      for (const txn of txns) {
-        const amt = Number(txn.amount);
-        switch (txn.type) {
-          case 'wallet_credit': computedWallet += amt; break;
-          case 'wallet_debit': computedWallet -= amt; break;
-          case 'fund_credit': computedFunds += amt; break;
-          case 'fund_debit': computedFunds -= amt; break;
-          case 'point_earned': computedPoints += amt; break;
-          case 'point_spent': computedPoints -= amt; break;
-        }
-      }
-
-      await this.db
-        .update(schema.wallets)
-        .set({
-          walletBalance: String(computedWallet),
-          fundsBalance: String(computedFunds),
-          pointsBalance: String(computedPoints),
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.wallets.userId, userId));
-
-      return {
-        walletBalance: computedWallet,
-        fundsBalance: computedFunds,
-        pointsBalance: computedPoints,
-      };
+  async getFunds(userId: string) {
+    let funds = await this.db.query.userFunds.findFirst({
+      where: eq(schema.userFunds.userId, userId),
+    });
+    if (!funds) {
+      const [created] = await this.db.insert(schema.userFunds).values({ userId }).returning();
+      funds = created;
     }
+    return { fundsBalance: Number(funds.balance) };
+  }
 
+  async getPoints(userId: string) {
+    let points = await this.db.query.userPoints.findFirst({
+      where: eq(schema.userPoints.userId, userId),
+    });
+    if (!points) {
+      const [created] = await this.db.insert(schema.userPoints).values({ userId }).returning();
+      points = created;
+    }
+    return { pointsBalance: Number(points.balance) };
+  }
+
+  async getAllBalances(userId: string) {
+    const [wallet, funds, points] = await Promise.all([
+      this.getWallet(userId),
+      this.getFunds(userId),
+      this.getPoints(userId),
+    ]);
     return {
-      walletBalance: Number(wallet.walletBalance),
-      fundsBalance: Number(wallet.fundsBalance),
-      pointsBalance: Number(wallet.pointsBalance),
+      walletBalance: wallet.walletBalance,
+      fundsBalance: funds.fundsBalance,
+      pointsBalance: points.pointsBalance,
     };
   }
 
-  async getTransactions(userId: string, type: string = 'all', filter: string = 'all') {
-    const conditions = [eq(schema.transactions.userId, userId)];
-
-    if (type !== 'all') {
-      const typeMap: Record<string, string[]> = {
-        wallet: ['wallet_credit', 'wallet_debit'],
-        funds: ['fund_credit', 'fund_debit'],
-        points: ['point_earned', 'point_spent'],
-      };
-      const types = typeMap[type] || [type];
-      if (types.length === 1) {
-        conditions.push(eq(schema.transactions.type, types[0]));
-      } else {
-        conditions.push(sql`${schema.transactions.type} IN (${sql.join(types.map(t => sql`${t}`), sql`, `)})`);
-      }
-    }
-
-    if (filter !== 'all') {
-      const now = new Date();
-      let startDate: Date;
-
-      switch (filter) {
-        case 'today':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          break;
-        case 'yesterday':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-          break;
-        case '7d':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case '15d':
-          startDate = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
-          break;
-        case '30d':
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          startDate = new Date(0);
-      }
-      conditions.push(gte(schema.transactions.createdAt, startDate));
-    }
-
-    const txns = await this.db
-      .select()
-      .from(schema.transactions)
-      .where(and(...conditions))
-      .orderBy(desc(schema.transactions.createdAt))
-      .limit(100);
-
-    return txns.map(t => ({
-      id: t.id,
-      userId: t.userId,
-      type: t.type,
-      amount: Number(t.amount),
-      description: t.description,
-      createdAt: t.createdAt.toISOString(),
-    }));
+  async getFundsBalance(userId: string): Promise<number> {
+    const { fundsBalance } = await this.getFunds(userId);
+    return fundsBalance;
   }
 
-  async addFunds(userId: string, amount: number) {
-    if (amount <= 0) throw new NotFoundException('Amount must be positive');
-
-    let wallet = await this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
-    });
-
-    if (!wallet) {
-      const [created] = await this.db
-        .insert(schema.wallets)
-        .values({ userId })
-        .returning();
-      wallet = created;
-    }
-
-    const newBalance = Number(wallet.fundsBalance) + amount;
-
-    await this.db
-      .update(schema.wallets)
-      .set({ fundsBalance: String(newBalance), updatedAt: new Date() })
-      .where(eq(schema.wallets.userId, userId));
-
-    await this.db.insert(schema.transactions).values({
-      userId,
-      type: 'fund_credit',
-      amount: String(amount),
-      description: `Added ৳${amount.toFixed(2)} via bKash`,
-    });
-
-    return {
-      fundsBalance: newBalance,
-    };
-  }
-
-  async debitFunds(userId: string, amount: number, description: string) {
-    if (amount <= 0) throw new NotFoundException('Amount must be positive');
-
-    let wallet = await this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
-    });
-
-    if (!wallet) throw new NotFoundException('Wallet not found');
-
-    const currentBalance = Number(wallet.fundsBalance);
-    if (currentBalance < amount) {
-      throw new NotFoundException('Insufficient funds balance');
-    }
-
-    const newBalance = currentBalance - amount;
-
-    await this.db
-      .update(schema.wallets)
-      .set({ fundsBalance: String(newBalance), updatedAt: new Date() })
-      .where(eq(schema.wallets.userId, userId));
-
-    await this.db.insert(schema.transactions).values({
-      userId,
-      type: 'fund_debit',
-      amount: String(amount),
-      description,
-    });
-
-    return { fundsBalance: newBalance };
-  }
+  // ─── Wallet Operations (earnings - WITHDRAWABLE) ──────────────────────
 
   async creditWallet(userId: string, amount: number, description: string) {
     if (amount <= 0) throw new NotFoundException('Amount must be positive');
 
-    let wallet = await this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
+    let wallet = await this.db.query.userWallets.findFirst({
+      where: eq(schema.userWallets.userId, userId),
     });
-
     if (!wallet) {
-      const [created] = await this.db
-        .insert(schema.wallets)
-        .values({ userId })
-        .returning();
+      const [created] = await this.db.insert(schema.userWallets).values({ userId }).returning();
       wallet = created;
     }
 
-    const newBalance = Number(wallet.walletBalance) + amount;
+    const newBalance = Number(wallet.balance) + amount;
 
     await this.db
-      .update(schema.wallets)
-      .set({ walletBalance: String(newBalance), updatedAt: new Date() })
-      .where(eq(schema.wallets.userId, userId));
+      .update(schema.userWallets)
+      .set({ balance: String(newBalance), updatedAt: new Date() })
+      .where(eq(schema.userWallets.userId, userId));
 
-    await this.db.insert(schema.transactions).values({
+    await this.db.insert(schema.walletTransactions).values({
       userId,
-      type: 'wallet_credit',
       amount: String(amount),
       description,
     });
@@ -225,47 +91,57 @@ export class WalletService {
     return { walletBalance: newBalance };
   }
 
-  async getFundsBalance(userId: string): Promise<number> {
-    let wallet = await this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
-    });
+  async debitWallet(userId: string, amount: number, description: string) {
+    if (amount <= 0) throw new NotFoundException('Amount must be positive');
 
-    if (!wallet) {
-      const [created] = await this.db
-        .insert(schema.wallets)
-        .values({ userId })
-        .returning();
-      wallet = created;
+    let wallet = await this.db.query.userWallets.findFirst({
+      where: eq(schema.userWallets.userId, userId),
+    });
+    if (!wallet) throw new NotFoundException('Wallet not found');
+
+    const currentBalance = Number(wallet.balance);
+    if (currentBalance < amount) {
+      throw new NotFoundException('Insufficient wallet balance');
     }
 
-    return Number(wallet.fundsBalance);
+    const newBalance = currentBalance - amount;
+
+    await this.db
+      .update(schema.userWallets)
+      .set({ balance: String(newBalance), updatedAt: new Date() })
+      .where(eq(schema.userWallets.userId, userId));
+
+    await this.db.insert(schema.walletTransactions).values({
+      userId,
+      amount: String(-amount),
+      description,
+    });
+
+    return { walletBalance: newBalance };
   }
+
+  // ─── Fund Operations (deposited money for purchases) ──────────────────
 
   async creditFunds(userId: string, amount: number, description: string) {
     if (amount <= 0) throw new NotFoundException('Amount must be positive');
 
-    let wallet = await this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
+    let funds = await this.db.query.userFunds.findFirst({
+      where: eq(schema.userFunds.userId, userId),
     });
-
-    if (!wallet) {
-      const [created] = await this.db
-        .insert(schema.wallets)
-        .values({ userId })
-        .returning();
-      wallet = created;
+    if (!funds) {
+      const [created] = await this.db.insert(schema.userFunds).values({ userId }).returning();
+      funds = created;
     }
 
-    const newBalance = Number(wallet.fundsBalance) + amount;
+    const newBalance = Number(funds.balance) + amount;
 
     await this.db
-      .update(schema.wallets)
-      .set({ fundsBalance: String(newBalance), updatedAt: new Date() })
-      .where(eq(schema.wallets.userId, userId));
+      .update(schema.userFunds)
+      .set({ balance: String(newBalance), updatedAt: new Date() })
+      .where(eq(schema.userFunds.userId, userId));
 
-    await this.db.insert(schema.transactions).values({
+    await this.db.insert(schema.fundTransactions).values({
       userId,
-      type: 'fund_credit',
       amount: String(amount),
       description,
     });
@@ -273,50 +149,252 @@ export class WalletService {
     return { fundsBalance: newBalance };
   }
 
-  async seedIfEmpty(userId: string) {
-    const existing = await this.db
-      .select()
-      .from(schema.transactions)
-      .where(eq(schema.transactions.userId, userId))
-      .limit(1);
+  async debitFunds(userId: string, amount: number, description: string) {
+    if (amount <= 0) throw new NotFoundException('Amount must be positive');
 
-    if (existing.length > 0) return false;
+    let funds = await this.db.query.userFunds.findFirst({
+      where: eq(schema.userFunds.userId, userId),
+    });
+    if (!funds) throw new NotFoundException('Funds account not found');
+
+    const currentBalance = Number(funds.balance);
+    if (currentBalance < amount) {
+      throw new NotFoundException('Insufficient funds balance');
+    }
+
+    const newBalance = currentBalance - amount;
+
+    await this.db
+      .update(schema.userFunds)
+      .set({ balance: String(newBalance), updatedAt: new Date() })
+      .where(eq(schema.userFunds.userId, userId));
+
+    await this.db.insert(schema.fundTransactions).values({
+      userId,
+      amount: String(-amount),
+      description,
+    });
+
+    return { fundsBalance: newBalance };
+  }
+
+  // ─── Point Operations (rewards) ───────────────────────────────────────
+
+  async creditPoints(userId: string, amount: number, description: string) {
+    if (amount <= 0) throw new NotFoundException('Amount must be positive');
+
+    let points = await this.db.query.userPoints.findFirst({
+      where: eq(schema.userPoints.userId, userId),
+    });
+    if (!points) {
+      const [created] = await this.db.insert(schema.userPoints).values({ userId }).returning();
+      points = created;
+    }
+
+    const newBalance = Number(points.balance) + amount;
+
+    await this.db
+      .update(schema.userPoints)
+      .set({ balance: String(newBalance), updatedAt: new Date() })
+      .where(eq(schema.userPoints.userId, userId));
+
+    await this.db.insert(schema.pointTransactions).values({
+      userId,
+      amount: String(amount),
+      description,
+    });
+
+    return { pointsBalance: newBalance };
+  }
+
+  async debitPoints(userId: string, amount: number, description: string) {
+    if (amount <= 0) throw new NotFoundException('Amount must be positive');
+
+    let points = await this.db.query.userPoints.findFirst({
+      where: eq(schema.userPoints.userId, userId),
+    });
+    if (!points) throw new NotFoundException('Points account not found');
+
+    const currentBalance = Number(points.balance);
+    if (currentBalance < amount) {
+      throw new NotFoundException('Insufficient points balance');
+    }
+
+    const newBalance = currentBalance - amount;
+
+    await this.db
+      .update(schema.userPoints)
+      .set({ balance: String(newBalance), updatedAt: new Date() })
+      .where(eq(schema.userPoints.userId, userId));
+
+    await this.db.insert(schema.pointTransactions).values({
+      userId,
+      amount: String(-amount),
+      description,
+    });
+
+    return { pointsBalance: newBalance };
+  }
+
+  // ─── Transaction History ──────────────────────────────────────────────
+
+  async getWalletTransactions(userId: string, filter: string = 'all') {
+    const conditions = [eq(schema.walletTransactions.userId, userId)];
+
+    if (filter !== 'all') {
+      const startDate = this.getFilterDate(filter);
+      if (startDate) conditions.push(gte(schema.walletTransactions.createdAt, startDate));
+    }
+
+    const txns = await this.db
+      .select()
+      .from(schema.walletTransactions)
+      .where(and(...conditions))
+      .orderBy(desc(schema.walletTransactions.createdAt))
+      .limit(100);
+
+    return txns.map(t => ({
+      id: t.id,
+      userId: t.userId,
+      type: Number(t.amount) >= 0 ? 'wallet_credit' : 'wallet_debit',
+      amount: Math.abs(Number(t.amount)),
+      description: t.description,
+      createdAt: t.createdAt.toISOString(),
+    }));
+  }
+
+  async getFundTransactions(userId: string, filter: string = 'all') {
+    const conditions = [eq(schema.fundTransactions.userId, userId)];
+
+    if (filter !== 'all') {
+      const startDate = this.getFilterDate(filter);
+      if (startDate) conditions.push(gte(schema.fundTransactions.createdAt, startDate));
+    }
+
+    const txns = await this.db
+      .select()
+      .from(schema.fundTransactions)
+      .where(and(...conditions))
+      .orderBy(desc(schema.fundTransactions.createdAt))
+      .limit(100);
+
+    return txns.map(t => ({
+      id: t.id,
+      userId: t.userId,
+      type: Number(t.amount) >= 0 ? 'fund_credit' : 'fund_debit',
+      amount: Math.abs(Number(t.amount)),
+      description: t.description,
+      createdAt: t.createdAt.toISOString(),
+    }));
+  }
+
+  async getPointTransactions(userId: string, filter: string = 'all') {
+    const conditions = [eq(schema.pointTransactions.userId, userId)];
+
+    if (filter !== 'all') {
+      const startDate = this.getFilterDate(filter);
+      if (startDate) conditions.push(gte(schema.pointTransactions.createdAt, startDate));
+    }
+
+    const txns = await this.db
+      .select()
+      .from(schema.pointTransactions)
+      .where(and(...conditions))
+      .orderBy(desc(schema.pointTransactions.createdAt))
+      .limit(100);
+
+    return txns.map(t => ({
+      id: t.id,
+      userId: t.userId,
+      type: Number(t.amount) >= 0 ? 'point_earned' : 'point_spent',
+      amount: Math.abs(Number(t.amount)),
+      description: t.description,
+      createdAt: t.createdAt.toISOString(),
+    }));
+  }
+
+  async getAllTransactions(userId: string, type: string = 'all', filter: string = 'all') {
+    if (type === 'wallet') return this.getWalletTransactions(userId, filter);
+    if (type === 'funds') return this.getFundTransactions(userId, filter);
+    if (type === 'points') return this.getPointTransactions(userId, filter);
+
+    const [walletTxns, fundTxns, pointTxns] = await Promise.all([
+      this.getWalletTransactions(userId, filter),
+      this.getFundTransactions(userId, filter),
+      this.getPointTransactions(userId, filter),
+    ]);
+
+    return [...walletTxns, ...fundTxns, ...pointTxns].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }
+
+  // ─── Seed Data ────────────────────────────────────────────────────────
+
+  async seedIfEmpty(userId: string) {
+    const existing = await this.db.query.walletTransactions.findFirst({
+      where: eq(schema.walletTransactions.userId, userId),
+    });
+    if (existing) return false;
 
     const now = new Date();
     const daysAgo = (d: number) => new Date(now.getTime() - d * 24 * 60 * 60 * 1000);
 
-    await this.db.insert(schema.wallets).values({
-      userId,
-      walletBalance: '45.00',
-      fundsBalance: '462.50',
-      pointsBalance: '600.00',
-    });
+    await this.db.insert(schema.userWallets).values({ userId, balance: '45.00' });
+    await this.db.insert(schema.userFunds).values({ userId, balance: '462.50' });
+    await this.db.insert(schema.userPoints).values({ userId, balance: '600.00' });
 
-    const seedTransactions = [
-      { type: 'fund_credit', amount: '500.00', description: 'Added via bKash', days: 2 },
-      { type: 'fund_debit', amount: '20.00', description: 'Mobile recharge 017...', days: 2 },
-      { type: 'fund_credit', amount: '20.00', description: 'Refund: mobile recharge', days: 2 },
-      { type: 'fund_debit', amount: '20.00', description: 'Mobile recharge 017...', days: 2 },
-      { type: 'wallet_credit', amount: '50.00', description: 'Commission earned', days: 3 },
-      { type: 'wallet_debit', amount: '30.00', description: 'Transfer to funds', days: 3 },
-      { type: 'wallet_credit', amount: '25.00', description: 'Referral bonus', days: 4 },
-      { type: 'point_earned', amount: '50.00', description: 'Daily login reward', days: 1 },
-      { type: 'point_earned', amount: '500.00', description: 'Referral bonus points', days: 3 },
-      { type: 'point_spent', amount: '150.00', description: 'Product purchase', days: 5 },
-      { type: 'point_earned', amount: '200.00', description: 'Product review reward', days: 7 },
-      { type: 'fund_credit', amount: '12.50', description: 'Cashback reward', days: 4 },
+    const seedWalletTxns = [
+      { amount: '50.00', description: 'Commission earned', days: 3 },
+      { amount: '-30.00', description: 'Transfer to funds', days: 3 },
+      { amount: '25.00', description: 'Referral bonus', days: 4 },
     ];
 
-    for (const txn of seedTransactions) {
-      await this.db.insert(schema.transactions).values({
-        userId,
-        type: txn.type,
-        amount: txn.amount,
-        description: txn.description,
-        createdAt: daysAgo(txn.days),
+    const seedFundTxns = [
+      { amount: '500.00', description: 'Added via bKash', days: 2 },
+      { amount: '-20.00', description: 'Mobile recharge 017...', days: 2 },
+      { amount: '20.00', description: 'Refund: mobile recharge', days: 2 },
+      { amount: '-20.00', description: 'Mobile recharge 017...', days: 2 },
+      { amount: '12.50', description: 'Cashback reward', days: 4 },
+    ];
+
+    const seedPointTxns = [
+      { amount: '50.00', description: 'Daily login reward', days: 1 },
+      { amount: '500.00', description: 'Referral bonus points', days: 3 },
+      { amount: '-150.00', description: 'Product purchase', days: 5 },
+      { amount: '200.00', description: 'Product review reward', days: 7 },
+    ];
+
+    for (const txn of seedWalletTxns) {
+      await this.db.insert(schema.walletTransactions).values({
+        userId, amount: txn.amount, description: txn.description, createdAt: daysAgo(txn.days),
+      });
+    }
+    for (const txn of seedFundTxns) {
+      await this.db.insert(schema.fundTransactions).values({
+        userId, amount: txn.amount, description: txn.description, createdAt: daysAgo(txn.days),
+      });
+    }
+    for (const txn of seedPointTxns) {
+      await this.db.insert(schema.pointTransactions).values({
+        userId, amount: txn.amount, description: txn.description, createdAt: daysAgo(txn.days),
       });
     }
 
     return true;
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────
+
+  private getFilterDate(filter: string): Date | null {
+    const now = new Date();
+    switch (filter) {
+      case 'today': return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      case 'yesterday': return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case '15d': return new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+      case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      default: return null;
+    }
   }
 }

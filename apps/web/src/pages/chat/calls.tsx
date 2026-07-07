@@ -1,21 +1,13 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
-import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 export default function CallsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, router]);
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Calls</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -67,6 +59,6 @@ export default function CallsPage() {
           </div>
         </nav>
       </body>
-    </>
+    </AuthGuard>
   );
 }

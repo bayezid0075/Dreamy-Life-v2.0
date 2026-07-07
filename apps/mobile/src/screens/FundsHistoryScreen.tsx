@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -18,21 +19,26 @@ interface Transaction {
 
 export default function FundsHistoryScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
 
-  useEffect(() => { loadTransactions(); }, [filter, timeRange]);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadTransactions(); }, [filter, timeRange, isAuthenticated]);
 
   const loadTransactions = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
-      const res = await fetch(`${API_URL}/wallet/transactions?type=funds&filter=${timeRange}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 401) { await AsyncStorage.removeItem('accessToken'); router.replace('/login'); return; }
+      const res = await authFetch(`${API_URL}/wallet/transactions?type=funds&filter=${timeRange}`);
+      if (res.status === 401) { await logout(); router.replace('/login'); return; }
       if (res.ok) { const d = await res.json(); setTransactions(d.data.transactions); }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }

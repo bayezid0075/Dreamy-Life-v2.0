@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -45,20 +46,19 @@ function getTimeAgo(dateStr: string): string {
 export default function PostDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { accessToken, isAuthenticated, user } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) { router.replace('/login'); return; }
-    if (!id) return;
+    if (!id || !accessToken) return;
     fetch(`${API_URL}/posts/${id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.json())
       .then((data) => { setPost(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [id, isAuthenticated, accessToken, router]);
+  }, [id, accessToken]);
 
   const handleLike = async () => {
     if (!post) return;
@@ -106,7 +106,7 @@ export default function PostDetailPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Dreamy Life - Post</title></Head>
       <style>{`
         body { background-color: #fcf9f8; min-height: 100vh; }
@@ -184,6 +184,6 @@ export default function PostDetailPage() {
           ))}
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -54,7 +55,7 @@ function getTimeAgo(dateStr: string): string {
 
 export default function SocialProfilePage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, user: authUser } = useAuthStore();
+  const { accessToken, user: authUser } = useAuthStore();
   const { unreadCount: unreadNotifCount } = useNotificationStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -65,14 +66,9 @@ export default function SocialProfilePage() {
   const profileId = authUser?.id;
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
-    if (profileId) {
-      fetchAll(profileId);
-    }
-  }, [isAuthenticated, accessToken, profileId, router]);
+    if (!accessToken || !profileId) return;
+    fetchAll(profileId);
+  }, [accessToken, profileId]);
 
   const fetchAll = async (userId: string) => {
     try {
@@ -157,7 +153,7 @@ export default function SocialProfilePage() {
   const isOwnProfile = true;
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Profile</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -380,6 +376,6 @@ export default function SocialProfilePage() {
           </div>
         </aside>
       </body>
-    </>
+    </AuthGuard>
   );
 }

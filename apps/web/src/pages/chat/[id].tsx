@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useSocket } from '@/hooks/useSocket';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -50,7 +51,7 @@ interface Conversation {
 export default function ChatDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { accessToken, isAuthenticated, user: authUser } = useAuthStore();
+  const { accessToken, user: authUser } = useAuthStore();
   const {
     isConnected,
     onlineUsers,
@@ -112,13 +113,10 @@ export default function ChatDetailPage() {
   }, [id, accessToken]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
+    if (!accessToken) return;
     fetchConversation();
     fetchMessages();
-  }, [isAuthenticated, accessToken, router, id, fetchConversation, fetchMessages]);
+  }, [accessToken, id, fetchConversation, fetchMessages]);
 
   useEffect(() => {
     if (!id || !isConnected) return;
@@ -218,7 +216,7 @@ export default function ChatDetailPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Chat with {displayName}</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -366,6 +364,6 @@ export default function ChatDetailPage() {
           </div>
         </div>
       </body>
-    </>
+    </AuthGuard>
   );
 }

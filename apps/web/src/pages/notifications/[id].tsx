@@ -6,6 +6,7 @@ import { useNotificationStore } from '@/store/notificationStore';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import { VendorProfile } from '@/features/vendor/api';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 interface NotificationDetail {
   id: string;
@@ -27,7 +28,7 @@ interface NotificationDetail {
 export default function NotificationDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<NotificationDetail | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -38,11 +39,7 @@ export default function NotificationDetailPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
-    }
-    if (!id) return;
+    if (!id || !accessToken) return;
 
     fetch(`${API_URL}/notifications/${id}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -67,7 +64,7 @@ export default function NotificationDetailPage() {
       .then((res) => res.json())
       .then((data) => setVendorProfile(data.data || null))
       .catch(() => setVendorProfile(null));
-  }, [id, isAuthenticated, accessToken, router]);
+  }, [id, accessToken]);
 
   const handleMarkAsRead = async () => {
     if (!notification || !accessToken) return;
@@ -105,9 +102,8 @@ export default function NotificationDetailPage() {
     setActionLoading(false);
   };
 
-  const handleLogout = () => {
-    useAuthStore.getState().clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await useAuthStore.getState().logout();
   };
 
   const copyReferCode = () => {
@@ -142,7 +138,7 @@ export default function NotificationDetailPage() {
   };
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>{notification.title} - Dreamy Life</title>
       </Head>
@@ -264,6 +260,6 @@ export default function NotificationDetailPage() {
           </button>
         </div>
       </main>
-    </>
+    </AuthGuard>
   );
 }

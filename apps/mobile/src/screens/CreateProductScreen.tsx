@@ -12,7 +12,8 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import TopBar from '@/shared/components/TopBar';
@@ -35,6 +36,7 @@ interface LocalImage {
 
 export default function CreateProductScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken } = useAuthStore();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -46,11 +48,11 @@ export default function CreateProductScreen() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    (async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) router.replace('/login');
-    })();
-  }, []);
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
 
   const pickImages = async () => {
     const permResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -85,10 +87,9 @@ export default function CreateProductScreen() {
       } as any);
 
       try {
-        const token = await AsyncStorage.getItem('accessToken');
         const res = await fetch(`${API_URL}/media/upload`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           body: formData,
         });
         const data = await res.json();
@@ -132,7 +133,6 @@ export default function CreateProductScreen() {
     setLoading(true);
     setError('');
     try {
-      const token = await AsyncStorage.getItem('accessToken');
       const uploadedUrls = images.filter(img => img.url).map(img => img.url!);
       const body: any = {
         name: name.trim(),
@@ -143,9 +143,8 @@ export default function CreateProductScreen() {
       if (description.trim()) body.description = description.trim();
       if (sku.trim()) body.sku = sku.trim();
       if (uploadedUrls.length > 0) body.imageUrls = uploadedUrls;
-      const res = await fetch(`${API_URL}/vendor/products`, {
+      const res = await authFetch(`${API_URL}/vendor/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
       });
       const data = await res.json();

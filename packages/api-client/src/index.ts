@@ -72,6 +72,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('authUser');
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }

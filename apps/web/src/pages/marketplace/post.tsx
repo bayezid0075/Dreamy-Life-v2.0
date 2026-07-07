@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function PostJobPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, hydrated } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -21,14 +22,9 @@ export default function PostJobPage() {
   const [descriptionLength, setDescriptionLength] = useState(0);
 
   useEffect(() => {
-    if (hydrated && (!isAuthenticated || !accessToken)) {
-      router.replace('/login');
-      return;
-    }
-    if (isAuthenticated && accessToken) {
-      fetchWallet();
-    }
-  }, [isAuthenticated, accessToken, hydrated]);
+    if (!accessToken) return;
+    fetchWallet();
+  }, [accessToken]);
 
   const fetchWallet = async () => {
     try {
@@ -123,16 +119,8 @@ export default function PostJobPage() {
     }
   };
 
-  if (!hydrated || (!isAuthenticated && !accessToken)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f8ff' }}>
-        <div className="animate-spin h-10 w-10 border-2 border-[#5d5e64] border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Create Job Post - Dreamy Life</title>
       </Head>
@@ -361,6 +349,6 @@ export default function PostJobPage() {
           </div>
         </form>
       </main>
-    </>
+    </AuthGuard>
   );
 }

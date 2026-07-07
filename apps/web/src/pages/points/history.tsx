@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 interface Transaction {
   id: string;
@@ -14,7 +15,7 @@ interface Transaction {
 
 export default function PointsHistoryPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [wallet, setWallet] = useState<{ pointsBalance: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,23 +39,21 @@ export default function PointsHistoryPage() {
           { headers: { Authorization: `Bearer ${token}` } }
         ),
       ]);
-      if (walletRes.status === 401 || txRes.status === 401) { clearAuth(); router.replace('/login'); return; }
+      if (walletRes.status === 401 || txRes.status === 401) { await logout(); return; }
       if (walletRes.ok) { const d = await walletRes.json(); setWallet(d.data.wallet); }
       if (txRes.ok) { const d = await txRes.json(); setTransactions(d.data.transactions); }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  }, [clearAuth, router]);
+  }, [logout]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchData();
     }
-    fetchData();
-  }, [isAuthenticated, accessToken, filter, timeRange, fetchData]);
+  }, [accessToken, filter, timeRange, fetchData]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!accessToken) return;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') fetchData();
@@ -73,7 +72,7 @@ export default function PointsHistoryPage() {
       window.removeEventListener('focus', handleFocus);
       router.events.off('routeChangeComplete', handleRouteChange);
     };
-  }, [isAuthenticated, accessToken, fetchData]);
+  }, [accessToken, fetchData]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -96,7 +95,7 @@ export default function PointsHistoryPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Points History - Dreamy Life</title>
       </Head>
@@ -213,6 +212,6 @@ export default function PointsHistoryPage() {
           </div>
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

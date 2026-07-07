@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -10,17 +11,24 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function VendorDashboardScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [vendor, setVendor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadData(); }, [isAuthenticated]);
 
   const loadData = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
-      const res = await fetch(`${API_URL}/vendor/me`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.status === 401) { await AsyncStorage.removeItem('accessToken'); router.replace('/login'); return; }
+      const res = await authFetch(`${API_URL}/vendor/me`);
+      if (res.status === 401) { await logout(); router.replace('/login'); return; }
       if (res.ok) { const data = await res.json(); setVendor(data.data); }
     } catch { /* error */ }
     finally { setLoading(false); }

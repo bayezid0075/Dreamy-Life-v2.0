@@ -9,6 +9,7 @@ import { uploadMedia } from '@/features/media/upload';
 import api from '@dreamy-life/api-client';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 interface ImagePreview {
   file?: File;
@@ -27,7 +28,7 @@ interface VariantPrices {
 
 export default function CreateProductPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const colorInputRef = useRef<HTMLInputElement>(null);
   const sizeInputRef = useRef<HTMLInputElement>(null);
@@ -104,13 +105,12 @@ export default function CreateProductPage() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated) { router.replace('/login'); return; }
     Promise.all([
       getMyVendorProfile().then(d => { setVendorProfile(d.data || null); }).catch(() => setVendorProfile(null)),
       api.get('/auth/profile').then(d => setUser(d.data?.data?.user)).catch(() => {}),
       api.get('/notifications/unread-count').then(d => { if (d.data?.count !== undefined) setUnreadNotifCount(d.data.count); }).catch(() => {}),
     ]);
-  }, [isAuthenticated]);
+  }, []);
 
   useEffect(() => {
     if (colors.length > 0 && sizes.length > 0) {
@@ -297,11 +297,11 @@ export default function CreateProductPage() {
     }
   };
 
-  const handleLogout = () => { useAuthStore.getState().clearAuth(); router.replace('/login'); };
+  const handleLogout = async () => { await useAuthStore.getState().logout(); };
   const copyReferCode = () => { if (user?.ownRefercode) navigator.clipboard.write(user.ownRefercode); };
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Add Product - Vendor Suite</title></Head>
       <div
         className="min-h-screen overflow-x-hidden pb-32 selection:bg-[#ffd1dc] selection:text-[#1c1b1b]"
@@ -642,6 +642,6 @@ export default function CreateProductPage() {
           </form>
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

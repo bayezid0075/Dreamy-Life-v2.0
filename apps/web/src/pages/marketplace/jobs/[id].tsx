@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -194,7 +195,7 @@ export default function JobDetailPage() {
   const hasPendingSubmission = job.submissions?.some((s) => s.workerId === user?.id && s.status === 'pending');
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>{job.title} - Dreamy Life Marketplace</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -426,6 +427,6 @@ export default function JobDetailPage() {
           </button>
         </div>
       )}
-    </>
+    </AuthGuard>
   );
 }

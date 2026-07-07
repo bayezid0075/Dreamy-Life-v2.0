@@ -7,10 +7,11 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 export default function ReferralPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [user, setUser] = useState<any>(null);
   const [downline, setDownline] = useState<any[]>([]);
   const [tree, setTree] = useState<any>(null);
@@ -27,25 +28,23 @@ export default function ReferralPage() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      fetchData(accessToken);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      fetch(`${apiUrl}/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
+        .catch(() => {});
+      fetch(`${apiUrl}/vendor/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => { setVendorProfile(data.data || null); })
+        .catch(() => { setVendorProfile(null); });
     }
-    fetchData(accessToken);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-    fetch(`${apiUrl}/notifications/unread-count`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { if (data.count !== undefined) setUnreadNotifCount(data.count); })
-      .catch(() => {});
-    fetch(`${apiUrl}/vendor/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => { setVendorProfile(data.data || null); })
-      .catch(() => { setVendorProfile(null); });
-  }, [isAuthenticated, accessToken, router]);
+  }, [accessToken]);
 
   const fetchData = async (token: string) => {
     try {
@@ -68,8 +67,7 @@ export default function ReferralPage() {
       ]);
 
       if (profileRes.status === 401 || statsRes.status === 401) {
-        clearAuth();
-        router.replace('/login');
+        await logout();
         return;
       }
 
@@ -95,8 +93,7 @@ export default function ReferralPage() {
       }
     } catch (err) {
       console.error('Failed to fetch data', err);
-      clearAuth();
-      router.replace('/login');
+      await logout();
     } finally {
       setLoading(false);
     }
@@ -115,9 +112,8 @@ export default function ReferralPage() {
     }
   };
 
-  const handleLogout = () => {
-    clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const getStatusColor = (status: string) => {
@@ -141,7 +137,7 @@ export default function ReferralPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Referrals</title>
       </Head>
@@ -341,6 +337,6 @@ export default function ReferralPage() {
           )}
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

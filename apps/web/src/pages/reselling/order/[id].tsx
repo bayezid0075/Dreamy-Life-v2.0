@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -11,14 +12,14 @@ const STATUS_STEPS = ['pending', 'confirmed', 'shipped', 'delivered'];
 export default function ResellerOrderDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) { router.replace('/login'); return; }
+    if (!accessToken) return;
     if (id) loadOrder();
-  }, [isAuthenticated, accessToken, id]);
+  }, [accessToken, id]);
 
   const loadOrder = async () => {
     try {
@@ -48,7 +49,7 @@ export default function ResellerOrderDetailPage() {
   const currentStep = STATUS_STEPS.indexOf(order.status);
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Order #{order.id?.slice(0, 8)} - Dreamy Life</title></Head>
       <div className="min-h-screen bg-[#fcf9f8]">
         <div className="fixed inset-0 z-[-1] pointer-events-none">
@@ -139,6 +140,6 @@ export default function ResellerOrderDetailPage() {
           </Link>
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

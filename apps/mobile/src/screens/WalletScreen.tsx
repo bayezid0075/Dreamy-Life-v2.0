@@ -11,7 +11,8 @@ import {
   FlatList,
   Linking,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import AuroraBackground from '@/shared/components/AuroraBackground';
@@ -36,6 +37,7 @@ interface Transaction {
 
 export default function WalletScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,14 @@ export default function WalletScreen() {
   const [addAmount, setAddAmount] = useState('');
   const [adding, setAdding] = useState(false);
 
-  useEffect(() => { loadData(); }, [filter]);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadData(); }, [filter, isAuthenticated]);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,15 +62,14 @@ export default function WalletScreen() {
   );
 
   const loadData = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
       const [walletRes, txRes] = await Promise.all([
-        fetch(`${API_URL}/wallet`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/wallet/transactions?type=${filter}`, { headers: { Authorization: `Bearer ${token}` } }),
+        authFetch(`${API_URL}/wallet`),
+        authFetch(`${API_URL}/wallet/transactions?type=${filter}`),
       ]);
       if (walletRes.status === 401 || txRes.status === 401) {
-        await AsyncStorage.removeItem('accessToken');
+        await logout();
         router.replace('/login');
         return;
       }
@@ -74,13 +82,11 @@ export default function WalletScreen() {
   const handleAddFunds = async () => {
     const amount = parseFloat(addAmount);
     if (!amount || amount <= 0) return;
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) return;
+    if (!accessToken) return;
     setAdding(true);
     try {
-      const res = await fetch(`${API_URL}/wallet/create-payment`, {
+      const res = await authFetch(`${API_URL}/wallet/create-payment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ amount }),
       });
       const data = await res.json();

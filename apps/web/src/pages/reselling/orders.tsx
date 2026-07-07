@@ -7,6 +7,7 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -20,7 +21,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; icon: string }> 
 
 export default function ResellerOrdersPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -30,14 +31,14 @@ export default function ResellerOrdersPage() {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) { router.replace('/login'); return; }
+    if (!accessToken) return;
     loadOrders();
     Promise.all([
       fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => setUser(d.data?.user)).catch(() => {}),
       fetch(`${API_URL}/notifications/unread-count`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => { if (d.count !== undefined) setUnreadNotifCount(d.count); }).catch(() => {}),
       fetch(`${API_URL}/vendor/me`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()).then(d => setVendorProfile(d.data || null)).catch(() => setVendorProfile(null)),
     ]);
-  }, [isAuthenticated, accessToken]);
+  }, [accessToken]);
 
   const loadOrders = async () => {
     try {
@@ -48,7 +49,7 @@ export default function ResellerOrdersPage() {
     finally { setLoading(false); }
   };
 
-  const handleLogout = () => { clearAuth(); router.replace('/login'); };
+  const handleLogout = async () => { await logout(); };
   const copyReferCode = () => { if (user?.ownRefercode) navigator.clipboard.writeText(user.ownRefercode); };
 
   // Analytics
@@ -73,7 +74,7 @@ export default function ResellerOrdersPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>My Orders - Dreamy Life</title></Head>
       <div
         className="min-h-screen overflow-x-hidden pb-32 selection:bg-[#ffd1dc] selection:text-[#1c1b1b]"
@@ -210,6 +211,6 @@ export default function ResellerOrdersPage() {
           )}
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

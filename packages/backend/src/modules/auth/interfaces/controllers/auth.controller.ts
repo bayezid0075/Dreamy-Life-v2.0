@@ -115,9 +115,30 @@ export class AuthController {
   }
 
   @Post('logout')
-  @ApiOperation({ summary: 'Logout — clears the refresh token cookie' })
+  @ApiOperation({ summary: 'Logout — clears the refresh token cookie and invalidates session' })
   @ApiResponse({ status: 200, description: 'Logged out successfully', type: LogoutResponse })
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refresh_token || req.body?.refreshToken;
+
+    // Try to extract userId from access token if available
+    let userId: string | undefined;
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const payload = this.jwtService.verify(token, {
+          secret: process.env.JWT_SECRET || 'super_secret_jwt_key',
+        });
+        userId = payload.userId;
+      } catch {
+        // Access token may be expired — that's okay, we still clear the cookie
+      }
+    }
+
+    if (userId) {
+      await this.authService.logout(userId, refreshToken);
+    }
+
     res.clearCookie('refresh_token');
     return {
       success: true,

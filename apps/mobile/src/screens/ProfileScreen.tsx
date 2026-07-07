@@ -9,7 +9,8 @@ import {
   Animated,
   Image,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
@@ -23,17 +24,24 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useI18n();
+  const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     (async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) { router.replace('/login'); return; }
       try {
-        const res = await fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } });
-        if (res.status === 401) { await AsyncStorage.removeItem('accessToken'); router.replace('/login'); return; }
+        const res = await authFetch(`${API_URL}/auth/profile`);
+        if (res.status === 401) { await logout(); router.replace('/login'); return; }
         if (res.ok) {
           const data = await res.json();
           setUser(data.data.user);
@@ -48,10 +56,10 @@ export default function ProfileScreen() {
         Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
       ])
     ).start();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('accessToken');
+    await logout();
     router.replace('/login');
   };
 

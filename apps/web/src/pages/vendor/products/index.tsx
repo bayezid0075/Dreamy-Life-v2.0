@@ -9,6 +9,7 @@ import { getMyVendorProfile, VendorProfile } from '@/features/vendor/api';
 import api from '@dreamy-life/api-client';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 export default function VendorProductsPage() {
   const router = useRouter();
@@ -23,9 +24,8 @@ export default function VendorProductsPage() {
   const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
 
   useEffect(() => {
-    if (!isAuthenticated) { router.replace('/login'); return; }
     loadData();
-  }, [isAuthenticated]);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -62,7 +62,7 @@ export default function VendorProductsPage() {
     }
   };
 
-  const handleLogout = () => { useAuthStore.getState().clearAuth(); router.replace('/login'); };
+  const handleLogout = async () => { await useAuthStore.getState().logout(); };
   const copyReferCode = () => { if (user?.ownRefercode) navigator.clipboard.writeText(user.ownRefercode); };
 
   const filtered = products.filter(p => {
@@ -80,7 +80,7 @@ export default function VendorProductsPage() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <Head><title>Inventory - Vendor Suite</title></Head>
       <style>{`body { min-height: max(884px, 100dvh); }`}</style>
       <div
@@ -244,6 +244,6 @@ export default function VendorProductsPage() {
           )}
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

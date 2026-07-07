@@ -12,7 +12,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { authFetch } from '@/shared/api';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import AuroraBackground from '@/shared/components/AuroraBackground';
@@ -31,7 +32,7 @@ const PRIMARY_ACTIONS = [
 ];
 
 const FEATURES = [
-  { icon: '📱', label: 'Mobile Recharge', bg: '#e9fdff' },
+  { icon: '📱', label: 'Mobile Recharge', bg: '#e9fdff', href: '/recharge' },
   { icon: '🚗', label: 'Easy Drive', bg: '#e3f2fd' },
   { icon: '🏪', label: 'Reselling', bg: '#f3e5f5', href: '/reseller-shop' },
   { icon: '🏢', label: 'Vendorship', bg: '#e8eaf6', href: '/vendor/apply' },
@@ -75,6 +76,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,7 +88,14 @@ export default function DashboardScreen() {
   const [vendorExpanded, setVendorExpanded] = useState(false);
   const drawerAnim = useRef(new Animated.Value(-320)).current;
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { if (isAuthenticated) loadData(); }, [isAuthenticated]);
 
   useFocusEffect(
     useCallback(() => {
@@ -95,15 +104,14 @@ export default function DashboardScreen() {
   );
 
   const loadData = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!accessToken) { router.replace('/login'); return; }
     try {
       const [profileRes, notifRes, vendorRes] = await Promise.all([
-        fetch(`${API_URL}/auth/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/notifications/unread-count`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/vendor/me`, { headers: { Authorization: `Bearer ${token}` } }),
+        authFetch(`${API_URL}/auth/profile`),
+        authFetch(`${API_URL}/notifications/unread-count`),
+        authFetch(`${API_URL}/vendor/me`),
       ]);
-      if (profileRes.status === 401) { await AsyncStorage.removeItem('accessToken'); router.replace('/login'); return; }
+      if (profileRes.status === 401) { await logout(); router.replace('/login'); return; }
       if (profileRes.ok) {
         const data = await profileRes.json();
         setUser(data.data.user);
@@ -131,7 +139,7 @@ export default function DashboardScreen() {
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('accessToken');
+    await logout();
     router.replace('/login');
   };
 
@@ -408,6 +416,10 @@ export default function DashboardScreen() {
                   <TouchableOpacity style={[styles.drawerItem, styles.drawerItemActive]}>
                     <Text style={styles.drawerItemIcon}>🏠</Text>
                     <Text style={styles.drawerItemTextActive}>Dashboard</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/recharge'); }}>
+                    <Text style={styles.drawerItemIcon}>📱</Text>
+                    <Text style={styles.drawerItemText}>Mobile Recharge</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/social-feed'); }}>
                     <Text style={styles.drawerItemIcon}>📢</Text>

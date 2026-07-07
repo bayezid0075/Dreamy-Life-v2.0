@@ -11,11 +11,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const returnUrl = (router.query.returnUrl as string) || '/dashboard';
+
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/dashboard');
+      router.replace(returnUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, returnUrl]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ export default function LoginPage() {
       }
 
       setAuth(data.data.accessToken, data.data.user);
-      router.push('/dashboard');
+      router.push(returnUrl);
     } catch (err) {
       setError('Connection error. Please try again.');
       setLoading(false);

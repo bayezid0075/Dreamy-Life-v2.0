@@ -7,12 +7,13 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function VendorDashboardPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [vendor, setVendor] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -22,12 +23,10 @@ export default function VendorDashboardPage() {
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-      return;
+    if (accessToken) {
+      loadData();
     }
-    loadData();
-  }, [isAuthenticated, accessToken]);
+  }, [accessToken]);
 
   const loadData = async () => {
     try {
@@ -40,7 +39,7 @@ export default function VendorDashboardPage() {
       ]);
 
       if (vendorRes.status === 401 || ordersRes.status === 401) {
-        router.replace('/login');
+        await logout();
         return;
       }
 
@@ -71,9 +70,8 @@ export default function VendorDashboardPage() {
     }
   };
 
-  const handleLogout = () => {
-    clearAuth();
-    router.replace('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const copyReferCode = () => {
@@ -92,7 +90,7 @@ export default function VendorDashboardPage() {
 
   if (!vendor) {
     return (
-      <>
+      <AuthGuard>
         <Head><title>No Vendor Profile - Dreamy Life</title></Head>
         <div className="min-h-screen bg-[#f8f8ff] flex flex-col items-center justify-center gap-4 px-6">
           <span className="material-symbols-outlined text-6xl text-[#5d5e64]/30">storefront</span>
@@ -102,7 +100,7 @@ export default function VendorDashboardPage() {
             Become a Vendor
           </Link>
         </div>
-      </>
+      </AuthGuard>
     );
   }
 
@@ -111,7 +109,7 @@ export default function VendorDashboardPage() {
   const recentOrders = orders.slice(0, 5);
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Vendor Dashboard - Dreamy Life</title>
       </Head>
@@ -352,6 +350,6 @@ export default function VendorDashboardPage() {
           </section>
         </main>
       </div>
-    </>
+    </AuthGuard>
   );
 }

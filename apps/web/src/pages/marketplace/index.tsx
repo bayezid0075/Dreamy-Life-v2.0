@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -27,7 +28,7 @@ const CATEGORIES = ['All Jobs', 'Design', 'Development', 'Marketing', 'Writing']
 
 export default function MarketplacePage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated, hydrated } = useAuthStore();
+  const { accessToken, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'browse' | 'posted' | 'assigned'>('browse');
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [postedJobs, setPostedJobs] = useState<any[]>([]);
@@ -38,14 +39,9 @@ export default function MarketplacePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    if (hydrated && (!isAuthenticated || !accessToken)) {
-      router.replace('/login');
-      return;
-    }
-    if (isAuthenticated && accessToken) {
-      fetchAll();
-    }
-  }, [isAuthenticated, accessToken, hydrated]);
+    if (!accessToken) return;
+    fetchAll();
+  }, [accessToken]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -102,16 +98,8 @@ export default function MarketplacePage() {
     { key: 'assigned', label: 'Assigned', count: assignedJobs.length },
   ];
 
-  if (!hydrated || (!isAuthenticated && !accessToken)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f8ff' }}>
-        <div className="animate-spin h-10 w-10 border-2 border-[#5d5e64] border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Job Marketplace - Dreamy Life</title>
       </Head>
@@ -373,6 +361,6 @@ export default function MarketplacePage() {
           </div>
         )}
       </main>
-    </>
+    </AuthGuard>
   );
 }

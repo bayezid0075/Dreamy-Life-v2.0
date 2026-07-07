@@ -13,6 +13,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { VendorModule } from './modules/vendor/vendor.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
+import { RechargeModule } from './modules/recharge/recharge.module';
 import { HealthController } from './common/controllers/health.controller';
 
 @Module({
@@ -33,6 +34,7 @@ import { HealthController } from './common/controllers/health.controller';
     ChatModule,
     VendorModule,
     MarketplaceModule,
+    RechargeModule,
   ],
   controllers: [HealthController],
   providers: [],

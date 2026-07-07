@@ -4,6 +4,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, desc, and, gte, count, sum, sql, like, or } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { NotificationService } from '../../../notifications/application/notification.service';
+import { WalletService } from './wallet.service';
 
 interface UddoktaPayCreateResponse {
   status: boolean;
@@ -38,6 +39,7 @@ export class FundPaymentService {
     private readonly configService: ConfigService,
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
     private readonly notificationService: NotificationService,
+    private readonly walletService: WalletService,
   ) {
     this.baseUrl = this.configService.get<string>('UDDOKTAPAY_BASE_URL') || 'https://sandbox.uddoktapay.com';
     this.apiKey = this.configService.get<string>('UDDOKTAPAY_API_KEY') || '';
@@ -176,31 +178,7 @@ export class FundPaymentService {
   }
 
   private async creditFundsBalance(userId: string, amount: number) {
-    let wallet = await this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
-    });
-
-    if (!wallet) {
-      const [created] = await this.db
-        .insert(schema.wallets)
-        .values({ userId })
-        .returning();
-      wallet = created;
-    }
-
-    const newBalance = Number(wallet.fundsBalance) + amount;
-
-    await this.db
-      .update(schema.wallets)
-      .set({ fundsBalance: String(newBalance), updatedAt: new Date() })
-      .where(eq(schema.wallets.userId, userId));
-
-    await this.db.insert(schema.transactions).values({
-      userId,
-      type: 'fund_credit',
-      amount: String(amount),
-      description: `Added ৳${amount.toFixed(2)} via UddoktaPay`,
-    });
+    await this.walletService.creditFunds(userId, amount, `Added ৳${amount.toFixed(2)} via UddoktaPay`);
   }
 
   private async sendPaymentNotifications(userId: string, amount: number) {

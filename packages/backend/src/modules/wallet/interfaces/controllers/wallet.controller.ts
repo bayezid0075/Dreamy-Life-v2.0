@@ -5,11 +5,6 @@ import { WalletService } from '../../application/services/wallet.service';
 import { FundPaymentService } from '../../application/services/fund-payment.service';
 import { AddFundsDto } from '../dto/add-funds.dto';
 import { CreateFundPaymentDto, PaymentCallbackDto } from '../dto/create-fund-payment.dto';
-import {
-  WalletResponse,
-  TransactionsResponse,
-  AddFundsResponse,
-} from '../../../../common/dto/api-response.dto';
 
 @ApiTags('Wallet')
 @ApiBearerAuth('access-token')
@@ -23,12 +18,12 @@ export class WalletController {
 
   @Get()
   @ApiOperation({ summary: 'Get user wallet balances (wallet, funds, points)' })
-  @ApiResponse({ status: 200, description: 'Wallet balances', type: WalletResponse })
+  @ApiResponse({ status: 200, description: 'Wallet balances' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getWallet(@Req() req: any) {
     const userId = this.extractUserId(req);
     await this.walletService.seedIfEmpty(userId);
-    const wallet = await this.walletService.getWallet(userId);
+    const wallet = await this.walletService.getAllBalances(userId);
     return { success: true, data: { wallet } };
   }
 
@@ -36,7 +31,7 @@ export class WalletController {
   @ApiOperation({ summary: 'Get filtered transaction history' })
   @ApiQuery({ name: 'type', required: false, enum: ['all', 'wallet', 'funds', 'points'] })
   @ApiQuery({ name: 'filter', required: false, enum: ['today', 'yesterday', '7d', '15d', '30d', 'all'] })
-  @ApiResponse({ status: 200, description: 'Transaction list', type: TransactionsResponse })
+  @ApiResponse({ status: 200, description: 'Transaction list' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getTransactions(
     @Req() req: any,
@@ -44,17 +39,44 @@ export class WalletController {
     @Query('filter') filter?: string,
   ) {
     const userId = this.extractUserId(req);
-    const transactions = await this.walletService.getTransactions(userId, type, filter);
+    const transactions = await this.walletService.getAllTransactions(userId, type, filter);
+    return { success: true, data: { transactions } };
+  }
+
+  @Get('wallet-transactions')
+  @ApiOperation({ summary: 'Get wallet (earnings) transaction history' })
+  @ApiQuery({ name: 'filter', required: false, enum: ['today', 'yesterday', '7d', '15d', '30d', 'all'] })
+  async getWalletTransactions(@Req() req: any, @Query('filter') filter?: string) {
+    const userId = this.extractUserId(req);
+    const transactions = await this.walletService.getWalletTransactions(userId, filter);
+    return { success: true, data: { transactions } };
+  }
+
+  @Get('fund-transactions')
+  @ApiOperation({ summary: 'Get fund (spending) transaction history' })
+  @ApiQuery({ name: 'filter', required: false, enum: ['today', 'yesterday', '7d', '15d', '30d', 'all'] })
+  async getFundTransactions(@Req() req: any, @Query('filter') filter?: string) {
+    const userId = this.extractUserId(req);
+    const transactions = await this.walletService.getFundTransactions(userId, filter);
+    return { success: true, data: { transactions } };
+  }
+
+  @Get('point-transactions')
+  @ApiOperation({ summary: 'Get point (rewards) transaction history' })
+  @ApiQuery({ name: 'filter', required: false, enum: ['today', 'yesterday', '7d', '15d', '30d', 'all'] })
+  async getPointTransactions(@Req() req: any, @Query('filter') filter?: string) {
+    const userId = this.extractUserId(req);
+    const transactions = await this.walletService.getPointTransactions(userId, filter);
     return { success: true, data: { transactions } };
   }
 
   @Post('add-funds')
   @ApiOperation({ summary: 'Add funds to funds balance (direct, no gateway)' })
-  @ApiResponse({ status: 201, description: 'Funds added successfully', type: AddFundsResponse })
+  @ApiResponse({ status: 201, description: 'Funds added successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async addFunds(@Req() req: any, @Body() body: AddFundsDto) {
     const userId = this.extractUserId(req);
-    const result = await this.walletService.addFunds(userId, body.amount);
+    const result = await this.walletService.creditFunds(userId, body.amount, `Added ৳${body.amount.toFixed(2)} via bKash`);
     return { success: true, data: result };
   }
 

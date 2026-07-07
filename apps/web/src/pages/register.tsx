@@ -9,11 +9,13 @@ export default function RegisterPage() {
   const { ref } = router.query;
   const { setAuth, isAuthenticated } = useAuthStore();
 
+  const returnUrl = (router.query.returnUrl as string) || '/dashboard';
+
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/dashboard');
+      router.replace(returnUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, returnUrl]);
   const [form, setForm] = useState({
     username: '',
     phoneNumber: '',
@@ -63,7 +65,7 @@ export default function RegisterPage() {
       }
 
       setAuth(data.data.accessToken, data.data.user);
-      router.push('/dashboard');
+      router.push(returnUrl);
     } catch (err) {
       setErrors({ general: 'Connection error. Please try again.' });
       setLoading(false);

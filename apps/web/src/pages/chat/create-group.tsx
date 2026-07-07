@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import AuthGuard from '@/shared/components/AuthGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -15,7 +16,7 @@ interface User {
 
 export default function CreateGroupPage() {
   const router = useRouter();
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const [groupName, setGroupName] = useState('');
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -32,10 +33,9 @@ export default function CreateGroupPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, accessToken, router]);
+    if (!accessToken) return;
+    fetchDownline();
+  }, [accessToken, fetchDownline]);
 
   const fetchDownline = useCallback(async () => {
     try {
@@ -54,12 +54,6 @@ export default function CreateGroupPage() {
       setDownlineError('Network error. Please try again.');
     }
   }, [accessToken, selectedUsers]);
-
-  useEffect(() => {
-    if (isAuthenticated && accessToken) {
-      fetchDownline();
-    }
-  }, [isAuthenticated, accessToken, fetchDownline]);
 
   const searchUsers = useCallback(async (q: string) => {
     if (q.length < 2) {
@@ -171,7 +165,7 @@ export default function CreateGroupPage() {
   const displayUsers = activeTab === 'search' ? users : downlineUsers;
 
   return (
-    <>
+    <AuthGuard>
       <Head>
         <title>Dreamy Life - Create Group</title>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -370,6 +364,6 @@ export default function CreateGroupPage() {
           )}
         </main>
       </body>
-    </>
+    </AuthGuard>
   );
 }
