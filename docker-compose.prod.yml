@@ -1,0 +1,123 @@
+version: '3.8'
+
+# =============================================================================
+# PRODUCTION docker-compose — optimized for 1-core / 1-2 GB VPS
+# Usage:  docker compose -f docker-compose.prod.yml up -d --build
+# =============================================================================
+
+services:
+  # ── Database ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: dreamy-life-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # No port binding — only reachable via internal docker network
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Limit memory for 1-core VPS
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    shm_size: '128mb'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: dreamy-life-redis
+    restart: always
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (NestJS) ─────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+      args:
+        NODE_OPTIONS: "--max-old-space-size=512"
+    container_name: dreamy-life-backend
+    restart: always
+    ports:
+      - "127.0.0.1:4000:4000"   # Bind to localhost only — nginx fronts this
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - packages/backend/.env
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+
+  # ── Web Frontend (Next.js) ───────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NODE_OPTIONS: "--max-old-space-size=512"
+    container_name: dreamy-life-web
+    restart: always
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:4000
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  # ── Admin Panel (Next.js) ────────────────────────────────────────────────
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        NODE_OPTIONS: "--max-old-space-size=512"
+    container_name: dreamy-life-admin
+    restart: always
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:4000
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+volumes:
+  pgdata:
