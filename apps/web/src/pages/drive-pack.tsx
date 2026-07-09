@@ -169,7 +169,7 @@ export default function DrivePackPage() {
     const opKey = getOperatorKey(pack._operator);
     router.push({
       pathname: '/recharge',
-      query: { operator: opKey, amount: pack._amount },
+      query: { operator: opKey, amount: pack._amount, source: 'drive_pack' },
     });
   };
 

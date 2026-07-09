@@ -14,6 +14,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { VendorModule } from './modules/vendor/vendor.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { RechargeModule } from './modules/recharge/recharge.module';
+import { WithdrawModule } from './modules/withdraw/withdraw.module';
 import { HealthController } from './common/controllers/health.controller';
 
 @Module({
@@ -35,6 +36,7 @@ import { HealthController } from './common/controllers/health.controller';
     VendorModule,
     MarketplaceModule,
     RechargeModule,
+    WithdrawModule,
   ],
   controllers: [HealthController],
   providers: [],

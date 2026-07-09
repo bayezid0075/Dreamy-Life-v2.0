@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 
@@ -11,6 +11,23 @@ interface Transaction {
   amount: number;
   description: string;
   createdAt: string;
+}
+
+const INCOME_CATEGORIES = [
+  { keywords: ['recharge commission', 'drive pack commission'], label: 'Recharge', icon: 'phone_iphone', color: '#00a651' },
+  { keywords: ['referral commission', 'level'], label: 'Referral', icon: 'group', color: '#6366f1' },
+  { keywords: ['membership commission', 'membership'], label: 'Membership', icon: 'workspace_premium', color: '#f7941d' },
+  { keywords: ['cashback'], label: 'Cashback', icon: 'redeem', color: '#ec4899' },
+  { keywords: ['refund'], label: 'Refund', icon: 'replay', color: '#0ea5e9' },
+  { keywords: ['fund', 'added', 'deposit'], label: 'Fund Add', icon: 'account_balance_wallet', color: '#0d9488' },
+];
+
+function getCategory(description: string) {
+  const lower = description.toLowerCase();
+  for (const cat of INCOME_CATEGORIES) {
+    if (cat.keywords.some(k => lower.includes(k))) return cat;
+  }
+  return { label: 'Other', icon: 'payments', color: '#45474b' };
 }
 
 export default function WalletHistoryPage() {
@@ -81,6 +98,31 @@ export default function WalletHistoryPage() {
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => filter === 'credit' ? t.type.includes('credit') : t.type.includes('debit'));
 
+  const incomeStats = useMemo(() => {
+    const credits = transactions.filter(t => t.type.includes('credit'));
+    const totalIncome = credits.reduce((sum, t) => sum + t.amount, 0);
+
+    const categoryMap = new Map<string, { amount: number; count: number; label: string; icon: string; color: string }>();
+    for (const tx of credits) {
+      const cat = getCategory(tx.description);
+      const existing = categoryMap.get(cat.label);
+      if (existing) {
+        existing.amount += tx.amount;
+        existing.count += 1;
+      } else {
+        categoryMap.set(cat.label, { amount: tx.amount, count: 1, label: cat.label, icon: cat.icon, color: cat.color });
+      }
+    }
+
+    const categories = Array.from(categoryMap.values()).sort((a, b) => b.amount - a.amount);
+    return { totalIncome, totalCredits: credits.length, categories };
+  }, [transactions]);
+
+  const timeRangeLabel = useMemo(() => {
+    const map: Record<string, string> = { all: 'All Time', today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 Days', '15d': 'Last 15 Days', '30d': 'Last 30 Days' };
+    return map[timeRange] || 'All Time';
+  }, [timeRange]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f8ff' }}>
@@ -130,7 +172,7 @@ export default function WalletHistoryPage() {
           <div className="w-10"></div>
         </header>
 
-        <main className="max-w-[1280px] mx-auto px-4 md:px-6 pt-6 space-y-6">
+        <main className="max-w-[1280px] mx-auto px-4 md:px-6 pt-4 md:pt-24 space-y-6">
           {/* Time Range Filters */}
           <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2">
             {['all', 'today', 'yesterday', '7d', '15d', '30d'].map(range => (
@@ -146,6 +188,77 @@ export default function WalletHistoryPage() {
                 {range === 'all' ? 'All Time' : range === '7d' ? '7 Days' : range === '15d' ? '15 Days' : range === '30d' ? '30 Days' : range.charAt(0).toUpperCase() + range.slice(1)}
               </button>
             ))}
+          </div>
+
+          {/* Income Summary Card */}
+          <div className="relative overflow-hidden rounded-3xl p-6 md:p-8" style={{
+            background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 30%, #2dd4bf 60%, #5eead4 100%)',
+            boxShadow: '0 20px 60px rgba(13,148,136,0.3), 0 8px 24px rgba(13,148,136,0.2)',
+          }}>
+            {/* Decorative Elements */}
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, white 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+            <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, white 0%, transparent 70%)', transform: 'translate(-20%, 30%)' }} />
+            <div className="absolute top-1/2 right-1/4 w-20 h-20 rounded-full opacity-5" style={{ background: 'white', transform: 'translate(50%, -50%)' }} />
+
+            <div className="relative z-10">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <span className="material-symbols-outlined text-white text-xl">trending_up</span>
+                  </div>
+                  <div>
+                    <p className="text-white/70 text-xs font-semibold uppercase tracking-wider">Income Summary</p>
+                    <p className="text-white/90 text-sm font-bold">{timeRangeLabel}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/70 text-xs font-semibold">{incomeStats.totalCredits} transactions</p>
+                </div>
+              </div>
+
+              {/* Total Income */}
+              <div className="mb-6">
+                <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Total Income</p>
+                <p className="text-white text-4xl md:text-5xl font-extrabold tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  ৳{incomeStats.totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              {/* Category Breakdown */}
+              {incomeStats.categories.length > 0 && (
+                <div className="space-y-2">
+                  {incomeStats.categories.slice(0, 5).map((cat) => {
+                    const percentage = incomeStats.totalIncome > 0 ? (cat.amount / incomeStats.totalIncome) * 100 : 0;
+                    return (
+                      <div key={cat.label} className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-white text-sm">{cat.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-white/80 text-xs font-semibold truncate">{cat.label}</span>
+                            <span className="text-white text-xs font-bold ml-2">৳{cat.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="h-1.5 bg-white/15 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-white/60 rounded-full transition-all duration-500"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {incomeStats.categories.length === 0 && (
+                <div className="text-center py-4">
+                  <p className="text-white/50 text-sm">No income in this period</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Transaction Type Tabs */}

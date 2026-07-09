@@ -6,10 +6,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import * as schema from '../../../../infrastructure/database/schema';
 import { WalletService } from '../../../wallet/application/services/wallet.service';
+import { NotificationService } from '../../../notifications/application/notification.service';
+import { NotificationGateway } from '../../../notifications/application/notification.gateway';
 
 const OPERATOR_MAP: Record<string, { operator: string; defaultNumberType: number }> = {
   GP: { operator: '7', defaultNumberType: 1 },
@@ -29,6 +31,8 @@ export class RechargeService {
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
     private readonly config: ConfigService,
     private readonly walletService: WalletService,
+    private readonly notificationService: NotificationService,
+    private readonly notificationGateway: NotificationGateway,
   ) {}
 
   private maskSecret(value: string): string {
@@ -69,6 +73,10 @@ export class RechargeService {
     userCommissionRate?: string;
     commissionRates?: number[];
     isActive?: boolean;
+    drivePackBuyerCommissionRate?: string;
+    drivePackCashbackRate?: string;
+    drivePackCommissionRates?: number[];
+    drivePackIsActive?: boolean;
   }) {
     this.logger.log(`Updating recharge config: keys=[${Object.keys(data).join(', ')}]`);
     if (data.apiKey !== undefined) {
@@ -92,8 +100,9 @@ export class RechargeService {
     operator: string;
     connectionType: string;
     amount: number;
+    source?: string;
   }) {
-    this.logger.log(`Creating recharge: user=${userId} phone=${data.phoneNumber} operator=${data.operator} amount=${data.amount} type=${data.connectionType}`);
+    this.logger.log(`Creating recharge: user=${userId} phone=${data.phoneNumber} operator=${data.operator} amount=${data.amount} type=${data.connectionType} source=${data.source || 'recharge'}`);
 
     const dbConfig = await this.getConfig();
     if (!dbConfig.isActive) {
@@ -138,6 +147,7 @@ export class RechargeService {
         amount: String(data.amount),
         status: 'pending',
         apiTransactionId: apiTrxId,
+        source: data.source || 'recharge',
       })
       .returning();
 
@@ -173,7 +183,14 @@ export class RechargeService {
           .where(eq(schema.rechargeOrders.id, order.id));
 
         this.logger.debug(`Distributing commissions for order ${order.id}`);
-        await this.distributeCommissions(order.id, userId, data.amount);
+        await this.distributeCommissions(order.id, userId, data.amount, data.source);
+
+        const sourceLabel = data.source === 'drive_pack' ? 'Drive Pack' : 'Mobile Recharge';
+        await this.sendRechargeNotification(userId, {
+          title: `${sourceLabel} Successful`,
+          body: `Your ৳${data.amount} ${operatorKey} recharge to ${data.phoneNumber} was successful.`,
+          link: '/recharge/history',
+        });
       } else {
         this.logger.warn(`Recharge FAILED: orderId=${order.id} refid=${apiTrxId} status=${result.data?.STATUS} rechargeStatus=${result.data?.RECHARGE_STATUS} message=${result.data?.MESSAGE}`);
 
@@ -188,6 +205,13 @@ export class RechargeService {
 
         this.logger.log(`Initiating refund for failed recharge: user=${userId} amount=${data.amount}`);
         await this.refundUser(userId, data.amount, data.phoneNumber);
+
+        const sourceLabel = data.source === 'drive_pack' ? 'Drive Pack' : 'Mobile Recharge';
+        await this.sendRechargeNotification(userId, {
+          title: `${sourceLabel} Failed`,
+          body: `Your ৳${data.amount} ${operatorKey} recharge to ${data.phoneNumber} failed. Amount has been refunded.`,
+          link: '/recharge/history',
+        });
       }
     } catch (error) {
       this.logger.error(`Recharge API call error: orderId=${order.id} error=${error.message}`, error.stack);
@@ -203,6 +227,13 @@ export class RechargeService {
 
       this.logger.log(`Initiating refund for errored recharge: user=${userId} amount=${data.amount}`);
       await this.refundUser(userId, data.amount, data.phoneNumber);
+
+      const sourceLabel = data.source === 'drive_pack' ? 'Drive Pack' : 'Mobile Recharge';
+      await this.sendRechargeNotification(userId, {
+        title: `${sourceLabel} Failed`,
+        body: `Your ৳${data.amount} ${operatorKey} recharge to ${data.phoneNumber} encountered an error. Amount has been refunded.`,
+        link: '/recharge/history',
+      });
     }
 
     return this.getOrder(order.id);
@@ -303,8 +334,8 @@ export class RechargeService {
     return defaultRates;
   }
 
-  private async distributeCommissions(orderId: string, buyerId: string, rechargeAmount: number) {
-    this.logger.debug(`Distributing commissions: orderId=${orderId} buyer=${buyerId} amount=${rechargeAmount}`);
+  private async distributeCommissions(orderId: string, buyerId: string, rechargeAmount: number, source?: string) {
+    this.logger.debug(`Distributing commissions: orderId=${orderId} buyer=${buyerId} amount=${rechargeAmount} source=${source || 'recharge'}`);
 
     const buyer = await this.db.query.users.findFirst({
       where: eq(schema.users.id, buyerId),
@@ -315,11 +346,14 @@ export class RechargeService {
     }
 
     const config = await this.getConfig();
-    const userCommissionRate = Number(config.userCommissionRate) || 2;
+    const isDrivePack = source === 'drive_pack';
+    const userCommissionRate = isDrivePack
+      ? Number(config.drivePackBuyerCommissionRate) || 5
+      : Number(config.userCommissionRate) || 2;
 
     const userCommission = (rechargeAmount * userCommissionRate) / 100;
 
-    await this.walletService.creditWallet(buyerId, userCommission, `Recharge commission (${userCommissionRate}%)`);
+    await this.walletService.creditWallet(buyerId, userCommission, `${isDrivePack ? 'Drive Pack' : 'Recharge'} commission (${userCommissionRate}%)`);
 
     await this.db
       .update(schema.rechargeOrders)
@@ -328,7 +362,8 @@ export class RechargeService {
 
     this.logger.debug(`User commission: ${userCommission} (${userCommissionRate}%) credited to ${buyerId}`);
 
-    const percentages = this.getCommissionPercentages(config.commissionRates, rechargeAmount);
+    const commissionRates = isDrivePack ? config.drivePackCommissionRates : config.commissionRates;
+    const percentages = this.getCommissionPercentages(commissionRates, rechargeAmount);
     this.logger.debug(`Using commission tier for amount ${rechargeAmount}: ${percentages.join(', ')}`);
     const commissions: any[] = [];
 
@@ -354,7 +389,7 @@ export class RechargeService {
           percentage: String(percentage),
         });
 
-        await this.walletService.creditWallet(uplineUser.id, amount, `Level ${level} recharge commission from ${buyer.username}`);
+        await this.walletService.creditWallet(uplineUser.id, amount, `Level ${level} ${isDrivePack ? 'drive pack' : 'recharge'} commission from ${buyer.username}`);
 
         this.logger.debug(`Level ${level} commission: ${amount} (${percentage}%) -> upline ${uplineUser.id}`);
         commissions.push({ level, amount, percentage, toUserId: uplineUser.id });
@@ -366,6 +401,57 @@ export class RechargeService {
 
     this.logger.log(`Commission distribution complete: ${commissions.length} levels paid out`);
     return commissions;
+  }
+
+  private async sendRechargeNotification(userId: string, data: {
+    title: string;
+    body: string;
+    link?: string;
+  }) {
+    try {
+      const notification = await this.notificationService.sendToUser(userId, {
+        title: data.title,
+        body: data.body,
+        link: data.link,
+        category: 'app',
+        createdBy: 'system',
+      });
+
+      this.notificationGateway.notifyUser(userId, {
+        id: notification.id,
+        title: data.title,
+        body: data.body,
+        link: data.link,
+        category: 'app',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send recharge notification: ${error.message}`);
+    }
+  }
+
+  async getDrivePackOrders(userId: string, page: number = 1, limit: number = 20) {
+    this.logger.debug(`Fetching drive pack orders for user=${userId} page=${page} limit=${limit}`);
+    const offset = (page - 1) * limit;
+    const orders = await this.db
+      .select()
+      .from(schema.rechargeOrders)
+      .where(
+        and(
+          eq(schema.rechargeOrders.userId, userId),
+          eq(schema.rechargeOrders.source, 'drive_pack'),
+        ),
+      )
+      .orderBy(desc(schema.rechargeOrders.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      orders,
+      total: orders.length,
+      page,
+      limit,
+    };
   }
 
   async getOrder(orderId: string) {
@@ -456,7 +542,20 @@ export class RechargeService {
         return { status: 'error', message: 'Invalid response from API', packs: [] };
       }
 
-      const packs = Array.isArray(data) ? data : Array.isArray(data?.packs) ? data.packs : [];
+      let packs: any[] = [];
+      if (Array.isArray(data)) {
+        packs = data;
+      } else if (data && typeof data === 'object') {
+        const OPERATOR_KEYS = ['GP', 'BL', 'RB', 'AR', 'TT', 'AL', 'ST'];
+        for (const key of OPERATOR_KEYS) {
+          if (Array.isArray(data[key])) {
+            packs.push(...data[key]);
+          }
+        }
+        if (packs.length === 0 && Array.isArray(data?.packs)) {
+          packs = data.packs;
+        }
+      }
       this.logger.log(`Offer packs received: ${packs.length} items`);
       return { status: 'ok', packs };
     } catch (error) {

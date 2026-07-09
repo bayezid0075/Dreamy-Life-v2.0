@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/shared/stores/authStore';
 import { authFetch } from '@/shared/api';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
@@ -35,6 +35,7 @@ const QUICK_AMOUNTS = [20, 50, 100, 500, 1000, 1500, 2000, 2500];
 
 export default function RechargeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ operator?: string; amount?: string; source?: string }>();
   const insets = useSafeAreaInsets();
   const { isAuthenticated, accessToken, logout } = useAuthStore();
 
@@ -42,6 +43,7 @@ export default function RechargeScreen() {
   const [selectedOperator, setSelectedOperator] = useState<string | null>(null);
   const [connectionType, setConnectionType] = useState<'prepaid' | 'postpaid'>('prepaid');
   const [amount, setAmount] = useState('');
+  const [source, setSource] = useState('recharge');
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [fundsBalance, setFundsBalance] = useState(0);
@@ -52,6 +54,22 @@ export default function RechargeScreen() {
   const [modalOperator, setModalOperator] = useState('');
   const [modalAmount, setModalAmount] = useState(0);
   const [modalRemainingBalance, setModalRemainingBalance] = useState(0);
+
+  useEffect(() => {
+    if (params.operator) {
+      const normalized = params.operator.toLowerCase();
+      if (OPERATORS.some(op => op.id === normalized)) {
+        setSelectedOperator(normalized);
+      }
+    }
+    if (params.amount) {
+      setAmount(params.amount);
+    }
+    if (params.source) {
+      setSource(params.source);
+    }
+    setPageLoading(false);
+  }, [params.operator, params.amount, params.source]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -108,6 +126,7 @@ export default function RechargeScreen() {
           operator: selectedOperator,
           connectionType,
           amount: parseFloat(amount),
+          source,
         }),
       });
       if (res.status === 401) { await logout(); router.replace('/login'); return; }

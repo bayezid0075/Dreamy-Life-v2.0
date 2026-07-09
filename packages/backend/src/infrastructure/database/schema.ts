@@ -566,6 +566,7 @@ export const rechargeOrders = pgTable('recharge_orders', {
   apiTransactionId: varchar('api_transaction_id', { length: 100 }),
   apiResponse: text('api_response'),
   userCommission: decimal('user_commission', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  source: varchar('source', { length: 20 }).notNull().default('recharge'), // recharge, drive_pack
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -594,6 +595,40 @@ export const rechargeConfig = pgTable('recharge_config', {
   userCommissionRate: decimal('user_commission_rate', { precision: 5, scale: 2 }).notNull().default('2.00'),
   commissionRates: jsonb('commission_rates').notNull().default([2, 1, 0.5, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1]),
   isActive: boolean('is_active').notNull().default(false),
+  drivePackBuyerCommissionRate: decimal('drive_pack_buyer_commission_rate', { precision: 5, scale: 2 }).notNull().default('5.00'),
+  drivePackCashbackRate: decimal('drive_pack_cashback_rate', { precision: 5, scale: 2 }).notNull().default('0.00'),
+  drivePackCommissionRates: jsonb('drive_pack_commission_rates').notNull().default([3, 2, 1, 0.5, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1]),
+  drivePackIsActive: boolean('drive_pack_is_active').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Withdrawals: Orders Table ────────────────────────────────────────
+export const withdrawals = pgTable('withdrawals', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  chargePercent: decimal('charge_percent', { precision: 5, scale: 2 }).notNull().default('0.00'),
+  chargeAmount: decimal('charge_amount', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
+  method: varchar('method', { length: 20 }).notNull(), // bkash, nagad, rocket
+  phoneNumber: varchar('phone_number', { length: 15 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, accepted, finished, rejected
+  adminNote: text('admin_note'),
+  processedAt: timestamp('processed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  withdrawUserIdx: index('withdraw_user_idx').on(table.userId),
+  withdrawStatusIdx: index('withdraw_status_idx').on(table.status),
+}));
+
+// ─── Withdrawals: Config Table (singleton) ────────────────────────────
+export const withdrawConfig = pgTable('withdraw_config', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  minimumBalance: decimal('minimum_balance', { precision: 12, scale: 2 }).notNull().default('100.00'),
+  chargePercent: decimal('charge_percent', { precision: 5, scale: 2 }).notNull().default('0.00'),
+  isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

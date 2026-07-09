@@ -59,6 +59,7 @@ export default function RootLayout() {
             <Stack.Screen name="recharge" />
             <Stack.Screen name="recharge-history" />
             <Stack.Screen name="drive-pack" />
+            <Stack.Screen name="drive-pack-history" />
           </Stack>
         </NotificationSocketProvider>
       </I18nProvider>

@@ -113,6 +113,27 @@
       "when": 1783100000000,
       "tag": "0020_update_recharge_api_base_url",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1783200000000,
+      "tag": "0021_add_recharge_order_source",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1783300000000,
+      "tag": "0022_add_drive_pack_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1783400000000,
+      "tag": "0023_add_withdrawals",
+      "breakpoints": true
     }
   ]
 }

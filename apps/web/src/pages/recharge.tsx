@@ -42,6 +42,7 @@ export default function RechargePage() {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [source, setSource] = useState<string>('recharge');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
@@ -49,6 +50,22 @@ export default function RechargePage() {
   const [modalOperator, setModalOperator] = useState('');
   const [modalAmount, setModalAmount] = useState(0);
   const [modalRemainingBalance, setModalRemainingBalance] = useState(0);
+
+  useEffect(() => {
+    const { operator, amount: queryAmount, source: querySource } = router.query;
+    if (operator && typeof operator === 'string') {
+      const normalized = operator.toLowerCase();
+      if (operators.some(op => op.id === normalized)) {
+        setSelectedOperator(normalized);
+      }
+    }
+    if (queryAmount && typeof queryAmount === 'string') {
+      setAmount(queryAmount);
+    }
+    if (querySource && typeof querySource === 'string') {
+      setSource(querySource);
+    }
+  }, [router.query]);
 
   const handleRecharge = async () => {
     if (!phoneNumber || phoneNumber.length !== 11) {
@@ -81,6 +98,7 @@ export default function RechargePage() {
           operator: selectedOperator,
           connectionType,
           amount: amt,
+          source,
         }),
       });
       const data = await res.json();

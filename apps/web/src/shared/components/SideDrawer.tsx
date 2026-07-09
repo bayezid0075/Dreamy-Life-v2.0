@@ -150,6 +150,10 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                   <span className="material-symbols-outlined">account_balance_wallet</span>
                   <span>Wallet</span>
                 </Link>
+                <Link href="/withdraw" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
+                  <span className="material-symbols-outlined">account_balance_wallet</span>
+                  <span>Withdraw</span>
+                </Link>
                 <Link href="/notifications" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">notifications</span>
                   <span>Notifications</span>

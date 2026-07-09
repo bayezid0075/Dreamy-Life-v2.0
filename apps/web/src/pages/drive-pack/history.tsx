@@ -71,7 +71,7 @@ export default function DrivePackHistoryPage() {
     if (showRefresh) setRefreshing(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${apiUrl}/recharge/orders?page=1&limit=20`, {
+      const res = await fetch(`${apiUrl}/recharge/drive-pack-orders?page=1&limit=20`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { await logout(); return; }

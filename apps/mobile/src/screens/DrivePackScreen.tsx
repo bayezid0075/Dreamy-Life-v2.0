@@ -116,6 +116,7 @@ export default function DrivePackScreen() {
         operator: opKey,
         amount: pack._amount,
         offerDetails: pack._offer_details,
+        source: 'drive_pack',
       },
     } as any);
   };
@@ -302,6 +303,15 @@ export default function DrivePackScreen() {
           })
         )}
 
+        {/* History Link */}
+        <TouchableOpacity
+          onPress={() => router.push('/drive-pack-history')}
+          style={styles.historyLink}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.historyLinkText}>View Drive Pack History →</Text>
+        </TouchableOpacity>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -404,6 +414,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   buyBtnText: { fontSize: 13, fontWeight: '700', color: '#ffffff' },
+
+  historyLink: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 4,
+  },
+  historyLinkText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ff5c26',
+  },
 
   emptyState: { alignItems: 'center', paddingVertical: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 16 },

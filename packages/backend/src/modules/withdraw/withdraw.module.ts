@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { RechargeController } from './interfaces/controllers/recharge.controller';
-import { RechargeService } from './application/services/recharge.service';
-import { AdminModule } from '../admin/admin.module';
+import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { WithdrawService } from './application/withdraw.service';
+import { WithdrawController } from './interfaces/withdraw.controller';
 import { WalletModule } from '../wallet/wallet.module';
-import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -18,12 +17,11 @@ import { NotificationsModule } from '../notifications/notifications.module';
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '15m' },
       }),
     }),
-    AdminModule,
+    DatabaseModule,
     WalletModule,
-    NotificationsModule,
   ],
-  controllers: [RechargeController],
-  providers: [RechargeService],
-  exports: [RechargeService],
+  controllers: [WithdrawController],
+  providers: [WithdrawService],
+  exports: [WithdrawService],
 })
-export class RechargeModule {}
+export class WithdrawModule {}
