@@ -48,6 +48,7 @@ services:
 
   # ── Backend (NestJS) ─────────────────────────────────────────────────────
   backend:
+    image: ghcr.io/bayezid0075/dreamy-life-backend:latest
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
@@ -79,6 +80,7 @@ services:
 
   # ── Web Frontend (Next.js) ───────────────────────────────────────────────
   web:
+    image: ghcr.io/bayezid0075/dreamy-life-web:latest
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -100,6 +102,7 @@ services:
 
   # ── Admin Panel (Next.js) ────────────────────────────────────────────────
   admin:
+    image: ghcr.io/bayezid0075/dreamy-life-admin:latest
     build:
       context: .
       dockerfile: apps/admin/Dockerfile

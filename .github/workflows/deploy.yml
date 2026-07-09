@@ -1,14 +1,16 @@
 name: Deploy to VPS
 
 on:
-  push:
-    branches:
-      - master
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types:
+      - completed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to VPS
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Deploy via SSH
@@ -25,14 +27,14 @@ jobs:
             echo ">>> Pulling latest code..."
             git pull origin master
 
-            echo ">>> Building images..."
-            docker compose -f docker-compose.prod.yml build
+            echo ">>> Logging in to GitHub Container Registry..."
+            echo "${{ secrets.VPS_CR_PAT }}" | docker login ghcr.io -u bayezid0075 --password-stdin
+
+            echo ">>> Pulling pre-built images..."
+            docker compose -f docker-compose.prod.yml pull
 
             echo ">>> Restarting containers..."
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
-            echo ">>> Pruning old images..."
-            docker image prune -f
 
             echo ">>> Waiting for health check..."
             sleep 15
