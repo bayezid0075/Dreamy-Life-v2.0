@@ -5,7 +5,7 @@
 # =============================================================================
 set -euo pipefail
 
-APP_DIR="/opt/dreamy-life"
+APP_DIR="/root/Dreamy-Life-v2.0"
 COMPOSE_FILE="docker-compose.prod.yml"
 
 cd "$APP_DIR"

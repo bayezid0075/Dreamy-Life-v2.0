@@ -20,7 +20,7 @@ jobs:
           script: |
             set -e
 
-            cd /opt/dreamy-life
+            cd /root/Dreamy-Life-v2.0
 
             echo ">>> Pulling latest code..."
             git pull origin master
