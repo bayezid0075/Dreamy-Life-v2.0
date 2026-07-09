@@ -27,11 +27,6 @@ export default function PeoplePage() {
   const [activeTab, setActiveTab] = useState<'search' | 'downline'>('search');
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!accessToken) return;
-    fetchDownline();
-  }, [accessToken, fetchDownline]);
-
   const fetchDownline = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/chat/downline-users`, {
@@ -45,6 +40,11 @@ export default function PeoplePage() {
       console.error('Failed to fetch downline users', err);
     }
   }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    fetchDownline();
+  }, [accessToken, fetchDownline]);
 
   const searchUsers = useCallback(async (q: string) => {
     if (q.length < 2) {

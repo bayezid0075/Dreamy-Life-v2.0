@@ -32,11 +32,6 @@ export default function CreateGroupPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!accessToken) return;
-    fetchDownline();
-  }, [accessToken, fetchDownline]);
-
   const fetchDownline = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/chat/downline-users`, {
@@ -54,6 +49,11 @@ export default function CreateGroupPage() {
       setDownlineError('Network error. Please try again.');
     }
   }, [accessToken, selectedUsers]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    fetchDownline();
+  }, [accessToken, fetchDownline]);
 
   const searchUsers = useCallback(async (q: string) => {
     if (q.length < 2) {
