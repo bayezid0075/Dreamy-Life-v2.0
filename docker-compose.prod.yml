@@ -57,7 +57,7 @@ services:
     container_name: dreamy-life-backend
     restart: always
     ports:
-      - "127.0.0.1:4000:4000"   # Bind to localhost only — nginx fronts this
+      - "0.0.0.0:4000:4000"
     environment:
       - NODE_ENV=production
       - PORT=4000
@@ -89,7 +89,7 @@ services:
     container_name: dreamy-life-web
     restart: always
     ports:
-      - "127.0.0.1:3000:3000"
+      - "0.0.0.0:3000:3000"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://backend:4000
@@ -111,7 +111,7 @@ services:
     container_name: dreamy-life-admin
     restart: always
     ports:
-      - "127.0.0.1:3001:3001"
+      - "0.0.0.0:3001:3001"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://backend:4000
