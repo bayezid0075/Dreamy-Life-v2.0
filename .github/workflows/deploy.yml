@@ -27,6 +27,23 @@ jobs:
             echo ">>> Pulling latest code..."
             git pull origin master
 
+            echo ">>> Setting production env vars..."
+            if ! grep -q "FRONTEND_URL" .env 2>/dev/null; then
+              echo "FRONTEND_URL=http://${{ secrets.VPS_HOST }}" >> .env
+            else
+              sed -i "s|^FRONTEND_URL=.*|FRONTEND_URL=http://${{ secrets.VPS_HOST }|" .env
+            fi
+            if ! grep -q "VPS_HOST" .env 2>/dev/null; then
+              echo "VPS_HOST=${{ secrets.VPS_HOST }}" >> .env
+            else
+              sed -i "s|^VPS_HOST=.*|VPS_HOST=${{ secrets.VPS_HOST }|" .env
+            fi
+            if ! grep -q "NEXT_PUBLIC_API_URL" .env 2>/dev/null; then
+              echo "NEXT_PUBLIC_API_URL=http://${{ secrets.VPS_HOST }}" >> .env
+            else
+              sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=http://${{ secrets.VPS_HOST }|" .env
+            fi
+
             echo ">>> Logging in to GitHub Container Registry..."
             if echo "${{ secrets.VPS_CR_PAT }}" | docker login ghcr.io -u bayezid0075 --password-stdin; then
               echo ">>> GHCR login succeeded"

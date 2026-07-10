@@ -23,6 +23,10 @@ RUN corepack enable && pnpm install --no-frozen-lockfile
 # Copy the rest of the source code (node_modules excluded via .dockerignore)
 COPY . .
 
+# Build-time API URL for client-side requests
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Build: invoke binaries directly from root node_modules to avoid pnpm/turbo
 # workspace binary resolution issues in Docker overlayfs
 RUN /app/node_modules/.bin/tsc -p /app/packages/shared-types/tsconfig.json && \

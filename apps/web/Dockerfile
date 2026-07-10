@@ -21,6 +21,10 @@ RUN corepack enable && pnpm install --no-frozen-lockfile
 # Copy source
 COPY . .
 
+# Build-time API URL for client-side requests
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Build
 RUN /app/node_modules/.bin/tsc -p /app/packages/shared-types/tsconfig.json && \
     /app/node_modules/.bin/tsc -p /app/packages/api-client/tsconfig.json && \
