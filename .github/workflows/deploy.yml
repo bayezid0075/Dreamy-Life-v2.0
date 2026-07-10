@@ -28,7 +28,12 @@ jobs:
             git pull origin master
 
             echo ">>> Logging in to GitHub Container Registry..."
-            echo "${{ secrets.VPS_CR_PAT }}" | docker login ghcr.io -u bayezid0075 --password-stdin
+            if echo "${{ secrets.VPS_CR_PAT }}" | docker login ghcr.io -u bayezid0075 --password-stdin; then
+              echo ">>> GHCR login succeeded"
+            else
+              echo ">>> ERROR: GHCR login failed! Check that VPS_CR_PAT secret is set with read:packages scope."
+              exit 1
+            fi
 
             echo ">>> Pulling pre-built images..."
             docker compose -f docker-compose.prod.yml pull

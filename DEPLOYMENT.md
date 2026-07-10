@@ -151,6 +151,7 @@ Go to your GitHub repo → **Settings → Secrets and variables → Actions** an
 | `VPS_HOST`     | `YOUR_VPS_IP`                 | Your VPS IP address      |
 | `VPS_USER`     | `root`                        | SSH username             |
 | `VPS_SSH_KEY`  | Contents of private SSH key   | Copy full key content    |
+| `VPS_CR_PAT`   | GitHub Personal Access Token  | PAT with `read:packages` scope for GHCR |
 
 ### Generating SSH Key Pair (if you don't have one)
 
@@ -169,6 +170,17 @@ mkdir -p ~/.ssh && chmod 700 ~/.ssh
 echo "YOUR_PUBLIC_KEY" >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
+
+### Creating a GitHub Personal Access Token (VPS_CR_PAT)
+
+The deploy workflow pulls pre-built Docker images from GitHub Container Registry (GHCR).
+Your VPS needs a PAT with `read:packages` scope to authenticate.
+
+1. Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
+2. Click **"Generate new token"** (classic or fine-grained)
+3. Select scope: **`read:packages`**
+4. Copy the generated token
+5. Add it as a GitHub Actions secret named **`VPS_CR_PAT`**
 
 ---
 
