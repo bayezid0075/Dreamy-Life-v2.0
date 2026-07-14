@@ -37,5 +37,14 @@ COPY --from=builder /app/packages/backend/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/backend/package.json ./package.json
 
+# Copy Drizzle migration files and config (needed for automated migrations)
+COPY --from=builder /app/packages/backend/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/packages/backend/drizzle ./drizzle
+COPY --from=builder /app/packages/backend/src/infrastructure/database/schema.ts ./src/infrastructure/database/schema.ts
+
+# Copy entrypoint script (runs migrations then starts server)
+COPY --from=builder /app/packages/backend/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 EXPOSE 4000
-CMD ["node", "dist/main"]
+CMD ["./docker-entrypoint.sh"]
