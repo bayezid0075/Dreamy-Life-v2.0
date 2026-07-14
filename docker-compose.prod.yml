@@ -75,7 +75,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 400M
+          memory: 512M
 
   # ── Web Frontend (Next.js) ───────────────────────────────────────────────
   web:
