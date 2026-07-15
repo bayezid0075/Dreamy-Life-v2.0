@@ -1,0 +1,197 @@
+{
+  "total_count": 2,
+  "jobs": [
+    {
+      "id": 87174506990,
+      "run_id": 29359167609,
+      "workflow_name": "Build, Push & Deploy",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/bayezid0075/Dreamy-Life-v2.0/actions/runs/29359167609",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOP-nqW88AAAAUTAFp7g",
+      "head_sha": "33ed9c5c73432345951a0cc200de4fb0fa300417",
+      "url": "https://api.github.com/repos/bayezid0075/Dreamy-Life-v2.0/actions/jobs/87174506990",
+      "html_url": "https://github.com/bayezid0075/Dreamy-Life-v2.0/actions/runs/29359167609/job/87174506990",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-07-14T18:45:42Z",
+      "started_at": "2026-07-14T18:45:45Z",
+      "completed_at": "2026-07-14T18:50:39Z",
+      "name": "build-and-push",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-07-14T18:45:46Z",
+          "completed_at": "2026-07-14T18:45:48Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-07-14T18:45:48Z",
+          "completed_at": "2026-07-14T18:45:49Z"
+        },
+        {
+          "name": "Log in to GitHub Container Registry",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-07-14T18:45:49Z",
+          "completed_at": "2026-07-14T18:45:50Z"
+        },
+        {
+          "name": "Build and push Backend",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-07-14T18:45:50Z",
+          "completed_at": "2026-07-14T18:48:09Z"
+        },
+        {
+          "name": "Build and push Web Frontend",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-07-14T18:48:09Z",
+          "completed_at": "2026-07-14T18:49:29Z"
+        },
+        {
+          "name": "Build and push Admin Panel",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-07-14T18:49:29Z",
+          "completed_at": "2026-07-14T18:50:35Z"
+        },
+        {
+          "name": "Verify images pushed",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-07-14T18:50:35Z",
+          "completed_at": "2026-07-14T18:50:35Z"
+        },
+        {
+          "name": "Post Build and push Admin Panel",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-07-14T18:50:35Z",
+          "completed_at": "2026-07-14T18:50:36Z"
+        },
+        {
+          "name": "Post Build and push Web Frontend",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-07-14T18:50:36Z",
+          "completed_at": "2026-07-14T18:50:36Z"
+        },
+        {
+          "name": "Post Build and push Backend",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-07-14T18:50:36Z",
+          "completed_at": "2026-07-14T18:50:36Z"
+        },
+        {
+          "name": "Post Log in to GitHub Container Registry",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-07-14T18:50:36Z",
+          "completed_at": "2026-07-14T18:50:36Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-07-14T18:50:36Z",
+          "completed_at": "2026-07-14T18:50:36Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-07-14T18:50:36Z",
+          "completed_at": "2026-07-14T18:50:36Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/bayezid0075/Dreamy-Life-v2.0/check-runs/87174506990",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000047,
+      "runner_name": "GitHub Actions 1000000047",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 87175612304,
+      "run_id": 29359167609,
+      "workflow_name": "Build, Push & Deploy",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/bayezid0075/Dreamy-Life-v2.0/actions/runs/29359167609",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOP-nqW88AAAAUTBJHkA",
+      "head_sha": "33ed9c5c73432345951a0cc200de4fb0fa300417",
+      "url": "https://api.github.com/repos/bayezid0075/Dreamy-Life-v2.0/actions/jobs/87175612304",
+      "html_url": "https://github.com/bayezid0075/Dreamy-Life-v2.0/actions/runs/29359167609/job/87175612304",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-07-14T18:50:40Z",
+      "started_at": "2026-07-14T18:50:42Z",
+      "completed_at": "2026-07-14T18:53:45Z",
+      "name": "Deploy to VPS",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-07-14T18:50:43Z",
+          "completed_at": "2026-07-14T18:50:44Z"
+        },
+        {
+          "name": "Build appleboy/ssh-action@v1.0.3",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-07-14T18:50:44Z",
+          "completed_at": "2026-07-14T18:50:50Z"
+        },
+        {
+          "name": "Deploy via SSH",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-07-14T18:50:50Z",
+          "completed_at": "2026-07-14T18:53:43Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-07-14T18:53:43Z",
+          "completed_at": "2026-07-14T18:53:43Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/bayezid0075/Dreamy-Life-v2.0/check-runs/87175612304",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000049,
+      "runner_name": "GitHub Actions 1000000049",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}
