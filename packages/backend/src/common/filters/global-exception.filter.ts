@@ -1,7 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import * as Sentry from '@sentry/nestjs';
-import { FileLoggerService } from '../../logger/file-logger.service';
+import { FileLoggerService } from '../logger/file-logger.service';
 
 export interface StandardErrorResponse {
   success: boolean;

@@ -1,4 +1,4 @@
-import { Injectable, LoggerService } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -20,7 +20,7 @@ export interface ErrorEntry {
 }
 
 @Injectable()
-export class FileLoggerService implements LoggerService {
+export class FileLoggerService {
   private readonly logDir: string;
   private readonly logFile: string;
   private readonly writeQueue: ErrorEntry[] = [];
