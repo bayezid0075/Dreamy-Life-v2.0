@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '../shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -38,6 +39,7 @@ interface Transaction {
 export default function WalletScreen() {
   const router = useRouter();
   const { isAuthenticated, accessToken, logout } = useAuthStore();
+  const { t } = useI18n();
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,12 +103,12 @@ export default function WalletScreen() {
 
   const getTypeInfo = (type: string) => {
     const map: Record<string, { icon: string; color: string; bg: string; label: string; positive: boolean }> = {
-      wallet_credit: { icon: '↓', color: '#2d666d', bg: '#e9fdff', label: 'Credit', positive: true },
-      wallet_debit: { icon: '↑', color: '#ba1a1a', bg: '#ffdad6', label: 'Debit', positive: false },
-      fund_credit: { icon: '↓', color: '#2d666d', bg: '#e9fdff', label: 'Credit', positive: true },
-      fund_debit: { icon: '↑', color: '#ba1a1a', bg: '#ffdad6', label: 'Debit', positive: false },
-      point_earned: { icon: '↓', color: '#2d666d', bg: '#e9fdff', label: 'Earned', positive: true },
-      point_spent: { icon: '↑', color: '#ba1a1a', bg: '#ffdad6', label: 'Spent', positive: false },
+      wallet_credit: { icon: '↓', color: '#2d666d', bg: '#e9fdff', label: t('credit'), positive: true },
+      wallet_debit: { icon: '↑', color: '#ba1a1a', bg: '#ffdad6', label: t('debit'), positive: false },
+      fund_credit: { icon: '↓', color: '#2d666d', bg: '#e9fdff', label: t('credit'), positive: true },
+      fund_debit: { icon: '↑', color: '#ba1a1a', bg: '#ffdad6', label: t('debit'), positive: false },
+      point_earned: { icon: '↓', color: '#2d666d', bg: '#e9fdff', label: t('earned'), positive: true },
+      point_spent: { icon: '↑', color: '#ba1a1a', bg: '#ffdad6', label: t('spent'), positive: false },
     };
     return map[type] || map.wallet_credit;
   };
@@ -135,7 +137,7 @@ export default function WalletScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar showBack title="Wallet" showNotification={false} showSearch={false} />
+      <TopBar showBack title={t('wallet')} showNotification={false} showSearch={false} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Balance Cards */}
@@ -144,19 +146,19 @@ export default function WalletScreen() {
           <LinearGradient colors={['#a855f7', '#ec4899']} style={styles.balanceCard}>
             <View style={styles.gridOverlay} />
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Wallet</Text>
+              <Text style={styles.cardTitle}>{t('wallet')}</Text>
               <View style={styles.cardIcon}><Text style={styles.cardIconText}>👛</Text></View>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardBalance}>৳{wallet?.walletBalance?.toFixed(2) || '0.00'}</Text>
-              <Text style={styles.cardSubtitle}>Commission & referral earnings</Text>
+              <Text style={styles.cardSubtitle}>{t('commissionReferralEarnings')}</Text>
               <View style={styles.cardStats}>
                 <Text style={styles.cardStat}>↓ ৳{walletIncome.toFixed(2)}</Text>
                 <Text style={styles.cardStat}>↑ ৳{walletExpense.toFixed(2)}</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.cardButton} onPress={() => router.push('/wallet-history')}>
-              <Text style={styles.cardButtonText}>📋 History</Text>
+              <Text style={styles.cardButtonText}>📋 {t('history')}</Text>
             </TouchableOpacity>
           </LinearGradient>
 
@@ -164,12 +166,12 @@ export default function WalletScreen() {
           <LinearGradient colors={['#14b8a6', '#06b6d4']} style={styles.balanceCard}>
             <View style={styles.gridOverlay} />
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Funds</Text>
+              <Text style={styles.cardTitle}>{t('funds')}</Text>
               <View style={styles.cardIcon}><Text style={styles.cardIconText}>💳</Text></View>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardBalance}>৳{wallet?.fundsBalance?.toFixed(2) || '0.00'}</Text>
-              <Text style={styles.cardSubtitle}>Funds account balance</Text>
+              <Text style={styles.cardSubtitle}>{t('fundsAccountBalance')}</Text>
               <View style={styles.cardStats}>
                 <Text style={styles.cardStat}>↓ ৳{fundsIncome.toFixed(2)}</Text>
                 <Text style={styles.cardStat}>↑ ৳{fundsExpense.toFixed(2)}</Text>
@@ -177,10 +179,10 @@ export default function WalletScreen() {
             </View>
             <View style={styles.cardButtonRow}>
               <TouchableOpacity style={[styles.cardButton, { flex: 1 }]} onPress={() => router.push('/funds-history')}>
-                <Text style={styles.cardButtonText}>📋 History</Text>
+                <Text style={styles.cardButtonText}>📋 {t('history')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.cardButton, { flex: 1 }]} onPress={() => setAddFundsVisible(true)}>
-                <Text style={styles.cardButtonText}>➕ Add</Text>
+                <Text style={styles.cardButtonText}>➕ {t('addFunds')}</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -189,27 +191,27 @@ export default function WalletScreen() {
           <LinearGradient colors={['#f97316', '#f43f5e']} style={styles.balanceCard}>
             <View style={styles.gridOverlay} />
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Points</Text>
+              <Text style={styles.cardTitle}>{t('points')}</Text>
               <View style={styles.cardIcon}><Text style={styles.cardIconText}>⭐</Text></View>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardBalance}>৳{wallet?.pointsBalance?.toFixed(2) || '0.00'}</Text>
-              <Text style={styles.cardSubtitle}>Reward points balance</Text>
+              <Text style={styles.cardSubtitle}>{t('rewardPointsBalance')}</Text>
               <View style={styles.cardStats}>
                 <Text style={styles.cardStat}>↓ ৳{pointsEarned.toFixed(2)}</Text>
                 <Text style={styles.cardStat}>↑ ৳{pointsSpent.toFixed(2)}</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.cardButton} onPress={() => router.push('/points-history')}>
-              <Text style={styles.cardButtonText}>📋 History</Text>
+              <Text style={styles.cardButtonText}>📋 {t('history')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
 
         {/* Withdraw Section */}
         <GlassPanel borderRadius={20} style={styles.withdrawSection}>
-          <Text style={styles.sectionTitle}>Withdraw</Text>
-          <Text style={styles.sectionSubtitle}>Transfer funds to your bank account</Text>
+          <Text style={styles.sectionTitle}>{t('withdraw')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('transferToBank')}</Text>
           <View style={styles.withdrawInput}>
             <Text style={styles.currencySymbol}>৳</Text>
             <TextInput
@@ -227,22 +229,22 @@ export default function WalletScreen() {
             ))}
           </View>
           <TouchableOpacity style={styles.withdrawButtonDisabled} disabled>
-            <Text style={styles.withdrawButtonTextDisabled}>Withdraw Coming Soon</Text>
+            <Text style={styles.withdrawButtonTextDisabled}>{t('withdrawComingSoon')}</Text>
           </TouchableOpacity>
         </GlassPanel>
 
         {/* Transactions */}
         <GlassPanel borderRadius={20} style={styles.transactionsSection}>
-          <Text style={styles.sectionTitle}>Transactions</Text>
-          <Text style={styles.sectionSubtitle}>View your transaction history</Text>
+          <Text style={styles.sectionTitle}>{t('transactions')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('viewTransactionHistory')}</Text>
 
           {/* Filter Tabs */}
           <View style={styles.filterTabs}>
             {[
-              { key: 'all', label: 'All' },
-              { key: 'wallet', label: 'Wallet' },
-              { key: 'funds', label: 'Funds' },
-              { key: 'points', label: 'Points' },
+              { key: 'all', label: t('all') },
+              { key: 'wallet', label: t('wallet') },
+              { key: 'funds', label: t('funds') },
+              { key: 'points', label: t('points') },
             ].map(tab => (
               <TouchableOpacity
                 key={tab.key}
@@ -259,7 +261,7 @@ export default function WalletScreen() {
           {/* Transaction List */}
           <View style={styles.txList}>
             {transactions.length === 0 ? (
-              <Text style={styles.emptyText}>No transactions found</Text>
+              <Text style={styles.emptyText}>{t('noTransactionsFound')}</Text>
             ) : (
               transactions.map(tx => {
                 const info = getTypeInfo(tx.type);
@@ -295,7 +297,7 @@ export default function WalletScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Funds</Text>
+              <Text style={styles.modalTitle}>{t('addFunds')}</Text>
               <TouchableOpacity onPress={() => setAddFundsVisible(false)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
@@ -323,7 +325,7 @@ export default function WalletScreen() {
               disabled={!addAmount || parseFloat(addAmount) <= 0 || adding}
               style={[styles.modalAddButton, (!addAmount || adding) && styles.modalAddButtonDisabled]}
             >
-              <Text style={styles.modalAddButtonText}>{adding ? 'Processing...' : 'Add Funds'}</Text>
+              <Text style={styles.modalAddButtonText}>{adding ? t('processing') : t('addFunds')}</Text>
             </TouchableOpacity>
           </View>
         </View>

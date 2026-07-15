@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, FormEvent } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useI18n } from '../i18n';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useI18n();
 
   const returnUrl = (router.query.returnUrl as string) || '/dashboard';
 
@@ -33,7 +35,7 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error?.message || 'Invalid credentials');
+        setError(data.error?.message || t('invalidCredentials'));
         setLoading(false);
         return;
       }
@@ -41,7 +43,7 @@ export default function LoginPage() {
       setAuth(data.data.accessToken, data.data.user);
       router.push(returnUrl);
     } catch (err) {
-      setError('Connection error. Please try again.');
+      setError(t('connectionError'));
       setLoading(false);
     }
   };
@@ -49,7 +51,7 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Dreamy Life - Sign In</title>
+        <title>{t('titleLogin')}</title>
       </Head>
       <style jsx>{`
         .aurora-blob {
@@ -99,7 +101,7 @@ export default function LoginPage() {
 
           {/* Typography */}
           <div className="text-center mb-8 w-full">
-            <h2 className="text-[24px] font-bold text-[#1c1b1b] mb-2">Welcome Back</h2>
+            <h2 className="text-[24px] font-bold text-[#1c1b1b] mb-2">{t('welcomeBack')}</h2>
             <p className="text-[16px] text-[#45474b] px-4 leading-relaxed">Enter your credentials to access your account</p>
           </div>
 
@@ -115,7 +117,7 @@ export default function LoginPage() {
           <form className="w-full space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="text-[14px] font-semibold tracking-[0.05em] text-[#1c1b1b] block ml-1" htmlFor="username">
-                Username or Phone
+                {t('username')}
               </label>
               <div className="relative">
                 <input
@@ -124,7 +126,7 @@ export default function LoginPage() {
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
                   className="w-full h-[56px] px-5 rounded-full text-[16px] text-[#1c1b1b] bg-white/50 border border-[rgba(118,119,123,0.2)] focus:bg-white focus:border-[#5d5e64] focus:shadow-[0_0_0_2px_rgba(93,94,100,0.1)] outline-none transition-all placeholder:text-[#45474b]/50"
-                  placeholder="Enter username or phone"
+                  placeholder={t('enterUsernameOrPhone')}
                   required
                 />
               </div>
@@ -132,7 +134,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <label className="text-[14px] font-semibold tracking-[0.05em] text-[#1c1b1b] block ml-1" htmlFor="password">
-                Password
+                {t('password')}
               </label>
               <div className="relative">
                 <input
@@ -141,7 +143,7 @@ export default function LoginPage() {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full h-[56px] px-5 rounded-full text-[16px] text-[#1c1b1b] bg-white/50 border border-[rgba(118,119,123,0.2)] focus:bg-white focus:border-[#5d5e64] focus:shadow-[0_0_0_2px_rgba(93,94,100,0.1)] outline-none transition-all placeholder:text-[#45474b]/50"
-                  placeholder="Enter your password"
+                  placeholder={t('enterPassword')}
                   required
                 />
               </div>
@@ -152,16 +154,16 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full h-[56px] mt-6 rounded-full bg-[#5d5e64] text-white font-semibold text-[16px] tracking-wide shadow-sm hover:shadow-md hover:bg-[#45474c] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? `${t('signIn')}...` : t('signIn')}
             </button>
           </form>
 
           {/* Sign Up Link */}
           <div className="mt-8 text-center w-full">
             <p className="text-[16px] text-[#45474b]">
-              Don't have an account?{' '}
+              {t('dontHaveAccount')}{' '}
               <Link href="/register" className="font-semibold text-[#2d666d] hover:text-[#437b81] transition-colors ml-1">
-                Sign up
+                {t('signUp')}
               </Link>
             </p>
           </div>

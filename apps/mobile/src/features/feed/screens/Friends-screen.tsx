@@ -15,6 +15,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -34,6 +35,7 @@ interface FriendRequest extends FriendUser {
 
 export default function FriendsScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'sent' | 'find'>('friends');
   const [friends, setFriends] = useState<FriendUser[]>([]);
@@ -296,7 +298,7 @@ export default function FriendsScreen() {
         onPress={() => handleCancelRequest(item.id)}
         disabled={actionLoading === item.id}
       >
-        <Text style={styles.cancelBtnText}>{actionLoading === item.id ? '...' : 'Cancel'}</Text>
+          <Text style={styles.cancelBtnText}>{actionLoading === item.id ? '...' : t('cancel')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -318,15 +320,15 @@ export default function FriendsScreen() {
       </View>
       {item.friendshipStatus === 'friends' ? (
         <View style={styles.friendsBadge}>
-          <Text style={styles.friendsBadgeText}>✓ Friends</Text>
+          <Text style={styles.friendsBadgeText}>✓ {t('friends')}</Text>
         </View>
       ) : item.friendshipStatus === 'request_sent' ? (
         <View style={styles.sentBadge}>
-          <Text style={styles.sentBadgeText}>Sent</Text>
+          <Text style={styles.sentBadgeText}>{t('sent')}</Text>
         </View>
       ) : item.friendshipStatus === 'request_received' ? (
         <View style={styles.pendingBadge}>
-          <Text style={styles.pendingBadgeText}>Pending</Text>
+          <Text style={styles.pendingBadgeText}>{t('pending')}</Text>
         </View>
       ) : (
         <TouchableOpacity
@@ -334,17 +336,17 @@ export default function FriendsScreen() {
           onPress={() => handleSendRequest(item.id)}
           disabled={actionLoading === item.id}
         >
-          <Text style={styles.addFriendBtnText}>{actionLoading === item.id ? '...' : '+ Add'}</Text>
+          <Text style={styles.addFriendBtnText}>{actionLoading === item.id ? '...' : t('addFriend')}</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   const tabs = [
-    { key: 'friends', label: `Friends (${friends.length})` },
-    { key: 'requests', label: `Requests (${receivedRequests.length})` },
-    { key: 'sent', label: `Sent (${sentRequests.length})` },
-    { key: 'find', label: 'Find' },
+    { key: 'friends', label: `${t('friends')} (${friends.length})` },
+    { key: 'requests', label: `${t('requests')} (${receivedRequests.length})` },
+    { key: 'sent', label: `${t('sent')} (${sentRequests.length})` },
+    { key: 'find', label: t('discover') },
   ];
 
   const renderContent = () => {
@@ -368,7 +370,7 @@ export default function FriendsScreen() {
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search friends..."
+                  placeholder={t('searchByNameOrUsername')}
                   placeholderTextColor="#76777b"
                   value={friendQuery}
                   onChangeText={setFriendQuery}
@@ -379,11 +381,11 @@ export default function FriendsScreen() {
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>👥</Text>
                 <Text style={styles.emptyText}>
-                  {friendQuery ? 'No friends match your search' : 'No friends yet'}
+                  {friendQuery ? t('noFriendsMatchSearch') : t('noFriendsYet')}
                 </Text>
                 {!friendQuery && (
                   <TouchableOpacity style={styles.findBtn} onPress={() => setActiveTab('find')}>
-                    <Text style={styles.findBtnText}>Find People</Text>
+                    <Text style={styles.findBtnText}>{t('discoverPeople')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -400,7 +402,7 @@ export default function FriendsScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>📥</Text>
-                <Text style={styles.emptyText}>No pending requests</Text>
+                <Text style={styles.emptyText}>{t('noPendingRequests')}</Text>
               </View>
             }
           />
@@ -415,7 +417,7 @@ export default function FriendsScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>📤</Text>
-                <Text style={styles.emptyText}>No sent requests</Text>
+                <Text style={styles.emptyText}>{t('noSentRequests')}</Text>
               </View>
             }
           />
@@ -431,7 +433,7 @@ export default function FriendsScreen() {
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Filter by username or name..."
+                  placeholder={t('searchByNameOrUsername')}
                   placeholderTextColor="#76777b"
                   value={searchQuery}
                   onChangeText={(text) => {
@@ -444,7 +446,7 @@ export default function FriendsScreen() {
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>🔍</Text>
                 <Text style={styles.emptyText}>
-                  {searchQuery.length >= 2 ? 'No users found' : 'No users available'}
+                  {searchQuery.length >= 2 ? t('noUsersFound') : t('noUsersAvailable')}
                 </Text>
               </View>
             }
@@ -456,7 +458,7 @@ export default function FriendsScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Friends" showBack showSearch={false} showNotification={false} />
+      <TopBar title={t('friends')} showBack showSearch={false} showNotification={false} />
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>

@@ -4,12 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { uploadMedia } from '@/features/media/upload';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-const VENDOR_TERMS = [
+const VENDOR_TERMS_KEYS = [
   {
-    title: 'Shop Responsibilities',
+    titleKey: 'shopResponsibilities',
     items: [
       'Maintain accurate product listings with up-to-date inventory',
       'Provide honest and detailed product descriptions',
@@ -18,7 +19,7 @@ const VENDOR_TERMS = [
     ],
   },
   {
-    title: 'Product Quality Standards',
+    titleKey: 'productQualityStandards',
     items: [
       'All products must meet Dreamy Life quality guidelines',
       'No counterfeit, prohibited, or restricted items allowed',
@@ -27,7 +28,7 @@ const VENDOR_TERMS = [
     ],
   },
   {
-    title: 'Payment & Fees',
+    titleKey: 'paymentFees',
     items: [
       'One-time vendorship fee: Tk 700 (free for VVIP members)',
       'Platform commission applies on each completed sale',
@@ -36,7 +37,7 @@ const VENDOR_TERMS = [
     ],
   },
   {
-    title: 'Order Fulfillment',
+    titleKey: 'orderFulfillment',
     items: [
       'Process and ship orders within the stated delivery timeframe',
       'Handle returns and refunds according to platform policy',
@@ -45,7 +46,7 @@ const VENDOR_TERMS = [
     ],
   },
   {
-    title: 'Termination',
+    titleKey: 'termination',
     items: [
       'Dreamy Life reserves the right to suspend vendors violating terms',
       'Vendors may voluntarily deactivate their shop at any time',
@@ -58,6 +59,7 @@ const VENDOR_TERMS = [
 export default function VendorApplyPage() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
+  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<'terms' | 'form'>('terms');
   const [agreed, setAgreed] = useState(false);
@@ -93,11 +95,11 @@ export default function VendorApplyPage() {
 
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
+      setError(t('pleaseSelectImageFile'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be less than 5MB');
+      setError(t('imageMustBeLessThan5MB'));
       return;
     }
 
@@ -117,7 +119,7 @@ export default function VendorApplyPage() {
       setUploadProgress(100);
       setBannerUrl(result.url);
     } catch (err) {
-      setError('Failed to upload image. Please try again.');
+      setError(t('failedToUploadImage'));
       setBannerUrl('');
     } finally {
       setUploading(false);
@@ -168,7 +170,7 @@ export default function VendorApplyPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error?.message || 'Failed to apply');
+        setError(data.error?.message || t('failedToApply'));
         return;
       }
 
@@ -178,7 +180,7 @@ export default function VendorApplyPage() {
         router.push('/vendor/dashboard');
       }
     } catch {
-      setError('Connection failed');
+      setError(t('connectionFailed'));
     } finally {
       setLoading(false);
     }
@@ -187,7 +189,7 @@ export default function VendorApplyPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Become a Vendor - Dreamy Life</title>
+        <title>{t('titleVendorApply')}</title>
       </Head>
       <div className="min-h-screen" style={{ backgroundColor: '#F8F8FF', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
         {/* Aurora Background Orbs */}
@@ -203,7 +205,7 @@ export default function VendorApplyPage() {
             <button onClick={() => (step === 'form' ? setStep('terms') : router.back())} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/40 transition-colors active:scale-95 text-[#5d5e64]">
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
-            <h1 className="text-[24px] font-extrabold text-[#1c1b1b] tracking-tight">Become a Vendor</h1>
+            <h1 className="text-[24px] font-extrabold text-[#1c1b1b] tracking-tight">{t('becomeAVendor')}</h1>
           </div>
         </header>
 
@@ -215,12 +217,12 @@ export default function VendorApplyPage() {
               <span className="material-symbols-outlined text-[#2d666d] text-4xl">storefront</span>
             </div>
             <h2 className="text-2xl font-extrabold text-[#1c1b1b]">
-              {step === 'terms' ? 'Vendor Agreement' : 'Application Form'}
+              {step === 'terms' ? t('vendorAgreement') : t('applicationForm')}
             </h2>
             <p className="text-sm text-[#45474b] mt-1 text-center">
               {step === 'terms'
-                ? 'Please review and accept the terms before proceeding'
-                : 'Fill in your shop details to get started'}
+                ? t('reviewAndAcceptTerms')
+                : t('fillShopDetails')}
             </p>
           </div>
 
@@ -229,13 +231,13 @@ export default function VendorApplyPage() {
             <div className="space-y-6">
               <div className="rounded-[2rem] p-8 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]" style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(24px)' }}>
                 <div className="max-h-[420px] overflow-y-auto pr-2 space-y-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#c6c6cb40 transparent' }}>
-                  {VENDOR_TERMS.map((section, idx) => (
+                  {VENDOR_TERMS_KEYS.map((section, idx) => (
                     <div key={idx}>
                       <h3 className="text-base font-bold text-[#1c1b1b] mb-3 flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-[#2d666d] text-white text-xs flex items-center justify-center font-bold shrink-0">
                           {idx + 1}
                         </span>
-                        {section.title}
+                        {t(section.titleKey as any)}
                       </h3>
                       <ul className="space-y-2 ml-8">
                         {section.items.map((item, i) => (
@@ -263,9 +265,7 @@ export default function VendorApplyPage() {
                   </div>
                 </div>
                 <span className="text-sm text-[#45474b] leading-relaxed">
-                  I have read and agree to the{' '}
-                  <span className="font-semibold text-[#2d666d]">Vendor Terms & Conditions</span>{' '}
-                  of Dreamy Life marketplace
+                  {t('agreedToTerms')}
                 </span>
               </label>
 
@@ -274,11 +274,11 @@ export default function VendorApplyPage() {
                 <button type="button" onClick={() => router.back()}
                   className="w-full sm:w-auto px-8 py-4 rounded-full text-[#1c1b1b] text-sm font-semibold hover:bg-white/60 transition-all active:scale-95"
                   style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.3)' }}>
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button type="button" disabled={!agreed} onClick={() => setStep('form')}
                   className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#1c1b1b] text-white text-sm font-semibold hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-black/10 disabled:opacity-40 disabled:cursor-not-allowed">
-                  Continue
+                  {t('continue')}
                 </button>
               </div>
             </div>
@@ -294,18 +294,18 @@ export default function VendorApplyPage() {
                     <span className="material-symbols-outlined text-[#2d666d]">storefront</span>
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-[#1c1b1b]">Vendor Application</h2>
+                    <h2 className="text-lg font-bold text-[#1c1b1b]">{t('vendorApplication')}</h2>
                     <p className="text-sm text-[#45474b]">
                       {vvipStatus === null
-                        ? 'Checking membership status...'
+                        ? t('checkingMembership')
                         : vvipStatus
-                        ? 'VVIP member - Free vendorship!'
-                        : 'Fee: Tk 700 (one-time payment via UddoktaPay)'}
+                        ? t('vvipFreeVendorship')
+                        : t('feeOneTime')}
                     </p>
                   </div>
                 </div>
                 <button type="button" onClick={() => setStep('terms')} className="text-xs text-[#2d666d] font-semibold hover:underline mt-2">
-                  Review Terms & Conditions
+                  {t('reviewTermsAndConditions')}
                 </button>
               </div>
 
@@ -330,7 +330,7 @@ export default function VendorApplyPage() {
                     {uploading ? (
                       <div className="flex flex-col items-center gap-4">
                         <div className="w-16 h-16 rounded-full border-4 border-[#e9fdff] border-t-[#2d666d] animate-spin" />
-                        <p className="text-sm font-semibold text-[#5d5e64]">Uploading... {uploadProgress}%</p>
+                        <p className="text-sm font-semibold text-[#5d5e64]">{t('uploading')} {uploadProgress}%</p>
                         <div className="w-48 h-2 bg-white/40 rounded-full overflow-hidden">
                           <div className="h-full bg-[#2d666d] rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
                         </div>
@@ -339,7 +339,7 @@ export default function VendorApplyPage() {
                       <div className="relative w-full h-full">
                         <img src={bannerUrl} alt="Banner preview" className="w-full h-full object-cover rounded-[20px]" />
                         <div className="absolute inset-0 bg-black/40 rounded-[20px] opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">Change Image</span>
+                          <span className="text-white font-semibold text-sm">{t('changeImage')}</span>
                         </div>
                         <button type="button" onClick={(e) => { e.stopPropagation(); setBannerUrl(''); }}
                           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center hover:bg-white transition-colors shadow-sm">
@@ -351,9 +351,9 @@ export default function VendorApplyPage() {
                         <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.6)' }}>
                           <span className="material-symbols-outlined text-[#2d666d] text-3xl">add_a_photo</span>
                         </div>
-                        <p className="text-sm font-semibold text-[#5d5e64] text-center">Upload Shop Banner</p>
-                        <p className="text-xs text-[#45474b] mt-2 text-center opacity-70">Drag & drop or click to upload</p>
-                        <p className="text-xs text-[#45474b] mt-1 text-center opacity-50">JPG, PNG up to 5MB</p>
+                        <p className="text-sm font-semibold text-[#5d5e64] text-center">{t('uploadShopBanner')}</p>
+                        <p className="text-xs text-[#45474b] mt-2 text-center opacity-70">{t('dragDropOrClick')}</p>
+                        <p className="text-xs text-[#45474b] mt-1 text-center opacity-50">{t('jpgPngUpTo5MB')}</p>
                       </>
                     )}
                   </div>
@@ -362,8 +362,8 @@ export default function VendorApplyPage() {
                 {/* Form Fields */}
                 <div className="md:col-span-7 space-y-6">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Shop Name *</label>
-                    <input type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="e.g. Premium Store" required
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">{t('shopName')}</label>
+                    <input type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t('shopNamePlaceholder')} required
                       className="w-full rounded-full px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 outline-none transition-all"
                       style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.4)' }}
                       onFocus={(e) => { e.target.style.background = 'rgba(255,255,255,0.8)'; e.target.style.borderColor = '#98d0d7'; e.target.style.boxShadow = '0 0 0 4px rgba(152,208,215,0.2)'; }}
@@ -372,8 +372,8 @@ export default function VendorApplyPage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Shop Address *</label>
-                    <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. House 12, Road 5, Dhanmondi, Dhaka" required
+                    <label className="text-sm font-semibold text-[#5d5e64] px-1">{t('shopAddress')}</label>
+                    <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('shopAddressPlaceholder')} required
                       className="w-full rounded-full px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 outline-none transition-all"
                       style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.4)' }}
                       onFocus={(e) => { e.target.style.background = 'rgba(255,255,255,0.8)'; e.target.style.borderColor = '#98d0d7'; e.target.style.boxShadow = '0 0 0 4px rgba(152,208,215,0.2)'; }}
@@ -384,7 +384,7 @@ export default function VendorApplyPage() {
                   {bannerUrl && (
                     <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'rgba(233,253,255,0.6)' }}>
                       <span className="material-symbols-outlined text-[#2d666d] text-[18px]">check_circle</span>
-                      <span className="text-sm text-[#2d666d] font-semibold">Banner uploaded successfully</span>
+                      <span className="text-sm text-[#2d666d] font-semibold">{t('bannerUploadedSuccessfully')}</span>
                     </div>
                   )}
                 </div>
@@ -402,11 +402,11 @@ export default function VendorApplyPage() {
                 <button type="button" onClick={() => router.back()}
                   className="w-full sm:w-auto px-8 py-4 rounded-full text-[#1c1b1b] text-sm font-semibold hover:bg-white/60 transition-all active:scale-95"
                   style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.3)' }}>
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button type="submit" disabled={loading || vvipStatus === null || uploading}
                   className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#1c1b1b] text-white text-sm font-semibold hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-black/10 disabled:opacity-60 disabled:cursor-not-allowed">
-                  {loading ? 'Processing...' : uploading ? 'Uploading...' : vvipStatus ? 'Create Vendor Profile (Free)' : 'Pay Tk 700 & Create Vendor Profile'}
+                  {loading ? t('processing') : uploading ? t('uploading') : vvipStatus ? t('createVendorProfileFree') : t('payAndCreateVendorProfile')}
                 </button>
               </div>
             </form>

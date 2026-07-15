@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useI18n } from '../i18n';
 
 interface TopBarProps {
   title?: string;
@@ -31,6 +32,7 @@ export default function TopBar({
 }: TopBarProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
 
   const renderLeft = () => {
     if (showBack) {
@@ -55,7 +57,7 @@ export default function TopBar({
       return <Text style={styles.title}>{title}</Text>;
     }
     if (!showBack && !title && showMenu) {
-      return <Text style={styles.title}>Dreamy Life</Text>;
+      return <Text style={styles.title}>{t('dreamyLife')}</Text>;
     }
     if (title) {
       return <Text style={styles.title}>{title}</Text>;

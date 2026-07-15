@@ -13,12 +13,14 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '../shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ReferralScreen() {
   const router = useRouter();
   const { isAuthenticated, accessToken } = useAuthStore();
+  const { t } = useI18n();
   const [user, setUser] = useState<any>(null);
   const [downline, setDownline] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -73,19 +75,19 @@ export default function ReferralScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Referral" showBack showSearch={false} showNotification={false} />
+      <TopBar title={t('referral')} showBack showSearch={false} showNotification={false} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Referral Link Card */}
         <GlassPanel borderRadius={16} style={styles.referCard}>
-          <Text style={styles.referLabel}>YOUR REFERRAL LINK</Text>
+          <Text style={styles.referLabel}>{t('yourReferralLink').toUpperCase()}</Text>
           <View style={styles.referLinkRow}>
             <Text style={styles.referLinkIcon}>🔗</Text>
             <Text style={styles.referLinkText} numberOfLines={1}>
               {user ? `/register?ref=${user.ownRefercode}` : 'N/A'}
             </Text>
             <View style={styles.copyBtn}>
-              <Text style={styles.copyBtnText}>Copy</Text>
+              <Text style={styles.copyBtnText}>{t('copyLink')}</Text>
             </View>
           </View>
         </GlassPanel>
@@ -94,10 +96,10 @@ export default function ReferralScreen() {
         {stats && (
           <View style={styles.statsGrid}>
             {[
-              { label: 'Total', value: stats.totalReferrals, color: '#5d5e64' },
-              { label: 'Level 1', value: stats.level1Count, color: '#2d666d' },
-              { label: 'Level 2', value: stats.level2Count, color: '#78555e' },
-              { label: 'Level 3', value: stats.level3Count, color: '#5d5e64' },
+              { label: t('total'), value: stats.totalReferrals, color: '#5d5e64' },
+              { label: t('level1'), value: stats.level1Count, color: '#2d666d' },
+              { label: t('level2'), value: stats.level2Count, color: '#78555e' },
+              { label: t('level3'), value: stats.level3Count, color: '#5d5e64' },
             ].map((stat) => (
               <GlassPanel key={stat.label} borderRadius={12} style={styles.statCard}>
                 <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
@@ -109,7 +111,7 @@ export default function ReferralScreen() {
 
         {/* Downline Tree */}
         <GlassPanel borderRadius={16} style={styles.treeSection}>
-          <Text style={styles.sectionTitle}>Downline Tree</Text>
+          <Text style={styles.sectionTitle}>{t('downlineTree')}</Text>
           {downline.length > 0 ? (
             <View style={styles.treeList}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
@@ -127,7 +129,7 @@ export default function ReferralScreen() {
                         <View style={styles.levelBadge}>
                           <Text style={styles.levelBadgeText}>{level}</Text>
                         </View>
-                        <Text style={styles.levelTitle}>Level {level}</Text>
+                        <Text style={styles.levelTitle}>{t('level')} {level}</Text>
                         <Text style={styles.levelCount}>({levelMembers.length})</Text>
                       </View>
                       <Text style={styles.levelArrow}>{isExpanded ? '▲' : '▼'}</Text>
@@ -164,8 +166,7 @@ export default function ReferralScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>👥</Text>
-              <Text style={styles.emptyText}>No referrals yet</Text>
-              <Text style={styles.emptyHint}>Share your code to start building your team</Text>
+              <Text style={styles.emptyText}>{t('noReferralsYet')}</Text>
             </View>
           )}
         </GlassPanel>

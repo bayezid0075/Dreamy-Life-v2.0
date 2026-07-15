@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -27,6 +28,7 @@ interface Job {
 const CATEGORIES = ['All Jobs', 'Design', 'Development', 'Marketing', 'Writing'] as const;
 
 export default function MarketplacePage() {
+  const { t } = useI18n();
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'browse' | 'posted' | 'assigned'>('browse');
@@ -92,16 +94,24 @@ export default function MarketplacePage() {
     return matchesSearch && matchesCategory;
   });
 
+  const categoryLabels: Record<string, string> = {
+    'All Jobs': t('allJobs'),
+    'Design': t('design'),
+    'Development': t('development'),
+    'Marketing': t('marketing'),
+    'Writing': t('writing'),
+  };
+
   const tabs = [
-    { key: 'browse', label: 'Browse Jobs', count: allJobs.length },
-    { key: 'posted', label: 'My Jobs', count: postedJobs.length },
-    { key: 'assigned', label: 'Assigned', count: assignedJobs.length },
+    { key: 'browse', label: t('browseJobs'), count: allJobs.length },
+    { key: 'posted', label: t('myJobs'), count: postedJobs.length },
+    { key: 'assigned', label: t('assigned'), count: assignedJobs.length },
   ];
 
   return (
     <AuthGuard>
       <Head>
-        <title>Job Marketplace - Dreamy Life</title>
+        <title>{t('jobMarketplace')}</title>
       </Head>
 
       {/* Atmospheric Background */}
@@ -126,19 +136,19 @@ export default function MarketplacePage() {
         <div className="flex space-x-8">
           <Link href="/dashboard" className="font-semibold text-sm text-[#45474b] hover:opacity-80 transition-opacity flex flex-col items-center gap-1">
             <span className="material-symbols-outlined">home</span>
-            Home
+            {t('home')}
           </Link>
           <Link href="/marketplace" className="font-semibold text-sm text-[#2d666d] flex flex-col items-center gap-1">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>search</span>
-            Jobs
+            {t('jobs')}
           </Link>
           <Link href="/cart" className="font-semibold text-sm text-[#45474b] hover:opacity-80 transition-opacity flex flex-col items-center gap-1">
             <span className="material-symbols-outlined">shopping_bag</span>
-            Bag
+            {t('bag')}
           </Link>
           <Link href="/profile" className="font-semibold text-sm text-[#45474b] hover:opacity-80 transition-opacity flex flex-col items-center gap-1">
             <span className="material-symbols-outlined">person</span>
-            Profile
+            {t('profile')}
           </Link>
         </div>
       </div>
@@ -176,7 +186,7 @@ export default function MarketplacePage() {
               <span className="material-symbols-outlined absolute left-4 top-1/2 transform -translate-y-1/2 text-[#45474b]">search</span>
               <input
                 type="text"
-                placeholder="Search for jobs, skills, or companies..."
+                placeholder={t('searchJobs')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full glass-input rounded-full py-4 pl-12 pr-4 text-base text-[#1c1b1b] placeholder-[#45474b] transition-shadow"
@@ -195,7 +205,7 @@ export default function MarketplacePage() {
                       : 'glass-card text-[#45474b] hover:opacity-80 transition-opacity'
                   }`}
                 >
-                  {cat}
+                  {categoryLabels[cat]}
                 </button>
               ))}
             </div>
@@ -208,8 +218,8 @@ export default function MarketplacePage() {
             ) : filteredJobs.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">work</span>
-                <p className="text-[#45474b] text-lg font-semibold">No jobs found</p>
-                <p className="text-[#45474b]/60 text-sm mt-2">Try a different search or category</p>
+                <p className="text-[#45474b] text-lg font-semibold">{t('noJobsFound')}</p>
+                <p className="text-[#45474b]/60 text-sm mt-2">{t('tryDifferentSearchOrCategory')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -238,7 +248,7 @@ export default function MarketplacePage() {
                         <div className="text-lg font-bold text-[#2d666d] mb-3">
                           ৳{Number(job.amount).toFixed(0)}
                           {job.type === 'multiple' && (
-                            <span className="text-xs font-normal text-[#45474b] ml-1">/ {job.totalUnits} units</span>
+                            <span className="text-xs font-normal text-[#45474b] ml-1">/ {job.totalUnits} {t('units')}</span>
                           )}
                         </div>
                         <p className="text-sm text-[#45474b] mb-6 line-clamp-3 leading-relaxed">
@@ -247,16 +257,16 @@ export default function MarketplacePage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-auto">
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#e9fdff] text-[#2d666d]">
-                          {job.type === 'single' ? 'Single Unit' : 'Multi Unit'}
+                          {job.type === 'single' ? t('singleUnit') : t('multiUnit')}
                         </span>
                         {job.type === 'multiple' && (
                           <span className="px-3 py-1 rounded-full text-xs font-semibold glass-card text-[#45474b]">
-                            {job.filledUnits}/{job.totalUnits} filled
+                            {job.filledUnits}/{job.totalUnits} {t('filled')}
                           </span>
                         )}
                         {job.status === 'active' && (
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#e9fdff] text-[#2d666d]">
-                            Open
+                            {t('open')}
                           </span>
                         )}
                       </div>
@@ -278,9 +288,9 @@ export default function MarketplacePage() {
             ) : postedJobs.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">add_circle</span>
-                <p className="text-[#45474b] text-lg font-semibold">No jobs posted yet</p>
+                <p className="text-[#45474b] text-lg font-semibold">{t('noJobsPostedYet')}</p>
                 <Link href="/marketplace/post" className="mt-6 inline-block px-6 py-3 rounded-full bg-[#2d666d] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                  Post a Job
+                  {t('postJob')}
                 </Link>
               </div>
             ) : (
@@ -314,7 +324,7 @@ export default function MarketplacePage() {
             {!loading && postedJobs.length > 0 && (
               <div className="flex justify-center pt-4">
                 <Link href="/marketplace/post" className="px-6 py-3 rounded-full bg-[#2d666d] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                  + Post New Job
+                  {t('postNewJob')}
                 </Link>
               </div>
             )}
@@ -331,8 +341,8 @@ export default function MarketplacePage() {
             ) : assignedJobs.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">assignment</span>
-                <p className="text-[#45474b] text-lg font-semibold">No assigned jobs</p>
-                <p className="text-[#45474b]/60 text-sm mt-2">Bid on jobs or get assigned to start working</p>
+                <p className="text-[#45474b] text-lg font-semibold">{t('noAssignedJobs')}</p>
+                <p className="text-[#45474b]/60 text-sm mt-2">{t('bidOnJobsOrGetAssigned')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -348,7 +358,7 @@ export default function MarketplacePage() {
                           }`}>
                             {assignment.status}
                           </span>
-                          <span className="text-[13px] text-[#45474b]">{assignment.units} units</span>
+                          <span className="text-[13px] text-[#45474b]">{assignment.units} {t('units')}</span>
                         </div>
                         <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate">{assignment.jobTitle}</h3>
                         <p className="text-[13px] text-[#45474b] truncate mt-0.5">@{assignment.posterUsername}</p>

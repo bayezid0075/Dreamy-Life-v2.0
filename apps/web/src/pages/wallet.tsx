@@ -8,6 +8,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 interface WalletData {
   walletBalance: number;
@@ -24,6 +25,7 @@ interface Transaction {
 }
 
 export default function WalletPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -176,12 +178,12 @@ export default function WalletPage() {
 
   const getTypeInfo = (type: string) => {
     const map: Record<string, { icon: string; color: string; bg: string; label: string; positive: boolean }> = {
-      wallet_credit: { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: 'Credit', positive: true },
-      wallet_debit: { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: 'Debit', positive: false },
-      fund_credit: { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: 'Credit', positive: true },
-      fund_debit: { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: 'Debit', positive: false },
-      point_earned: { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: 'Earned', positive: true },
-      point_spent: { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: 'Spent', positive: false },
+      wallet_credit: { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: t('credit'), positive: true },
+      wallet_debit: { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: t('debit'), positive: false },
+      fund_credit: { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: t('credit'), positive: true },
+      fund_debit: { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: t('debit'), positive: false },
+      point_earned: { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: t('earned'), positive: true },
+      point_spent: { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: t('spent'), positive: false },
     };
     return map[type] || map.wallet_credit;
   };
@@ -209,7 +211,7 @@ export default function WalletPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Dreamy Life - Wallet</title>
+        <title>{t('walletTitle')}</title>
       </Head>
       <style>{`
         body { min-height: max(884px, 100dvh); }
@@ -238,7 +240,7 @@ export default function WalletPage() {
       >
         {/* TopAppBar - Desktop */}
         <DesktopHeader
-          title="Wallet"
+          title={t('wallet')}
           onMenuClick={() => setDrawerOpen(true)}
           avatarUrl={user?.info?.avatarUrl || ''}
           unreadNotifCount={unreadNotifCount}
@@ -259,7 +261,7 @@ export default function WalletPage() {
           <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Wallet</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('wallet')}</h1>
           <div className="w-10"></div>
         </header>
 
@@ -267,8 +269,8 @@ export default function WalletPage() {
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <div>
-              <h1 className="text-[32px] font-extrabold tracking-tight text-[#1c1b1b]">Wallet</h1>
-              <p className="text-[16px] text-[#45474b]">Manage your financial accounts</p>
+              <h1 className="text-[32px] font-extrabold tracking-tight text-[#1c1b1b]">{t('walletTitle')}</h1>
+              <p className="text-[16px] text-[#45474b]">{t('manageFinances')}</p>
             </div>
           </div>
 
@@ -278,14 +280,14 @@ export default function WalletPage() {
             <div className="gradient-wallet text-white rounded-[2rem] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(236,72,153,0.15)] flex flex-col justify-between min-h-[220px]">
               <div className="grid-overlay absolute inset-0 mix-blend-overlay"></div>
               <div className="relative z-10 flex justify-between items-start">
-                <h2 className="text-[24px] font-bold">Wallet</h2>
+                <h2 className="text-[24px] font-bold">{t('wallet')}</h2>
                 <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <span className="material-symbols-outlined">account_balance_wallet</span>
                 </div>
               </div>
               <div className="relative z-10 mt-4">
                 <div className="text-[40px] font-extrabold leading-none">৳{wallet?.walletBalance?.toFixed(2) || '0.00'}</div>
-                <p className="text-sm opacity-80 mt-1">Commission & referral earnings</p>
+                <p className="text-sm opacity-80 mt-1">{t('commissionReferralEarnings')}</p>
                 <div className="flex gap-4 mt-2 text-sm">
                   <span className="flex items-center gap-1 opacity-80">
                     <span className="material-symbols-outlined text-[16px]">south_east</span> ৳{walletIncome.toFixed(2)}
@@ -296,7 +298,7 @@ export default function WalletPage() {
                 </div>
               </div>
               <Link href="/wallet/history" className="relative z-10 mt-6 w-full py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-colors text-sm font-semibold flex justify-center items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">history</span> History
+                <span className="material-symbols-outlined text-[18px]">history</span> {t('history')}
               </Link>
             </div>
 
@@ -304,14 +306,14 @@ export default function WalletPage() {
             <div className="gradient-funds text-white rounded-[2rem] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(6,182,212,0.15)] flex flex-col justify-between min-h-[220px]">
               <div className="grid-overlay absolute inset-0 mix-blend-overlay"></div>
               <div className="relative z-10 flex justify-between items-start">
-                <h2 className="text-[24px] font-bold">Funds</h2>
+                <h2 className="text-[24px] font-bold">{t('funds')}</h2>
                 <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <span className="material-symbols-outlined">payments</span>
                 </div>
               </div>
               <div className="relative z-10 mt-4">
                 <div className="text-[40px] font-extrabold leading-none">৳{wallet?.fundsBalance?.toFixed(2) || '0.00'}</div>
-                <p className="text-sm opacity-80 mt-1">Funds account balance</p>
+                <p className="text-sm opacity-80 mt-1">{t('fundsAccountBalance')}</p>
                 <div className="flex gap-4 mt-2 text-sm">
                   <span className="flex items-center gap-1 opacity-80">
                     <span className="material-symbols-outlined text-[16px]">south_east</span> ৳{fundsIncome.toFixed(2)}
@@ -323,10 +325,10 @@ export default function WalletPage() {
               </div>
               <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
                 <Link href="/funds/history" className="py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-colors text-sm font-semibold flex justify-center items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">history</span> History
+                  <span className="material-symbols-outlined text-[18px]">history</span> {t('history')}
                 </Link>
                 <button onClick={() => setAddFundsOpen(true)} className="py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-colors text-sm font-semibold flex justify-center items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">add_circle</span> Add Funds
+                  <span className="material-symbols-outlined text-[18px]">add_circle</span> {t('addFunds')}
                 </button>
               </div>
             </div>
@@ -335,14 +337,14 @@ export default function WalletPage() {
             <div className="gradient-points text-white rounded-[2rem] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(249,115,22,0.15)] flex flex-col justify-between min-h-[220px]">
               <div className="grid-overlay absolute inset-0 mix-blend-overlay"></div>
               <div className="relative z-10 flex justify-between items-start">
-                <h2 className="text-[24px] font-bold">Points</h2>
+                <h2 className="text-[24px] font-bold">{t('points')}</h2>
                 <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <span className="material-symbols-outlined">star</span>
                 </div>
               </div>
               <div className="relative z-10 mt-4">
                 <div className="text-[40px] font-extrabold leading-none">৳{wallet?.pointsBalance?.toFixed(2) || '0.00'}</div>
-                <p className="text-sm opacity-80 mt-1">Reward points balance</p>
+                <p className="text-sm opacity-80 mt-1">{t('rewardPointsBalance')}</p>
                 <div className="flex gap-4 mt-2 text-sm">
                   <span className="flex items-center gap-1 opacity-80">
                     <span className="material-symbols-outlined text-[16px]">south_east</span> ৳{pointsEarned.toFixed(2)}
@@ -353,7 +355,7 @@ export default function WalletPage() {
                 </div>
               </div>
               <Link href="/points/history" className="relative z-10 mt-6 w-full py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-colors text-sm font-semibold flex justify-center items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">history</span> History
+                <span className="material-symbols-outlined text-[18px]">history</span> {t('history')}
               </Link>
             </div>
           </div>
@@ -363,11 +365,11 @@ export default function WalletPage() {
             {/* Withdraw Section */}
             <div className="lg:col-span-5">
               <div className="bg-white/50 backdrop-blur-[20px] rounded-[2rem] p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-                <h3 className="text-[24px] font-bold text-[#1c1b1b] mb-1">Withdraw</h3>
-                <p className="text-sm text-[#45474b] mb-6">Transfer funds to your bank account</p>
+                <h3 className="text-[24px] font-bold text-[#1c1b1b] mb-1">{t('withdraw')}</h3>
+                <p className="text-sm text-[#45474b] mb-6">{t('transferToBank')}</p>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-2 block">Amount</label>
+                    <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-2 block">{t('amount')}</label>
                     <div className="bg-white/40 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/30 flex items-center">
                       <span className="text-[#5d5e64] font-bold mr-2">৳</span>
                       <input
@@ -386,7 +388,7 @@ export default function WalletPage() {
                     ))}
                   </div>
                   <button className="w-full py-3 rounded-full bg-[#1c1b1b]/10 text-[#45474b]/50 font-semibold text-sm cursor-not-allowed" disabled>
-                    Withdraw Coming Soon
+                    {t('withdrawComingSoon')}
                   </button>
                 </div>
               </div>
@@ -395,16 +397,16 @@ export default function WalletPage() {
             {/* Transactions Section */}
             <div className="lg:col-span-7">
               <div className="bg-white/50 backdrop-blur-[20px] rounded-[2rem] p-6 lg:p-8 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-                <h3 className="text-[24px] font-bold text-[#1c1b1b] mb-1">Transactions</h3>
-                <p className="text-sm text-[#45474b] mb-6">View your transaction history</p>
+                <h3 className="text-[24px] font-bold text-[#1c1b1b] mb-1">{t('transactions')}</h3>
+                <p className="text-sm text-[#45474b] mb-6">{t('viewTransactionHistory')}</p>
 
                 {/* Filter Tabs */}
                 <div className="flex p-1 bg-[#eae7e7] rounded-full mb-6 overflow-x-auto hide-scrollbar gap-1">
                   {[
-                    { key: 'all', icon: 'grid_view', label: 'All' },
-                    { key: 'wallet', icon: 'account_balance_wallet', label: 'Wallet' },
-                    { key: 'funds', icon: 'payments', label: 'Funds' },
-                    { key: 'points', icon: 'star', label: 'Points' },
+                    { key: 'all', icon: 'grid_view', label: t('all') },
+                    { key: 'wallet', icon: 'account_balance_wallet', label: t('wallet') },
+                    { key: 'funds', icon: 'payments', label: t('funds') },
+                    { key: 'points', icon: 'star', label: t('points') },
                   ].map(tab => (
                     <button
                       key={tab.key}
@@ -423,7 +425,7 @@ export default function WalletPage() {
                 {/* Transaction List */}
                 <div className="space-y-3">
                   {transactions.length === 0 ? (
-                    <div className="text-center py-10 text-[#45474b]">No transactions found</div>
+                    <div className="text-center py-10 text-[#45474b]">{t('noTransactionsFound')}</div>
                   ) : (
                     transactions.map(tx => {
                       const info = getTypeInfo(tx.type);
@@ -462,14 +464,14 @@ export default function WalletPage() {
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAddFundsOpen(false)}></div>
             <div className="relative bg-white/80 backdrop-blur-3xl rounded-[2rem] p-6 w-full max-w-md border border-white/40 shadow-2xl">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-[#1c1b1b]">Add Funds</h3>
+                <h3 className="text-xl font-bold text-[#1c1b1b]">{t('addFunds')}</h3>
                 <button onClick={() => setAddFundsOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
                   <span className="material-symbols-outlined text-[#45474b]">close</span>
                 </button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-2 block">Amount</label>
+                  <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-2 block">{t('amount')}</label>
                   <div className="bg-white/60 backdrop-blur-md rounded-2xl px-4 py-4 border border-white/40 flex items-center">
                     <span className="text-[#5d5e64] font-bold text-xl mr-2">৳</span>
                     <input
@@ -497,7 +499,7 @@ export default function WalletPage() {
                   disabled={!addAmount || parseFloat(addAmount) <= 0 || adding}
                   className="w-full py-3.5 rounded-full bg-[#14b8a6] text-white font-semibold text-sm hover:bg-[#0d9488] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {adding ? 'Processing...' : 'Add Funds'}
+                  {adding ? t('processing') : t('addFunds')}
                 </button>
               </div>
             </div>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { VendorProfile } from '@/features/vendor/api';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useI18n } from '../../i18n';
 
 interface SideDrawerProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
   const hasVendor = !!vendorProfile;
   const { unreadCount } = useNotificationStore();
   const isAdmin = user?.role === 'admin';
+  const { t } = useI18n();
 
   return (
     <div className={`fixed inset-0 z-[60] transition-all duration-500 ease-in-out ${isOpen ? '' : 'pointer-events-none'}`}>
@@ -31,7 +33,7 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
           {/* Drawer Header */}
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center gap-3">
-              <span className="text-lg font-bold text-[#5d5e64]">Dreamy Life</span>
+              <span className="text-lg font-bold text-[#5d5e64]">{t('dreamyLife')}</span>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
               <span className="material-symbols-outlined text-[#45474b]">close</span>
@@ -63,12 +65,12 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                     {user?.isVerified ? (
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#e9fdff] text-[#2d666d] text-[9px] rounded-full font-bold uppercase tracking-wider border border-[#2d666d]/20">
                         <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                        Verified
+                        {t('verified')}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#ffdad6]/60 text-[#ba1a1a] text-[9px] rounded-full font-bold uppercase tracking-wider border border-[#ba1a1a]/20">
                         <span className="material-symbols-outlined text-[10px]">gpp_maybe</span>
-                        Not Verified
+                        {t('notVerified')}
                       </span>
                     )}
                   </div>
@@ -82,7 +84,7 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
               </div>
               <div className="flex items-center justify-between bg-white/40 p-2.5 rounded-xl border border-white/50">
                 <span className="text-xs font-semibold text-[#45474b]">
-                  Refer: <span className="text-[#5d5e64]">{user?.ownRefercode}</span>
+                  {t('refer')} <span className="text-[#5d5e64]">{user?.ownRefercode}</span>
                 </span>
                 <button onClick={copyReferCode}>
                   <span className="material-symbols-outlined text-sm cursor-pointer">content_copy</span>
@@ -100,8 +102,8 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
             >
               <span className="text-2xl">🔒</span>
               <div className="flex-1">
-                <span className="font-bold text-sm text-[#2d666d] block">Verify Now</span>
-                <span className="text-[11px] text-[#45474b]">Purchase a membership to verify your account</span>
+                <span className="font-bold text-sm text-[#2d666d] block">{t('verifyNow')}</span>
+                <span className="text-[11px] text-[#45474b]">{t('purchaseMembershipToVerify')}</span>
               </div>
               <span className="material-symbols-outlined text-[#2d666d] font-bold group-hover:translate-x-1 transition-transform">arrow_forward</span>
             </Link>
@@ -111,8 +113,8 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
             <div className="flex items-center gap-3 p-4 mb-6 rounded-2xl bg-[#2d666d]/5 border border-[#2d666d]/20">
               <span className="text-2xl">✅</span>
               <div className="flex-1">
-                <span className="font-bold text-sm text-[#2d666d] block">Account Verified</span>
-                <span className="text-[11px] text-[#45474b]">Your account is fully verified</span>
+                <span className="font-bold text-sm text-[#2d666d] block">{t('accountVerifiedText')}</span>
+                <span className="text-[11px] text-[#45474b]">{t('yourAccountIsVerified')}</span>
               </div>
             </div>
           )}
@@ -120,43 +122,43 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto space-y-6 pr-2">
             <div>
-              <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">Main</h4>
+              <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">{t('main')}</h4>
               <div className="space-y-1">
                 <Link href="/dashboard" className="flex items-center gap-4 px-4 py-3 rounded-xl bg-[#f8f8ff] text-[#5d5e64] transition-all">
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
-                  <span className="font-semibold">Dashboard</span>
+                  <span className="font-semibold">{t('dashboard')}</span>
                 </Link>
                 <Link href="/recharge" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">phone_iphone</span>
-                  <span className="font-semibold">Mobile Recharge</span>
+                  <span className="font-semibold">{t('mobileRecharge')}</span>
                 </Link>
                 <Link href="/social-feed" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">public</span>
-                  <span>Social Feed</span>
+                  <span>{t('socialFeed')}</span>
                 </Link>
                 <Link href="/marketplace" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">work</span>
-                  <span>Marketplace</span>
+                  <span>{t('marketplace')}</span>
                 </Link>
                 <Link href="/referral" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">share</span>
-                  <span>Referral</span>
+                  <span>{t('referral')}</span>
                 </Link>
                 <Link href="/membership" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">card_membership</span>
-                  <span>Membership</span>
+                  <span>{t('membership')}</span>
                 </Link>
                 <Link href="/wallet" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">account_balance_wallet</span>
-                  <span>Wallet</span>
+                  <span>{t('wallet')}</span>
                 </Link>
                 <Link href="/withdraw" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">account_balance_wallet</span>
-                  <span>Withdraw</span>
+                  <span>{t('withdraw')}</span>
                 </Link>
                 <Link href="/notifications" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">notifications</span>
-                  <span>Notifications</span>
+                  <span>{t('notifications')}</span>
                   {unreadCount > 0 && (
                     <span className="ml-auto bg-[#ff6b6b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>
                   )}
@@ -166,23 +168,23 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
 
             {isAdmin && (
               <div>
-                <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">Admin</h4>
+                <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">{t('admin')}</h4>
                 <div className="space-y-1">
                   <Link href="/admin/notifications" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                     <span className="material-symbols-outlined">campaign</span>
-                    <span>Manage Notifications</span>
+                    <span>{t('manageNotifications')}</span>
                   </Link>
                 </div>
               </div>
             )}
 
             <div>
-              <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">Vendor</h4>
+              <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">{t('vendor')}</h4>
               <div className="space-y-1">
                 {!hasVendor ? (
                   <Link href="/vendor/apply" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                     <span className="material-symbols-outlined">storefront</span>
-                    <span>Become a Vendor</span>
+                    <span>{t('becomeAVendor')}</span>
                   </Link>
                 ) : (
                   <>
@@ -192,9 +194,9 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                     >
                       <span className="material-symbols-outlined">storefront</span>
                       <div className="flex-1 text-left">
-                        <span className="font-semibold block">{vendorProfile?.shopName || 'Vendor'}</span>
+                        <span className="font-semibold block">{vendorProfile?.shopName || t('vendor')}</span>
                         {vendorProfile?.isActive && (
-                          <span className="text-[10px] text-[#2d666d] font-medium">Active Vendor</span>
+                          <span className="text-[10px] text-[#2d666d] font-medium">{t('activeVendor')}</span>
                         )}
                       </div>
                       <span className="material-symbols-outlined text-sm">{vendorExpanded ? 'expand_less' : 'expand_more'}</span>
@@ -206,35 +208,35 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                           <div className="grid grid-cols-3 gap-2">
                             <div className="text-center">
                               <p className="text-lg font-bold text-[#1c1b1b]">{vendorProfile?.totalProducts ?? 0}</p>
-                              <p className="text-[10px] text-[#45474b] font-medium">Products</p>
+                              <p className="text-[10px] text-[#45474b] font-medium">{t('products')}</p>
                             </div>
                             <div className="text-center">
                               <p className="text-lg font-bold text-[#1c1b1b]">{vendorProfile?.totalOrders ?? 0}</p>
-                              <p className="text-[10px] text-[#45474b] font-medium">Orders</p>
+                              <p className="text-[10px] text-[#45474b] font-medium">{t('orders')}</p>
                             </div>
                             <div className="text-center">
                               <p className="text-lg font-bold text-[#1c1b1b]">{vendorProfile?.totalRevenue ?? 0}</p>
-                              <p className="text-[10px] text-[#45474b] font-medium">Revenue</p>
+                              <p className="text-[10px] text-[#45474b] font-medium">{t('revenueLabel')}</p>
                             </div>
                           </div>
                         </div>
 
                         <Link href="/vendor/dashboard" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#5d5e64] hover:bg-black/5 transition-all text-sm">
                           <span className="material-symbols-outlined text-base">analytics</span>
-                          <span className="font-semibold">Dashboard</span>
+                  <span className="font-semibold">{t('dashboard')}</span>
                         </Link>
                         <Link href="/vendor/products" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#5d5e64] hover:bg-black/5 transition-all text-sm">
                           <span className="material-symbols-outlined text-base">inventory_2</span>
-                          <span className="font-semibold">Inventory</span>
+                          <span className="font-semibold">{t('inventory')}</span>
                           <span className="ml-auto text-[10px] bg-[#f8f8ff] text-[#5d5e64] px-2 py-0.5 rounded-full font-medium">{vendorProfile?.totalProducts ?? 0}</span>
                         </Link>
                         <Link href="/vendor/products/create" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#5d5e64] hover:bg-black/5 transition-all text-sm">
                           <span className="material-symbols-outlined text-base">add_circle</span>
-                          <span className="font-semibold">Add Product</span>
+                          <span className="font-semibold">{t('addProduct')}</span>
                         </Link>
                         <Link href="/reselling/orders" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#5d5e64] hover:bg-black/5 transition-all text-sm">
                           <span className="material-symbols-outlined text-base">receipt_long</span>
-                          <span className="font-semibold">My Orders</span>
+                          <span className="font-semibold">{t('myOrders')}</span>
                           <span className="ml-auto text-[10px] bg-[#f8f8ff] text-[#5d5e64] px-2 py-0.5 rounded-full font-medium">{vendorProfile?.totalOrders ?? 0}</span>
                         </Link>
                       </div>
@@ -251,7 +253,7 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
             className="mt-auto flex items-center justify-center gap-3 w-full py-4 bg-[#ffdad6]/50 text-[#ba1a1a] rounded-2xl font-bold border border-[#ba1a1a]/10 hover:bg-[#ba1a1a] hover:text-white transition-all"
           >
             <span className="material-symbols-outlined">logout</span>
-            Logout
+            {t('logout')}
           </button>
           <div className="text-center mt-4 text-[10px] text-[#45474b]/40">v1.0.0</div>
         </div>

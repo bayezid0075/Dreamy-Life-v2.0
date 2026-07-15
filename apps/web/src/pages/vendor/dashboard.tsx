@@ -8,12 +8,14 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function VendorDashboardPage() {
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
+  const { t } = useI18n();
   const [vendor, setVendor] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -91,13 +93,13 @@ export default function VendorDashboardPage() {
   if (!vendor) {
     return (
       <AuthGuard>
-        <Head><title>No Vendor Profile - Dreamy Life</title></Head>
+        <Head><title>{t('vendorDashboardTitle')}</title></Head>
         <div className="min-h-screen bg-[#f8f8ff] flex flex-col items-center justify-center gap-4 px-6">
           <span className="material-symbols-outlined text-6xl text-[#5d5e64]/30">storefront</span>
-          <h2 className="text-xl font-bold text-[#1c1b1b]">No Vendor Profile</h2>
-          <p className="text-[#45474b] text-center">Apply to become a vendor first</p>
+          <h2 className="text-xl font-bold text-[#1c1b1b]">{t('noVendorProfile')}</h2>
+          <p className="text-[#45474b] text-center">{t('applyToBecomeVendorFirst')}</p>
           <Link href="/vendor/apply" className="px-8 py-3 rounded-full bg-[#1A1A1A] text-white text-sm font-semibold hover:opacity-90 transition-all">
-            Become a Vendor
+            {t('becomeAVendor')}
           </Link>
         </div>
       </AuthGuard>
@@ -111,7 +113,7 @@ export default function VendorDashboardPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Vendor Dashboard - Dreamy Life</title>
+        <title>{t('vendorDashboardTitle')}</title>
       </Head>
       <style>{`
         body { min-height: max(884px, 100dvh); }
@@ -129,7 +131,7 @@ export default function VendorDashboardPage() {
       >
         {/* Desktop Header */}
         <DesktopHeader
-          title="Vendor Dashboard"
+          title={t('vendorDashboard')}
           onMenuClick={() => setDrawerOpen(true)}
           avatarUrl={user?.info?.avatarUrl || ''}
           unreadNotifCount={unreadNotifCount}
@@ -153,7 +155,7 @@ export default function VendorDashboardPage() {
           >
             <span className="material-symbols-outlined">menu</span>
           </button>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Vendor Dashboard</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('vendorDashboard')}</h1>
           <button
             onClick={() => router.push('/notifications')}
             className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b] relative"
@@ -189,14 +191,14 @@ export default function VendorDashboardPage() {
                   <h1 className="text-[28px] md:text-[36px] font-extrabold text-[#1c1b1b] leading-tight">{vendor.shopName}</h1>
                   <p className="text-[#45474b] mt-1 flex items-center gap-2">
                     <span className="material-symbols-outlined text-sm">location_on</span>
-                    {vendor.address || 'No address set'}
+                    {vendor.address || t('noAddressSet')}
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <Link href="/vendor/products/create"
                     className="px-6 py-3 bg-[#1A1A1A] text-white text-sm font-semibold rounded-full hover:opacity-90 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-black/10">
                     <span className="material-symbols-outlined text-[18px]">add</span>
-                    Add Product
+                    {t('addProduct')}
                   </Link>
                 </div>
               </div>
@@ -207,7 +209,7 @@ export default function VendorDashboardPage() {
           <section className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-6 md:p-8 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-[#45474b] uppercase tracking-wider mb-1">Total Revenue</p>
+                <p className="text-sm font-semibold text-[#45474b] uppercase tracking-wider mb-1">{t('totalRevenue')}</p>
                 <div className="flex items-end gap-3">
                   <span className="text-[40px] md:text-[56px] font-extrabold text-[#1c1b1b] leading-none">
                     ${vendor.totalRevenue?.toFixed(2) || '0.00'}
@@ -217,18 +219,18 @@ export default function VendorDashboardPage() {
                     <span className="text-sm font-semibold text-[#2d666d]">+12%</span>
                   </div>
                 </div>
-                <p className="text-sm text-[#45474b] mt-2">Last 30 days overview</p>
+                <p className="text-sm text-[#45474b] mt-2">{t('last30DaysOverview')}</p>
               </div>
               <div className="flex gap-3">
                 <Link href="/vendor/products"
                   className="bg-white/50 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/40 text-sm font-semibold text-[#1c1b1b] hover:bg-white/70 transition-colors flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px]">inventory_2</span>
-                  View Products
+                  {t('viewProducts')}
                 </Link>
                 <Link href="/reselling/orders"
                   className="bg-white/50 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/40 text-sm font-semibold text-[#1c1b1b] hover:bg-white/70 transition-colors flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px]">receipt_long</span>
-                  View Orders
+                  {t('viewOrders')}
                 </Link>
               </div>
             </div>
@@ -242,11 +244,11 @@ export default function VendorDashboardPage() {
                 <span className="material-symbols-outlined text-2xl">inventory_2</span>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#45474b] mb-1">Active Products</h3>
+                <h3 className="text-sm font-semibold text-[#45474b] mb-1">{t('activeProducts')}</h3>
                 <p className="text-[32px] font-bold text-[#1c1b1b]">{vendor.totalProducts || 0}</p>
               </div>
               <span className="text-xs font-semibold text-[#2d666d] flex items-center gap-1 mt-auto">
-                View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                {t('viewAll')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </span>
             </Link>
 
@@ -256,11 +258,11 @@ export default function VendorDashboardPage() {
                 <span className="material-symbols-outlined text-2xl">pending_actions</span>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#45474b] mb-1">Pending Orders</h3>
+                <h3 className="text-sm font-semibold text-[#45474b] mb-1">{t('pendingOrders')}</h3>
                 <p className="text-[32px] font-bold text-[#1c1b1b]">{pendingOrders.length}</p>
               </div>
               <span className="text-xs font-semibold text-[#78555e] flex items-center gap-1 mt-auto">
-                View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                {t('viewAll')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </span>
             </Link>
 
@@ -270,46 +272,46 @@ export default function VendorDashboardPage() {
                 <span className="material-symbols-outlined text-2xl">shopping_bag</span>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#45474b] mb-1">Completed Orders</h3>
+                <h3 className="text-sm font-semibold text-[#45474b] mb-1">{t('completedOrders')}</h3>
                 <p className="text-[32px] font-bold text-[#1c1b1b]">{completedOrders.length}</p>
               </div>
               <span className="text-xs font-semibold text-[#00838f] flex items-center gap-1 mt-auto">
-                View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                {t('viewAll')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </span>
             </Link>
           </section>
 
           {/* Quick Actions */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-            <h2 className="text-lg font-bold text-[#1c1b1b] mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-bold text-[#1c1b1b] mb-4">{t('quickActions')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Link href="/vendor/products/create"
                 className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/40 hover:bg-white/60 transition-colors border border-white/30">
                 <div className="w-12 h-12 rounded-full bg-[#e9fdff] text-[#2d666d] flex items-center justify-center">
                   <span className="material-symbols-outlined text-xl">add_box</span>
                 </div>
-                <span className="text-sm font-semibold text-[#1c1b1b]">Add Product</span>
+                <span className="text-sm font-semibold text-[#1c1b1b]">{t('addProduct')}</span>
               </Link>
               <Link href="/vendor/products"
                 className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/40 hover:bg-white/60 transition-colors border border-white/30">
                 <div className="w-12 h-12 rounded-full bg-[#e2e2e9] text-[#45474c] flex items-center justify-center">
                   <span className="material-symbols-outlined text-xl">inventory_2</span>
                 </div>
-                <span className="text-sm font-semibold text-[#1c1b1b]">Inventory</span>
+                <span className="text-sm font-semibold text-[#1c1b1b]">{t('inventory')}</span>
               </Link>
               <Link href="/reselling/orders"
                 className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/40 hover:bg-white/60 transition-colors border border-white/30">
                 <div className="w-12 h-12 rounded-full bg-[#ffd1dc] text-[#78555e] flex items-center justify-center">
                   <span className="material-symbols-outlined text-xl">local_shipping</span>
                 </div>
-                <span className="text-sm font-semibold text-[#1c1b1b]">Orders</span>
+                <span className="text-sm font-semibold text-[#1c1b1b]">{t('orders')}</span>
               </Link>
               <Link href="/reselling/orders"
                 className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/40 hover:bg-white/60 transition-colors border border-white/30">
                 <div className="w-12 h-12 rounded-full bg-[#e0f7fa] text-[#00838f] flex items-center justify-center">
                   <span className="material-symbols-outlined text-xl">analytics</span>
                 </div>
-                <span className="text-sm font-semibold text-[#1c1b1b]">Order Analytics</span>
+                <span className="text-sm font-semibold text-[#1c1b1b]">{t('orderAnalytics')}</span>
               </Link>
             </div>
           </section>
@@ -317,16 +319,16 @@ export default function VendorDashboardPage() {
           {/* Recent Activity */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-6 md:p-8 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-[#1c1b1b]">Recent Orders</h2>
+              <h2 className="text-lg font-bold text-[#1c1b1b]">{t('recentOrders')}</h2>
               <Link href="/reselling/orders" className="text-sm font-semibold text-[#2d666d] hover:opacity-80 transition-opacity flex items-center gap-1">
-                View All <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                {t('viewAll')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </Link>
             </div>
             <div className="flex flex-col gap-3">
               {recentOrders.length === 0 ? (
                 <div className="text-center py-12">
                   <span className="material-symbols-outlined text-4xl text-[#5d5e64]/30 mb-3">receipt_long</span>
-                  <p className="text-[#45474b]">No orders yet</p>
+                  <p className="text-[#45474b]">{t('noTransactionsFound')}</p>
                 </div>
               ) : (
                 recentOrders.map((order: any) => (
@@ -339,7 +341,7 @@ export default function VendorDashboardPage() {
                       <span className="material-symbols-outlined text-[#2d666d] text-sm">shopping_bag</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#1c1b1b] truncate">{order.productName || 'Product'}</p>
+                      <p className="text-sm font-semibold text-[#1c1b1b] truncate">{order.productName || t('product')}</p>
                       <p className="text-xs text-[#45474b]">{order.customerName} · {order.status}</p>
                     </div>
                     <p className="text-sm font-bold text-[#1c1b1b] whitespace-nowrap">+${order.vendorPrice?.toFixed(2) || '0.00'}</p>

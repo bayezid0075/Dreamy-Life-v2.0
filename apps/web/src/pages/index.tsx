@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuthStore } from '@/store/authStore';
+import { useI18n } from '../i18n';
 
 export default function HomePage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -17,7 +19,7 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>Dreamy Life - Welcome</title>
+        <title>{t('dreamyLifeWelcome')}</title>
         <meta name="description" content="Your personal wellness journey" />
       </Head>
       <style jsx>{`
@@ -54,7 +56,7 @@ export default function HomePage() {
             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-white/50">
               <span className="material-symbols-outlined text-[#5d5e64]" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
             </div>
-            <h1 className="text-[32px] font-bold text-[#1c1b1b] tracking-tight">Dreamy Life</h1>
+            <h1 className="text-[32px] font-bold text-[#1c1b1b] tracking-tight">{t('dreamyLife')}</h1>
           </div>
         </header>
 
@@ -73,10 +75,10 @@ export default function HomePage() {
           {/* Typography */}
           <div className="text-center mb-10 w-full">
             <h2 className="text-[28px] font-bold text-[#1c1b1b] mb-3">
-              Welcome to Dreamy Life
+              {t('welcomeToDreamyLife')}
             </h2>
             <p className="text-[16px] text-[#45474b] px-2 leading-relaxed">
-              Your personal wellness journey starts here. Join our community and unlock exclusive benefits, referrals, and membership rewards.
+              {t('yourWellnessJourney')}
             </p>
           </div>
 
@@ -86,7 +88,7 @@ export default function HomePage() {
               href="/login"
               className="w-full h-[56px] rounded-full bg-[#5d5e64] text-white font-semibold text-[16px] tracking-wide shadow-sm hover:shadow-md hover:bg-[#45474c] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
             >
-              Sign In
+              {t('signIn')}
               <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
             </Link>
 
@@ -94,7 +96,7 @@ export default function HomePage() {
               href="/register"
               className="w-full h-[56px] rounded-full bg-white/60 backdrop-blur-[10px] border border-[rgba(118,119,123,0.2)] text-[#1c1b1b] font-semibold text-[16px] tracking-wide hover:bg-white/80 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
             >
-              Create Account
+              {t('createAccount')}
               <span className="material-symbols-outlined text-[20px]">person_add</span>
             </Link>
           </div>
@@ -103,9 +105,9 @@ export default function HomePage() {
           <div className="w-full mt-10 pt-8 border-t border-[rgba(118,119,123,0.1)]">
             <div className="grid grid-cols-3 gap-4">
               {[
-                { icon: 'share', label: 'Referral Program', desc: 'Earn rewards' },
-                { icon: 'card_membership', label: 'Membership', desc: 'Exclusive perks' },
-                { icon: 'group', label: 'Community', desc: 'Join the network' },
+                { icon: 'share', label: t('referralProgram'), desc: t('earnRewards') },
+                { icon: 'card_membership', label: t('membership'), desc: t('exclusivePerks') },
+                { icon: 'group', label: t('community'), desc: t('joinTheNetwork') },
               ].map((feature) => (
                 <div key={feature.label} className="text-center">
                   <div className="w-10 h-10 rounded-full bg-[#f8f8ff] mx-auto mb-2 flex items-center justify-center">
@@ -124,7 +126,7 @@ export default function HomePage() {
         {/* Footer */}
         <footer className="mt-8 relative z-10 text-center w-full max-w-md">
           <p className="text-[14px] text-[#45474b] tracking-wide">
-            &copy; 2026 Dreamy Life. All rights reserved.
+            {t('footerText')}
           </p>
         </footer>
       </div>

@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -60,6 +61,7 @@ interface OfferPack {
 }
 
 export default function DrivePackScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isAuthenticated, accessToken, logout } = useAuthStore();
@@ -87,7 +89,7 @@ export default function DrivePackScreen() {
         setPacks(data.data.packs);
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to load offer packs.');
+      Alert.alert(t('error'), t('error'));
     } finally {
       setLoading(false);
     }
@@ -123,10 +125,10 @@ export default function DrivePackScreen() {
 
   const getCategoryLabel = (pack: OfferPack): string => {
     switch (pack._offer_type) {
-      case 'MN': return 'Minutes';
-      case 'IN': return 'Internet';
-      case 'BD': return 'Combo';
-      case 'SM': return 'SMS';
+      case 'MN': return t('minutes');
+      case 'IN': return t('internet');
+      case 'BD': return t('combo');
+      case 'SM': return t('sms');
       default: return pack._offer_type;
     }
   };
@@ -153,7 +155,7 @@ export default function DrivePackScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar showBack title="Drive Pack" showNotification={false} showSearch={false} />
+      <TopBar showBack title={t('drivePack')} showNotification={false} showSearch={false} />
 
       <ScrollView
         style={styles.scroll}
@@ -190,7 +192,7 @@ export default function DrivePackScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.filterLabel, isActive && styles.filterLabelActive]}>
-                  {op.id === 'ALL' ? 'All' : op.id}
+                  {op.id === 'ALL' ? t('all') : op.id}
                 </Text>
               </TouchableOpacity>
             );
@@ -206,6 +208,7 @@ export default function DrivePackScreen() {
         >
           {CATEGORIES.map((cat) => {
             const isActive = selectedCategory === cat.id;
+            const catName = cat.id === 'ALL' ? t('allPacks') : cat.id === 'MN' ? t('minutes') : cat.id === 'IN' ? t('internet') : cat.id === 'BD' ? t('combo') : cat.name;
             return (
               <TouchableOpacity
                 key={cat.id}
@@ -217,7 +220,7 @@ export default function DrivePackScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
-                  {cat.name}
+                  {catName}
                 </Text>
               </TouchableOpacity>
             );
@@ -225,14 +228,14 @@ export default function DrivePackScreen() {
         </ScrollView>
 
         {/* Pack Count */}
-        <Text style={styles.packCount}>{filteredPacks.length} packs found</Text>
+        <Text style={styles.packCount}>{t('packsFound', { count: filteredPacks.length })}</Text>
 
         {/* Pack Cards */}
         {filteredPacks.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>📭</Text>
-            <Text style={styles.emptyTitle}>No Packs Found</Text>
-            <Text style={styles.emptySubtitle}>Try a different operator or category filter.</Text>
+            <Text style={styles.emptyTitle}>{t('noPacksFound')}</Text>
+            <Text style={styles.emptySubtitle}>{t('tryDifferentOperatorFilter')}</Text>
           </View>
         ) : (
           filteredPacks.map((pack, index) => {
@@ -287,7 +290,7 @@ export default function DrivePackScreen() {
                   <View style={styles.packPriceWrap}>
                     <Text style={styles.packPrice}>৳{pack._amount}</Text>
                     {pack._commission_amount && pack._commission_amount !== '0' && (
-                      <Text style={styles.packCommission}>Earn ৳{pack._commission_amount}</Text>
+                      <Text style={styles.packCommission}>{t('earn')} ৳{pack._commission_amount}</Text>
                     )}
                   </View>
                   <TouchableOpacity
@@ -295,7 +298,7 @@ export default function DrivePackScreen() {
                     onPress={() => handleBuyPack(pack)}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.buyBtnText}>Get Pack</Text>
+                    <Text style={styles.buyBtnText}>{t('getPack')}</Text>
                   </TouchableOpacity>
                 </View>
               </GlassPanel>

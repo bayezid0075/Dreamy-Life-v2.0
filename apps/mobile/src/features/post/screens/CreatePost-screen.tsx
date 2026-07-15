@@ -16,11 +16,13 @@ import * as ImagePicker from 'expo-image-picker';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function CreatePostScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [content, setContent] = useState('');
   const [posting, setPosting] = useState(false);
   const [selectedUri, setSelectedUri] = useState<string | null>(null);
@@ -71,10 +73,10 @@ export default function CreatePostScreen() {
       if (res.ok) {
         router.back();
       } else {
-        Alert.alert('Error', 'Failed to create post');
+        Alert.alert(t('error'), t('error'));
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to create post');
+      Alert.alert(t('error'), t('error'));
     } finally {
       setPosting(false);
     }
@@ -83,14 +85,14 @@ export default function CreatePostScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="New Post" showBack />
+      <TopBar title={t('newPost')} showBack />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <GlassPanel borderRadius={12} style={styles.composer}>
           <TextInput
             value={content}
             onChangeText={setContent}
-            placeholder="What's on your mind?"
+            placeholder={t('whatsOnYourMind')}
             placeholderTextColor="#45474b80"
             multiline
             style={styles.input}
@@ -108,7 +110,7 @@ export default function CreatePostScreen() {
         </GlassPanel>
 
         <TouchableOpacity style={styles.photoBtn} onPress={pickImage}>
-          <Text style={styles.photoBtnText}>Add Photo</Text>
+          <Text style={styles.photoBtnText}>{t('addPhoto')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -119,7 +121,7 @@ export default function CreatePostScreen() {
           {posting ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.postBtnText}>Post</Text>
+            <Text style={styles.postBtnText}>{t('post')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -36,6 +37,7 @@ interface Job {
 
 export default function MarketplaceScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'available' | 'posted' | 'assigned'>('available');
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -100,7 +102,7 @@ export default function MarketplaceScreen() {
     >
       <View style={styles.jobHeader}>
         <View style={styles.jobTypeBadge}>
-          <Text style={styles.jobTypeText}>{item.type === 'single' ? 'Single' : 'Multi'}</Text>
+          <Text style={styles.jobTypeText}>{item.type === 'single' ? t('singleUnit') : t('multiUnit')}</Text>
         </View>
         <Text style={styles.jobAmount}>৳{Number(item.amount).toFixed(0)}</Text>
       </View>
@@ -130,7 +132,7 @@ export default function MarketplaceScreen() {
       </View>
       <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
       <View style={styles.jobFooter}>
-        <Text style={styles.jobType}>{item.type === 'single' ? 'Single Unit' : `${item.totalUnits} Units`}</Text>
+        <Text style={styles.jobType}>{item.type === 'single' ? t('singleUnit') : `${item.totalUnits} ${t('units')}`}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -156,15 +158,15 @@ export default function MarketplaceScreen() {
   );
 
   const tabs = [
-    { key: 'available', label: 'Available' },
-    { key: 'posted', label: 'My Jobs' },
-    { key: 'assigned', label: 'Assigned' },
+    { key: 'available', label: t('browseJobs') },
+    { key: 'posted', label: t('myJobs') },
+    { key: 'assigned', label: t('assigned') },
   ];
 
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Marketplace" showBack showSearch={false} showNotification={false} />
+      <TopBar title={t('browseJobs')} showBack showSearch={false} showNotification={false} />
 
       <View style={styles.tabsContainer}>
         {tabs.map((tab) => (
@@ -184,7 +186,7 @@ export default function MarketplaceScreen() {
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search jobs..."
+            placeholder={t('searchJobs')}
             placeholderTextColor="#76777b"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -207,16 +209,16 @@ export default function MarketplaceScreen() {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>💼</Text>
               <Text style={styles.emptyText}>
-                {activeTab === 'available' && 'No available jobs'}
-                {activeTab === 'posted' && 'No jobs posted yet'}
-                {activeTab === 'assigned' && 'No assigned jobs'}
+                {activeTab === 'available' && t('noJobsFound')}
+                {activeTab === 'posted' && t('noJobsPostedYet')}
+                {activeTab === 'assigned' && t('noAssignedJobs')}
               </Text>
               {activeTab === 'posted' && (
                 <TouchableOpacity
                   style={styles.postBtn}
                   onPress={() => router.push('/marketplace/post')}
                 >
-                  <Text style={styles.postBtnText}>Post a Job</Text>
+                  <Text style={styles.postBtnText}>{t('postJob')}</Text>
                 </TouchableOpacity>
               )}
             </View>

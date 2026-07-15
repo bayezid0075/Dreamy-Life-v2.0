@@ -19,6 +19,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 import RechargeResultModal from '@/shared/components/RechargeResultModal';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -34,6 +35,7 @@ const OPERATORS = [
 const QUICK_AMOUNTS = [20, 50, 100, 500, 1000, 1500, 2000, 2500];
 
 export default function RechargeScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const params = useLocalSearchParams<{ operator?: string; amount?: string; source?: string }>();
   const insets = useSafeAreaInsets();
@@ -100,16 +102,16 @@ export default function RechargeScreen() {
 
   const validate = (): boolean => {
     if (phoneNumber.length !== 11) {
-      Alert.alert('Invalid Number', 'Please enter a valid 11-digit phone number.');
+      Alert.alert('Invalid Number', t('pleaseEnterValidPhoneNumber'));
       return false;
     }
     if (!selectedOperator) {
-      Alert.alert('Select Operator', 'Please select an operator.');
+      Alert.alert('Select Operator', t('pleaseSelectOperator'));
       return false;
     }
     const amountNum = parseFloat(amount);
     if (!amount || isNaN(amountNum) || amountNum <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid recharge amount.');
+      Alert.alert('Invalid Amount', t('pleaseEnterValidAmount'));
       return false;
     }
     return true;
@@ -156,7 +158,7 @@ export default function RechargeScreen() {
         setModalVisible(true);
       }
     } catch (err) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('error'), t('error'));
     } finally {
       setLoading(false);
     }
@@ -183,7 +185,7 @@ export default function RechargeScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar showBack title="Mobile Recharge" showNotification={false} showSearch={false} />
+      <TopBar showBack title={t('mobileRecharge')} showNotification={false} showSearch={false} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -196,7 +198,7 @@ export default function RechargeScreen() {
         >
           {/* Phone Number Input */}
           <GlassPanel borderRadius={16} style={styles.section}>
-            <Text style={styles.sectionLabel}>Phone Number</Text>
+            <Text style={styles.sectionLabel}>{t('phoneNumber')}</Text>
             <View style={styles.phoneInputWrap}>
               <Text style={styles.bdtSymbol}>+880</Text>
               <TextInput
@@ -214,7 +216,7 @@ export default function RechargeScreen() {
 
           {/* Operator Selection */}
           <GlassPanel borderRadius={16} style={styles.section}>
-            <Text style={styles.sectionLabel}>Select Operator</Text>
+            <Text style={styles.sectionLabel}>{t('selectOperator')}</Text>
             <View style={styles.operatorGrid}>
               {OPERATORS.map(op => {
                 const isSelected = selectedOperator === op.id;
@@ -261,7 +263,7 @@ export default function RechargeScreen() {
 
           {/* Connection Type */}
           <GlassPanel borderRadius={16} style={styles.section}>
-            <Text style={styles.sectionLabel}>Connection Type</Text>
+            <Text style={styles.sectionLabel}>{t('connectionType')}</Text>
             <View style={styles.toggleRow}>
               <TouchableOpacity
                 onPress={() => setConnectionType('prepaid')}
@@ -277,7 +279,7 @@ export default function RechargeScreen() {
                     connectionType === 'prepaid' && styles.toggleTextActive,
                   ]}
                 >
-                  Prepaid
+                  {t('prepaid')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -294,7 +296,7 @@ export default function RechargeScreen() {
                     connectionType === 'postpaid' && styles.toggleTextActive,
                   ]}
                 >
-                  Postpaid
+                  {t('postpaid')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -302,7 +304,7 @@ export default function RechargeScreen() {
 
           {/* Amount Input */}
           <GlassPanel borderRadius={16} style={styles.section}>
-            <Text style={styles.sectionLabel}>Amount (BDT)</Text>
+            <Text style={styles.sectionLabel}>{t('amountBdt')}</Text>
             <View style={styles.amountInputWrap}>
               <Text style={styles.bdtSymbolLarge}>৳</Text>
               <TextInput
@@ -315,7 +317,7 @@ export default function RechargeScreen() {
               />
             </View>
 
-            <Text style={styles.quickLabel}>Quick Select</Text>
+            <Text style={styles.quickLabel}>{t('quickSelect')}</Text>
             <View style={styles.quickGrid}>
               {QUICK_AMOUNTS.map(val => {
                 const isActive = amount === val.toString();
@@ -345,7 +347,7 @@ export default function RechargeScreen() {
 
           {/* Funds Balance */}
           <View style={styles.balanceBar}>
-            <Text style={styles.balanceLabel}>Available Funds</Text>
+            <Text style={styles.balanceLabel}>{t('availableFunds')}</Text>
             <Text style={styles.balanceValue}>৳{fundsBalance.toFixed(2)}</Text>
           </View>
 
@@ -359,7 +361,7 @@ export default function RechargeScreen() {
             {loading ? (
               <ActivityIndicator color="#ffffff" size="small" />
             ) : (
-              <Text style={styles.confirmBtnText}>Confirm Recharge</Text>
+              <Text style={styles.confirmBtnText}>{t('confirmRecharge')}</Text>
             )}
           </TouchableOpacity>
 
@@ -369,7 +371,7 @@ export default function RechargeScreen() {
             style={styles.historyLink}
             activeOpacity={0.7}
           >
-            <Text style={styles.historyLinkText}>View Recharge History →</Text>
+            <Text style={styles.historyLinkText}>{t('viewRechargeHistory')} →</Text>
           </TouchableOpacity>
 
           <View style={{ height: 40 }} />

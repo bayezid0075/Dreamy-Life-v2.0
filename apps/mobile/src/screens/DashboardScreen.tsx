@@ -20,59 +20,61 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
 import BottomNav from '@/shared/components/BottomNav';
 import { useNotificationStore } from '@/shared/stores/notificationStore';
+import { useI18n } from '../shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 const PRIMARY_ACTIONS = [
-  { icon: '📦', label: 'Add Parcel', bg: '#e9fdff', activeBg: '#2d666d' },
-  { icon: '🚚', label: 'Pickup Request', bg: '#ffd1dc', activeBg: '#78555e' },
-  { icon: '⚡', label: 'Express Delivery', bg: '#e2e2e9', activeBg: '#5d5e64' },
-  { icon: '📰', label: 'Social Feed', bg: '#e0f7fa', activeBg: '#00838f', href: '/social-feed' as const },
-  { icon: '🔄', label: 'Pick & Drop', bg: '#ffdad6', activeBg: '#ba1a1a' },
+  { icon: '📦', label: 'addParcel', bg: '#e9fdff', activeBg: '#2d666d' },
+  { icon: '🚚', label: 'pickupRequest', bg: '#ffd1dc', activeBg: '#78555e' },
+  { icon: '⚡', label: 'expressDelivery', bg: '#e2e2e9', activeBg: '#5d5e64' },
+  { icon: '📰', label: 'socialFeed', bg: '#e0f7fa', activeBg: '#00838f', href: '/social-feed' as const },
+  { icon: '🔄', label: 'pickAndDrop', bg: '#ffdad6', activeBg: '#ba1a1a' },
 ];
 
 const FEATURES = [
-  { icon: '📱', label: 'Mobile Recharge', bg: '#e9fdff', href: '/recharge' },
-  { icon: '🚗', label: 'Easy Drive', bg: '#e3f2fd' },
-  { icon: '🏪', label: 'Reselling', bg: '#f3e5f5', href: '/reseller-shop' },
-  { icon: '🏢', label: 'Vendorship', bg: '#e8eaf6', href: '/vendor/apply' },
-   { icon: '🛒', label: 'Reseller Shop', bg: '#ffd1dc', href: '/reseller-shop' },
-  { icon: '📦', label: 'My Orders', bg: '#e9fdff', href: '/reselling/orders' },
-  { icon: '👥', label: 'Drive Pack', bg: '#e0f7fa', href: '/drive-pack' },
-  { icon: '🧾', label: 'Pay Bill', bg: '#ffd1dc' },
-  { icon: '✈️', label: 'Telegram Sell', bg: '#e3f2fd' },
-  { icon: '📧', label: 'Gmail Sell', bg: '#fce4ec' },
-  { icon: '💬', label: 'WhatsApp Sell', bg: '#e8f5e9' },
-  { icon: '⭐', label: 'Premium Apps', bg: '#fffde7' },
-  { icon: '✅', label: 'Micro Jobs', bg: '#e9fdff' },
-  { icon: '📢', label: 'Social Media', bg: '#e0f7fa', href: '/social-feed' },
-  { icon: '💼', label: 'Job Post', bg: '#e3f2fd' },
-  { icon: '⌨️', label: 'Typing Work', bg: '#e8eaf6' },
-  { icon: '❓', label: 'Quiz Work', bg: '#f3e5f5' },
-  { icon: '🧮', label: 'Math Work', bg: '#e0f7fa' },
-  { icon: '💻', label: 'Code Entry', bg: '#e8f5e9' },
-  { icon: '🎥', label: 'Video Ads', bg: '#fce4ec' },
-  { icon: '⚽', label: 'Football Game', bg: '#e8f5e9' },
-  { icon: '🎯', label: 'Carrom Game', bg: '#fff3e0' },
-  { icon: '🎁', label: 'Welcome Bonus', bg: '#ffd1dc' },
-  { icon: '📍', label: 'Target Bonus', bg: '#fff3e0' },
-  { icon: '📅', label: 'Weekly Bonus', bg: '#e8eaf6' },
-  { icon: '📆', label: 'Daily Bonus', bg: '#e9fdff' },
-  { icon: '🗓️', label: 'Monthly Bonus', bg: '#f3e5f5' },
-  { icon: '🎫', label: 'Gift Code', bg: '#fffde7' },
-  { icon: '🏥', label: 'Daily Service', bg: '#fce4ec' },
-  { icon: '🩸', label: 'Blood', bg: '#fce4ec' },
-  { icon: '🏪', label: 'Outlet', bg: '#e9fdff' },
+  { icon: '📱', label: 'mobileRecharge', bg: '#e9fdff', href: '/recharge' },
+  { icon: '🚗', label: 'easyDrive', bg: '#e3f2fd' },
+  { icon: '🏪', label: 'reselling', bg: '#f3e5f5', href: '/reseller-shop' },
+  { icon: '🏢', label: 'vendorship', bg: '#e8eaf6', href: '/vendor/apply' },
+   { icon: '🛒', label: 'resellerShop', bg: '#ffd1dc', href: '/reseller-shop' },
+  { icon: '📦', label: 'myOrders', bg: '#e9fdff', href: '/reselling/orders' },
+  { icon: '👥', label: 'drivePack', bg: '#e0f7fa', href: '/drive-pack' },
+  { icon: '🧾', label: 'payBill', bg: '#ffd1dc' },
+  { icon: '✈️', label: 'telegramSell', bg: '#e3f2fd' },
+  { icon: '📧', label: 'gmailSell', bg: '#fce4ec' },
+  { icon: '💬', label: 'whatsappSell', bg: '#e8f5e9' },
+  { icon: '⭐', label: 'premiumApps', bg: '#fffde7' },
+  { icon: '✅', label: 'microJobs', bg: '#e9fdff' },
+  { icon: '📢', label: 'socialMedia', bg: '#e0f7fa', href: '/social-feed' },
+  { icon: '💼', label: 'jobPost', bg: '#e3f2fd' },
+  { icon: '⌨️', label: 'typingWork', bg: '#e8eaf6' },
+  { icon: '❓', label: 'quizWork', bg: '#f3e5f5' },
+  { icon: '🧮', label: 'mathWork', bg: '#e0f7fa' },
+  { icon: '💻', label: 'codeEntry', bg: '#e8f5e9' },
+  { icon: '🎥', label: 'videoAds', bg: '#fce4ec' },
+  { icon: '⚽', label: 'footballGame', bg: '#e8f5e9' },
+  { icon: '🎯', label: 'carromGame', bg: '#fff3e0' },
+  { icon: '🎁', label: 'welcomeBonus', bg: '#ffd1dc' },
+  { icon: '📍', label: 'targetBonus', bg: '#fff3e0' },
+  { icon: '📅', label: 'weeklyBonus', bg: '#e8eaf6' },
+  { icon: '📆', label: 'dailyBonus', bg: '#e9fdff' },
+  { icon: '🗓️', label: 'monthlyBonus', bg: '#f3e5f5' },
+  { icon: '🎫', label: 'giftCode', bg: '#fffde7' },
+  { icon: '🏥', label: 'dailyService', bg: '#fce4ec' },
+  { icon: '🩸', label: 'blood', bg: '#fce4ec' },
+  { icon: '🏪', label: 'outlet', bg: '#e9fdff' },
 ];
 
 const SUPPORT_ACTIONS = [
-  { icon: '🎧', label: 'Support', color: '#2d666d' },
-  { icon: '📍', label: 'Pickup Points', color: '#78555e' },
-  { icon: '🗺️', label: 'Coverage', color: '#5d5e64' },
-  { icon: '🧮', label: 'Pricing', color: '#5d5e64' },
+  { icon: '🎧', label: 'support', color: '#2d666d' },
+  { icon: '📍', label: 'pickupPoints', color: '#78555e' },
+  { icon: '🗺️', label: 'coverage', color: '#5d5e64' },
+  { icon: '🧮', label: 'pricing', color: '#5d5e64' },
 ];
 
 export default function DashboardScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -173,7 +175,7 @@ export default function DashboardScreen() {
             style={styles.walletPill}
           >
             <Text style={styles.walletPillIcon}>👛</Text>
-            <Text style={styles.walletPillText}>Tap for Balance</Text>
+            <Text style={styles.walletPillText}>{t('tapForBalance')}</Text>
           </TouchableOpacity>
 
           <View style={styles.topBarRight}>
@@ -203,8 +205,8 @@ export default function DashboardScreen() {
             <View style={styles.heroInner}>
               <View style={styles.heroGradient} />
               <View style={styles.heroTextWrap}>
-                <Text style={styles.heroTitle}>Seamless Delivery</Text>
-                <Text style={styles.heroSubtitle}>Manage all your shipments in one elegant space.</Text>
+                <Text style={styles.heroTitle}>{t('seamlessDelivery')}</Text>
+                <Text style={styles.heroSubtitle}>{t('manageYourShipments')}</Text>
               </View>
             </View>
           </GlassPanel>
@@ -224,7 +226,7 @@ export default function DashboardScreen() {
               <View style={[styles.primaryIconWrap, { backgroundColor: item.bg }]}>
                 <Text style={styles.primaryEmoji}>{item.icon}</Text>
               </View>
-              <Text style={styles.primaryLabel}>{item.label}</Text>
+              <Text style={styles.primaryLabel}>{t(item.label as any)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -239,7 +241,7 @@ export default function DashboardScreen() {
                   <View style={[styles.featureIcon, { backgroundColor: item.bg }]}>
                     <Text style={styles.featureIconText}>{item.icon}</Text>
                   </View>
-                  <Text style={styles.featureLabel} numberOfLines={2}>{item.label}</Text>
+                  <Text style={styles.featureLabel} numberOfLines={2}>{t(item.label as any)}</Text>
                 </>
               );
               return (
@@ -260,7 +262,7 @@ export default function DashboardScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.seeMoreText}>
-              {showAllFeatures ? 'Show Less' : 'See More'}
+              {showAllFeatures ? t('showLess') : t('seeMore')}
             </Text>
             <Text style={styles.seeMoreIcon}>{showAllFeatures ? '▲' : '▼'}</Text>
           </TouchableOpacity>
@@ -274,7 +276,7 @@ export default function DashboardScreen() {
                 <View style={[styles.supportIcon, { backgroundColor: item.color + '20' }]}>
                   <Text style={styles.supportEmoji}>{item.icon}</Text>
                 </View>
-                <Text style={styles.supportLabel}>{item.label}</Text>
+                <Text style={styles.supportLabel}>{t(item.label)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -296,7 +298,7 @@ export default function DashboardScreen() {
                 <TextInput
                   autoFocus
                   style={styles.searchInput}
-                  placeholder="Search services, parcels..."
+                  placeholder={t('searchPlaceholder')}
                   placeholderTextColor="rgba(69,71,75,0.6)"
                 />
                 <TouchableOpacity onPress={() => setSearchOpen(false)} style={styles.searchCloseBtn}>
@@ -305,35 +307,35 @@ export default function DashboardScreen() {
               </View>
 
               <View style={styles.searchSuggestions}>
-                <Text style={styles.searchSectionTitle}>SUGGESTIONS</Text>
+                <Text style={styles.searchSectionTitle}>{t('suggestions')}</Text>
                 <View style={styles.suggestionList}>
                   <TouchableOpacity style={styles.suggestionItem}>
                     <View style={[styles.suggestionIcon, { backgroundColor: '#e9fdff' }]}>
                       <Text style={styles.suggestionIconText}>📦</Text>
                     </View>
-                    <Text style={styles.suggestionLabel}>Track a Parcel</Text>
+                    <Text style={styles.suggestionLabel}>{t('trackParcel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.suggestionItem}>
                     <View style={[styles.suggestionIcon, { backgroundColor: '#ffd1dc' }]}>
                       <Text style={styles.suggestionIconText}>💳</Text>
                     </View>
-                    <Text style={styles.suggestionLabel}>Pay Invoice</Text>
+                    <Text style={styles.suggestionLabel}>{t('payInvoice')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.suggestionItem}>
                     <View style={[styles.suggestionIcon, { backgroundColor: '#e2e2e9' }]}>
                       <Text style={styles.suggestionIconText}>📍</Text>
                     </View>
-                    <Text style={styles.suggestionLabel}>Nearby Pickup</Text>
+                    <Text style={styles.suggestionLabel}>{t('nearbyPickup')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
               <View style={styles.recentSearches}>
-                <Text style={styles.searchSectionTitle}>RECENT SEARCHES</Text>
+                <Text style={styles.searchSectionTitle}>{t('recentSearches')}</Text>
                 <View style={styles.recentTags}>
-                  <View style={styles.recentTag}><Text style={styles.recentTagText}>Express delivery</Text></View>
-                  <View style={styles.recentTag}><Text style={styles.recentTagText}>Luna Glo Lamp</Text></View>
-                  <View style={styles.recentTag}><Text style={styles.recentTagText}>Shipping rates</Text></View>
+                  <View style={styles.recentTag}><Text style={styles.recentTagText}>{t('expressDeliverySearch')}</Text></View>
+                  <View style={styles.recentTag}><Text style={styles.recentTagText}>{t('lunaGloLamp')}</Text></View>
+                  <View style={styles.recentTag}><Text style={styles.recentTagText}>{t('shippingRates')}</Text></View>
                 </View>
               </View>
             </View>
@@ -349,7 +351,7 @@ export default function DashboardScreen() {
               <View style={styles.drawerOverlay} />
               <View style={styles.drawerContent}>
                 <View style={styles.drawerHeader}>
-                  <Text style={styles.drawerTitle}>Dreamy Life</Text>
+                  <Text style={styles.drawerTitle}>{t('dreamyLife')}</Text>
                   <TouchableOpacity onPress={toggleDrawer}>
                     <Text style={styles.drawerClose}>✕</Text>
                   </TouchableOpacity>
@@ -365,11 +367,11 @@ export default function DashboardScreen() {
                         <Text style={styles.userName}>{user?.username || 'User'}</Text>
                         {user?.isVerified ? (
                           <View style={styles.verifiedBadge}>
-                            <Text style={styles.verifiedBadgeText}>✓ Verified</Text>
+                            <Text style={styles.verifiedBadgeText}>✓ {t('verified')}</Text>
                           </View>
                         ) : (
                           <View style={styles.notVerifiedBadge}>
-                            <Text style={styles.notVerifiedBadgeText}>Not Verified</Text>
+                            <Text style={styles.notVerifiedBadgeText}>{t('notVerified')}</Text>
                           </View>
                         )}
                       </View>
@@ -379,7 +381,7 @@ export default function DashboardScreen() {
                     </View>
                   </View>
                   <View style={styles.referRow}>
-                    <Text style={styles.referLabel}>Refer: </Text>
+                    <Text style={styles.referLabel}>{t('refer')} </Text>
                     <Text style={styles.referCode}>{user?.ownRefercode || 'N/A'}</Text>
                     <TouchableOpacity onPress={copyReferCode}>
                       <Text style={styles.copyIcon}>📋</Text>
@@ -394,8 +396,8 @@ export default function DashboardScreen() {
                   >
                     <Text style={styles.verifyNowIcon}>🔒</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.verifyNowText}>Verify Now</Text>
-                      <Text style={styles.verifyNowSubtext}>Purchase a membership to verify your account</Text>
+                      <Text style={styles.verifyNowText}>{t('verifyNow')}</Text>
+                      <Text style={styles.verifyNowSubtext}>{t('purchaseMembershipToVerify')}</Text>
                     </View>
                     <Text style={styles.verifyNowArrow}>→</Text>
                   </TouchableOpacity>
@@ -405,44 +407,44 @@ export default function DashboardScreen() {
                   <View style={styles.verifiedBanner}>
                     <Text style={styles.verifiedBannerIcon}>✅</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.verifiedBannerText}>Account Verified</Text>
-                      <Text style={styles.verifiedBannerSubtext}>Your account is fully verified</Text>
+                      <Text style={styles.verifiedBannerText}>{t('accountVerifiedText')}</Text>
+                      <Text style={styles.verifiedBannerSubtext}>{t('yourAccountIsVerified')}</Text>
                     </View>
                   </View>
                 )}
 
                 <View style={styles.drawerNav}>
-                  <Text style={styles.drawerSectionTitle}>MAIN</Text>
+                  <Text style={styles.drawerSectionTitle}>{t('main')}</Text>
                   <TouchableOpacity style={[styles.drawerItem, styles.drawerItemActive]}>
                     <Text style={styles.drawerItemIcon}>🏠</Text>
-                    <Text style={styles.drawerItemTextActive}>Dashboard</Text>
+                    <Text style={styles.drawerItemTextActive}>{t('dashboard')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/recharge'); }}>
                     <Text style={styles.drawerItemIcon}>📱</Text>
-                    <Text style={styles.drawerItemText}>Mobile Recharge</Text>
+                    <Text style={styles.drawerItemText}>{t('mobileRecharge')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/social-feed'); }}>
                     <Text style={styles.drawerItemIcon}>📢</Text>
-                    <Text style={styles.drawerItemText}>Social Feed</Text>
+                    <Text style={styles.drawerItemText}>{t('socialFeed')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/referral'); }}>
                     <Text style={styles.drawerItemIcon}>🔗</Text>
-                    <Text style={styles.drawerItemText}>Referral</Text>
+                    <Text style={styles.drawerItemText}>{t('referral')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/membership'); }}>
                     <Text style={styles.drawerItemIcon}>💳</Text>
-                    <Text style={styles.drawerItemText}>Membership</Text>
+                    <Text style={styles.drawerItemText}>{t('membership')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/wallet'); }}>
                     <Text style={styles.drawerItemIcon}>👛</Text>
-                    <Text style={styles.drawerItemText}>Wallet</Text>
+                    <Text style={styles.drawerItemText}>{t('wallet')}</Text>
                   </TouchableOpacity>
 
-                  <Text style={[styles.drawerSectionTitle, { marginTop: 16 }]}>VENDOR</Text>
+                  <Text style={[styles.drawerSectionTitle, { marginTop: 16 }]}>{t('vendor').toUpperCase()}</Text>
                   {hasVendor === false ? (
                     <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/vendor/apply'); }}>
                       <Text style={styles.drawerItemIcon}>🏪</Text>
-                      <Text style={styles.drawerItemText}>Become a Vendor</Text>
+                      <Text style={styles.drawerItemText}>{t('becomeAVendor')}</Text>
                     </TouchableOpacity>
                   ) : (
                     <>
@@ -451,26 +453,26 @@ export default function DashboardScreen() {
                         onPress={() => setVendorExpanded(!vendorExpanded)}
                       >
                         <Text style={styles.drawerItemIcon}>🏪</Text>
-                        <Text style={styles.drawerItemText}>Vendor</Text>
+                        <Text style={styles.drawerItemText}>{t('vendor')}</Text>
                         <Text style={styles.drawerArrow}>{vendorExpanded ? '▲' : '▼'}</Text>
                       </TouchableOpacity>
                       {vendorExpanded && (
                         <View style={styles.vendorSubMenu}>
                           <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/dashboard'); }}>
                             <Text style={styles.vendorSubIcon}>📊</Text>
-                            <Text style={styles.vendorSubText}>Dashboard</Text>
+                            <Text style={styles.vendorSubText}>{t('dashboard')}</Text>
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/products'); }}>
                             <Text style={styles.vendorSubIcon}>📦</Text>
-                            <Text style={styles.vendorSubText}>Inventory</Text>
+                            <Text style={styles.vendorSubText}>{t('inventory')}</Text>
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/products/create'); }}>
                             <Text style={styles.vendorSubIcon}>➕</Text>
-                            <Text style={styles.vendorSubText}>Add Product</Text>
+                            <Text style={styles.vendorSubText}>{t('addProduct')}</Text>
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/reseller-shop'); }}>
                             <Text style={styles.vendorSubIcon}>🛒</Text>
-                            <Text style={styles.vendorSubText}>My Shop</Text>
+                            <Text style={styles.vendorSubText}>{t('myShop')}</Text>
                           </TouchableOpacity>
                         </View>
                       )}
@@ -479,7 +481,7 @@ export default function DashboardScreen() {
                 </View>
 
                 <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                  <Text style={styles.logoutText}>🚪 Log Out</Text>
+                  <Text style={styles.logoutText}>🚪 {t('logout')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.version}>v1.0.0</Text>
               </View>

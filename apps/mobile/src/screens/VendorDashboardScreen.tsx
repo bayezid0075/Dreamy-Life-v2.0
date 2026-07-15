@@ -6,11 +6,13 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function VendorDashboardScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { isAuthenticated, accessToken, logout } = useAuthStore();
   const [vendor, setVendor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -42,13 +44,13 @@ export default function VendorDashboardScreen() {
     return (
       <View style={styles.container}>
         <AuroraBackground />
-        <TopBar title="Vendor Dashboard" showBack showSearch={false} showNotification={false} />
+        <TopBar title={t('vendorDashboard')} showBack showSearch={false} showNotification={false} />
         <View style={styles.emptyContainer}>
           <Text style={{ fontSize: 48 }}>🏪</Text>
-          <Text style={styles.emptyTitle}>No Vendor Profile</Text>
-          <Text style={styles.emptyDesc}>Apply to become a vendor first</Text>
+          <Text style={styles.emptyTitle}>{t('noVendorProfile')}</Text>
+          <Text style={styles.emptyDesc}>{t('applyToBecomeVendorFirst')}</Text>
           <TouchableOpacity style={styles.submitBtn} onPress={() => router.push('/vendor/apply')}>
-            <Text style={styles.submitBtnText}>Become a Vendor</Text>
+            <Text style={styles.submitBtnText}>{t('becomeAVendor')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -58,39 +60,39 @@ export default function VendorDashboardScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Vendor Dashboard" showBack showSearch={false} showNotification={false} />
+        <TopBar title={t('vendorDashboard')} showBack showSearch={false} showNotification={false} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <GlassPanel borderRadius={16} style={styles.performanceCard}>
           <Text style={styles.shopName}>{vendor.shopName}</Text>
-          <Text style={styles.period}>Last 30 days overview</Text>
+          <Text style={styles.period}>{t('last30DaysOverview')}</Text>
           <Text style={styles.revenue}>${vendor.totalRevenue?.toFixed(2) || '0.00'}</Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{vendor.totalProducts || 0}</Text>
-              <Text style={styles.statLabel}>Products</Text>
+              <Text style={styles.statLabel}>{t('products')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{vendor.totalOrders || 0}</Text>
-              <Text style={styles.statLabel}>Orders</Text>
+              <Text style={styles.statLabel}>{t('orders')}</Text>
             </View>
           </View>
         </GlassPanel>
 
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/vendor/products')}>
           <Text style={styles.menuIcon}>📦</Text>
-          <Text style={styles.menuText}>Inventory Management</Text>
+          <Text style={styles.menuText}>{t('inventoryManagement')}</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/reselling/orders')}>
           <Text style={styles.menuIcon}>🛒</Text>
-          <Text style={styles.menuText}>Reseller Orders</Text>
+          <Text style={styles.menuText}>{t('resellerOrders')}</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/reseller-shop')}>
           <Text style={styles.menuIcon}>🏪</Text>
-          <Text style={styles.menuText}>Reseller Shop</Text>
+          <Text style={styles.menuText}>{t('resellerShop')}</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -16,6 +16,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '../shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -32,9 +33,44 @@ const BUTTON_COLORS: Record<string, string> = {
   secondary: '#78555e',
 };
 
+const PLAN_NAME_MAP: Record<string, string> = {
+  user: 'planUser', basic: 'planBasic', standard: 'planStandard', smart: 'planSmart', vvip: 'planVvip',
+};
+const PLAN_DESC_MAP: Record<string, string> = {
+  user: 'planDescUser', basic: 'planDescBasic', standard: 'planDescStandard', smart: 'planDescSmart', vvip: 'planDescVvip',
+};
+const FEATURE_MAP: Record<string, string> = {
+  'Basic Access': 'featureBasicAccess',
+  'Community Feed': 'featureCommunityFeed',
+  '1x Reward Points': 'feature1xRewardPoints',
+  'Standard Support': 'featureStandardSupport',
+  'Member Newsletter': 'featureMemberNewsletter',
+  'Priority Support': 'featurePrioritySupport',
+  'Early Access to Sales': 'featureEarlyAccessToSales',
+  '2x Reward Points': 'feature2xRewardPoints',
+  'Exclusive Content': 'featureExclusiveContent',
+  '24/7 VIP Support': 'feature24x7VipSupport',
+  'Invite-Only Events': 'featureInviteOnlyEvents',
+  '3x Reward Points': 'feature3xRewardPoints',
+  'Free Shipping': 'featureFreeShipping',
+  '24/7 VIP Concierge': 'feature24x7VipConcierge',
+  '4x Reward Points': 'feature4xRewardPoints',
+  'Complimentary Shipping': 'featureComplimentaryShipping',
+  'Personal Account Manager': 'featurePersonalAccountManager',
+};
+const BUTTON_TEXT_MAP: Record<string, string> = {
+  'Current Plan': 'btnCurrentPlan',
+  'Choose Basic': 'btnChooseBasic',
+  'Choose Standard': 'btnChooseStandard',
+  'Choose Smart': 'btnChooseSmart',
+  'Choose VVIP': 'btnChooseVvip',
+  'Choose Plan': 'choosePlan',
+};
+
 export default function MembershipScreen() {
   const router = useRouter();
   const { isAuthenticated, accessToken, logout } = useAuthStore();
+  const { t } = useI18n();
   const [plans, setPlans] = useState<any[]>([]);
   const [myMembership, setMyMembership] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -78,11 +114,11 @@ export default function MembershipScreen() {
         body: JSON.stringify({ planId }),
       });
       const data = await res.json();
-      if (!res.ok) { Alert.alert('Error', data.error?.message || data.message || 'Payment creation failed'); return; }
+      if (!res.ok) { Alert.alert(t('error'), data.error?.message || data.message || t('paymentCreationFailed')); return; }
       if (data.success && data.data?.paymentUrl) {
         Linking.openURL(data.data.paymentUrl);
       }
-    } catch (err) { Alert.alert('Error', 'Connection failed'); }
+    } catch (err) { Alert.alert(t('error'), t('connectionFailed')); }
     finally { setPurchasing(null); }
   };
 
@@ -98,18 +134,18 @@ export default function MembershipScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Membership" showBack showSearch={false} showNotification={false} />
+      <TopBar title={t('membership')} showBack showSearch={false} showNotification={false} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {myMembership?.currentPlan && (
           <GlassPanel borderRadius={16} style={styles.currentPlanCard}>
             <View style={styles.currentPlanRow}>
               <View>
-                <Text style={styles.currentPlanLabel}>CURRENT PLAN</Text>
-                <Text style={styles.currentPlanName}>{myMembership.currentPlan.name}</Text>
+                <Text style={styles.currentPlanLabel}>{t('currentPlan').toUpperCase()}</Text>
+                <Text style={styles.currentPlanName}>{t(PLAN_NAME_MAP[myMembership.currentPlan.name] as any || 'planUser')}</Text>
               </View>
               <View style={styles.currentPlanRight}>
-                <Text style={styles.commissionLabel}>Commission Earned</Text>
+                <Text style={styles.commissionLabel}>{t('commissionEarned')}</Text>
                 <Text style={styles.commissionValue}>${myMembership.commissionEarned?.toFixed(2) || '0.00'}</Text>
               </View>
             </View>
@@ -132,18 +168,18 @@ export default function MembershipScreen() {
                 ]}
               >
                 <View style={styles.planHeader}>
-                  <Text style={styles.planName}>{plan.name}</Text>
+                  <Text style={styles.planName}>{t(PLAN_NAME_MAP[plan.name] as any || 'planUser')}</Text>
                   {isCurrentPlan && (
                     <View style={styles.currentBadge}>
-                      <Text style={styles.currentBadgeText}>Current</Text>
+                      <Text style={styles.currentBadgeText}>{t('current')}</Text>
                     </View>
                   )}
                 </View>
                 <Text style={styles.planPrice}>${plan.price}</Text>
-                <Text style={styles.planDesc}>{plan.description}</Text>
+                <Text style={styles.planDesc}>{t(PLAN_DESC_MAP[plan.name] as any || 'planDescUser')}</Text>
                 {isCurrentPlan ? (
                   <View style={styles.activeBtn}>
-                    <Text style={styles.activeBtnText}>Active</Text>
+                    <Text style={styles.activeBtnText}>{t('active')}</Text>
                   </View>
                 ) : (
                   <TouchableOpacity
@@ -152,7 +188,7 @@ export default function MembershipScreen() {
                     disabled={isLocked || purchasing === plan.id}
                   >
                     <Text style={styles.upgradeBtnText}>
-                      {purchasing === plan.id ? 'Processing...' : isLocked ? 'Already Upgraded' : 'Upgrade'}
+                      {purchasing === plan.id ? t('processing') : isLocked ? t('alreadyUpgraded') : t(BUTTON_TEXT_MAP[plan.buttonText] as any || 'choosePlan')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -164,14 +200,14 @@ export default function MembershipScreen() {
         {/* Commission History */}
         {myMembership?.commissionHistory?.length > 0 && (
           <GlassPanel borderRadius={16} style={styles.commissionSection}>
-            <Text style={styles.sectionTitle}>Commission History</Text>
+            <Text style={styles.sectionTitle}>{t('commissionHistory')}</Text>
             <View style={styles.commissionList}>
               {myMembership.commissionHistory.map((c: any) => (
                 <View key={c.id} style={styles.commissionItem}>
                   <View style={styles.commissionLeft}>
                     <View style={styles.commissionIcon}><Text style={{ fontSize: 12 }}>💳</Text></View>
                     <View>
-                      <Text style={styles.commissionName}>Level {c.level} Commission</Text>
+                      <Text style={styles.commissionName}>{t('levelCommission', { level: String(c.level) })}</Text>
                       <Text style={styles.commissionMeta}>{c.percentage}% · {new Date(c.createdAt).toLocaleDateString()}</Text>
                     </View>
                   </View>
@@ -189,15 +225,15 @@ export default function MembershipScreen() {
             <View style={styles.modalIconContainer}>
               <Text style={styles.modalIcon}>🎉</Text>
             </View>
-            <Text style={styles.modalTitle}>Purchase Successful!</Text>
+            <Text style={styles.modalTitle}>{t('purchaseSuccessful')}</Text>
             <Text style={styles.modalMessage}>
-              Your account has been verified successfully. You now have access to all membership benefits.
+              {t('accountVerifiedSuccess')}
             </Text>
             <TouchableOpacity
               style={styles.modalBtn}
               onPress={() => { setShowSuccess(false); router.back(); }}
             >
-              <Text style={styles.modalBtnText}>Continue</Text>
+              <Text style={styles.modalBtnText}>{t('continueToDashboard')}</Text>
             </TouchableOpacity>
           </GlassPanel>
         </View>

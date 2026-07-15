@@ -8,8 +8,10 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 export default function ReferralPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
   const [user, setUser] = useState<any>(null);
@@ -139,7 +141,7 @@ export default function ReferralPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Dreamy Life - Referrals</title>
+        <title>{t('referralTitle')}</title>
       </Head>
 
       <div
@@ -153,7 +155,7 @@ export default function ReferralPage() {
       >
         {/* TopAppBar - Desktop */}
         <DesktopHeader
-          title="Referral"
+          title={t('referral')}
           onMenuClick={() => setDrawerOpen(true)}
           avatarUrl={user?.info?.avatarUrl || ''}
           unreadNotifCount={unreadNotifCount}
@@ -174,7 +176,7 @@ export default function ReferralPage() {
           <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Referral</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('referral')}</h1>
           <div className="w-10"></div>
         </header>
 
@@ -182,14 +184,14 @@ export default function ReferralPage() {
           {/* Direct Upline */}
           {upline.length > 0 && (
             <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-              <h2 className="text-lg font-bold mb-4">Referred By</h2>
+              <h2 className="text-lg font-bold mb-4">{t('referredBy')}</h2>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#2d666d] to-[#98d0d7] flex items-center justify-center text-white font-bold text-lg shadow-md">
                   {upline[0].username?.[0]?.toUpperCase()}
                 </div>
                 <div>
                   <p className="font-semibold text-base">{upline[0].username}</p>
-                  <p className="text-xs text-[#45474b]">Level 1 &middot; Direct Referrer</p>
+                  <p className="text-xs text-[#45474b]">{t('level1Direct')}</p>
                 </div>
               </div>
             </section>
@@ -198,14 +200,14 @@ export default function ReferralPage() {
           {/* No Upline Message */}
           {upline.length === 0 && !loading && (
             <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-              <h2 className="text-lg font-bold mb-2">Referred By</h2>
-              <p className="text-sm text-[#45474b]">No one. You are at the top of the chain!</p>
+              <h2 className="text-lg font-bold mb-2">{t('referredBy')}</h2>
+              <p className="text-sm text-[#45474b]">{t('noOneAtTop')}</p>
             </section>
           )}
 
           {/* Referral Link Card */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-            <h2 className="text-lg font-bold mb-3">Your Referral Link</h2>
+            <h2 className="text-lg font-bold mb-3">{t('yourReferralLink')}</h2>
             <div className="flex items-center gap-3 bg-white/40 p-3 rounded-xl border border-white/50">
               <span className="material-symbols-outlined text-[#5d5e64]">link</span>
               <input
@@ -214,7 +216,7 @@ export default function ReferralPage() {
                 className="flex-1 bg-transparent text-sm text-[#45474b] outline-none"
               />
               <button onClick={copyReferralLink} className="px-4 py-2 bg-[#5d5e64] text-white rounded-full text-xs font-semibold hover:bg-[#45474c] transition-colors">
-                Copy Link
+                {t('copyLink')}
               </button>
             </div>
           </section>
@@ -223,12 +225,12 @@ export default function ReferralPage() {
           {stats && (
             <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
-                { label: 'Total', value: stats.totalReferrals, color: 'text-[#5d5e64]' },
-                { label: 'Level 1', value: stats.level1Count, color: 'text-[#2d666d]' },
-                { label: 'Level 2', value: stats.level2Count, color: 'text-[#78555e]' },
-                { label: 'Level 3', value: stats.level3Count, color: 'text-[#5d5e64]' },
-                { label: 'Level 4', value: stats.level4Count, color: 'text-[#2d666d]' },
-                { label: 'Level 5+', value: stats.level6To10Count, color: 'text-[#78555e]' },
+                { label: t('total'), value: stats.totalReferrals, color: 'text-[#5d5e64]' },
+                { label: t('level1'), value: stats.level1Count, color: 'text-[#2d666d]' },
+                { label: t('level2'), value: stats.level2Count, color: 'text-[#78555e]' },
+                { label: t('level3'), value: stats.level3Count, color: 'text-[#5d5e64]' },
+                { label: t('level4'), value: stats.level4Count, color: 'text-[#2d666d]' },
+                { label: t('level5Plus'), value: stats.level6To10Count, color: 'text-[#78555e]' },
               ].map((stat) => (
                 <div key={stat.label} className="bg-white/50 backdrop-blur-[20px] rounded-xl p-4 text-center border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
                   <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
@@ -240,7 +242,7 @@ export default function ReferralPage() {
 
           {/* Referral Tree Visualization */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-            <h2 className="text-lg font-bold mb-4">Downline Tree</h2>
+            <h2 className="text-lg font-bold mb-4">{t('downlineTree')}</h2>
             {tree && tree.tree && tree.tree.length > 0 ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
@@ -258,7 +260,7 @@ export default function ReferralPage() {
                           <div className="w-7 h-7 rounded-full bg-[#f8f8ff] flex items-center justify-center text-xs font-bold text-[#5d5e64]">
                             {level}
                           </div>
-                          <span className="font-semibold text-sm">Level {level}</span>
+                          <span className="font-semibold text-sm">{t('level')} {level}</span>
                           <span className="text-xs text-[#45474b]">({levelMembers.length})</span>
                         </div>
                         <span className="material-symbols-outlined text-sm transition-transform" style={{ transform: isExpanded ? 'rotate(180deg)' : '' }}>
@@ -292,7 +294,7 @@ export default function ReferralPage() {
             ) : (
               <div className="text-center py-10">
                 <span className="material-symbols-outlined text-5xl text-[#45474b]/30 mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
-                <p className="text-[#45474b]">No referrals yet. Share your referral link to start building your team!</p>
+                <p className="text-[#45474b]">{t('noReferralsYet')}</p>
               </div>
             )}
           </section>
@@ -300,16 +302,16 @@ export default function ReferralPage() {
           {/* Downline Table */}
           {downline.length > 0 && (
             <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-              <h2 className="text-lg font-bold mb-4">All Downline Members</h2>
+              <h2 className="text-lg font-bold mb-4">{t('allDownlineMembers')}</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/30">
-                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">Username</th>
-                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">Phone</th>
-                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">Level</th>
-                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">Status</th>
-                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">Downline</th>
+                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">{t('username')}</th>
+                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">{t('phone')}</th>
+                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">{t('level')}</th>
+                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">{t('status')}</th>
+                      <th className="text-left py-3 px-2 text-[#45474b] font-semibold">{t('downline')}</th>
                     </tr>
                   </thead>
                   <tbody>

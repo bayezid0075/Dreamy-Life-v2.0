@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 interface Transaction {
   id: string;
@@ -13,26 +14,28 @@ interface Transaction {
   createdAt: string;
 }
 
-const INCOME_CATEGORIES = [
-  { keywords: ['recharge commission', 'drive pack commission'], label: 'Recharge', icon: 'phone_iphone', color: '#00a651' },
-  { keywords: ['referral commission', 'level'], label: 'Referral', icon: 'group', color: '#6366f1' },
-  { keywords: ['membership commission', 'membership'], label: 'Membership', icon: 'workspace_premium', color: '#f7941d' },
-  { keywords: ['cashback'], label: 'Cashback', icon: 'redeem', color: '#ec4899' },
-  { keywords: ['refund'], label: 'Refund', icon: 'replay', color: '#0ea5e9' },
-  { keywords: ['fund', 'added', 'deposit'], label: 'Fund Add', icon: 'account_balance_wallet', color: '#0d9488' },
+const INCOME_CATEGORY_KEYWORDS = [
+  { keywords: ['recharge commission', 'drive pack commission'], icon: 'phone_iphone', color: '#00a651' },
+  { keywords: ['referral commission', 'level'], icon: 'group', color: '#6366f1' },
+  { keywords: ['membership commission', 'membership'], icon: 'workspace_premium', color: '#f7941d' },
+  { keywords: ['cashback'], icon: 'redeem', color: '#ec4899' },
+  { keywords: ['refund'], icon: 'replay', color: '#0ea5e9' },
+  { keywords: ['fund', 'added', 'deposit'], icon: 'account_balance_wallet', color: '#0d9488' },
 ];
 
-function getCategory(description: string) {
-  const lower = description.toLowerCase();
-  for (const cat of INCOME_CATEGORIES) {
-    if (cat.keywords.some(k => lower.includes(k))) return cat;
-  }
-  return { label: 'Other', icon: 'payments', color: '#45474b' };
-}
+const INCOME_LABEL_MAP: Record<string, string> = {
+  'phone_iphone': 'rechargeHistory',
+  'group': 'referralHistory',
+  'workspace_premium': 'membershipHistory',
+  'redeem': 'cashback',
+  'replay': 'refund',
+  'account_balance_wallet': 'fundAdd',
+};
 
 export default function WalletHistoryPage() {
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
+  const { t } = useI18n();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -92,15 +95,26 @@ export default function WalletHistoryPage() {
   };
 
   const getTypeInfo = (type: string) => {
-    if (type === 'wallet_credit') return { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: 'Credit', positive: true };
-    return { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: 'Debit', positive: false };
+    if (type === 'wallet_credit') return { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: t('credit'), positive: true };
+    return { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: t('debit'), positive: false };
   };
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => filter === 'credit' ? t.type.includes('credit') : t.type.includes('debit'));
 
   const incomeStats = useMemo(() => {
-    const credits = transactions.filter(t => t.type.includes('credit'));
-    const totalIncome = credits.reduce((sum, t) => sum + t.amount, 0);
+    const credits = transactions.filter(tx => tx.type.includes('credit'));
+    const totalIncome = credits.reduce((sum, tx) => sum + tx.amount, 0);
+
+    const getCategory = (description: string) => {
+      const lower = description.toLowerCase();
+      for (const cat of INCOME_CATEGORY_KEYWORDS) {
+        if (cat.keywords.some(k => lower.includes(k))) {
+          const labelKey = INCOME_LABEL_MAP[cat.icon] || 'other';
+          return { label: t(labelKey as any), icon: cat.icon, color: cat.color };
+        }
+      }
+      return { label: t('other'), icon: 'payments', color: '#45474b' };
+    };
 
     const categoryMap = new Map<string, { amount: number; count: number; label: string; icon: string; color: string }>();
     for (const tx of credits) {
@@ -116,12 +130,12 @@ export default function WalletHistoryPage() {
 
     const categories = Array.from(categoryMap.values()).sort((a, b) => b.amount - a.amount);
     return { totalIncome, totalCredits: credits.length, categories };
-  }, [transactions]);
+  }, [transactions, t]);
 
   const timeRangeLabel = useMemo(() => {
-    const map: Record<string, string> = { all: 'All Time', today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 Days', '15d': 'Last 15 Days', '30d': 'Last 30 Days' };
-    return map[timeRange] || 'All Time';
-  }, [timeRange]);
+    const map: Record<string, string> = { all: t('allTime'), today: t('today'), yesterday: t('yesterday'), '7d': t('days7'), '15d': t('days15'), '30d': t('days30') };
+    return map[timeRange] || t('allTime');
+  }, [timeRange, t]);
 
   if (loading) {
     return (
@@ -134,7 +148,7 @@ export default function WalletHistoryPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Wallet History - Dreamy Life</title>
+        <title>{t('walletHistoryTitle')}</title>
       </Head>
       <style>{`
         body { min-height: max(884px, 100dvh); }
@@ -159,7 +173,7 @@ export default function WalletHistoryPage() {
               <span className="material-symbols-outlined">arrow_back</span>
             </Link>
           </div>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Wallet History</div>
+          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('walletHistory')}</div>
           <div className="w-10"></div>
         </header>
 
@@ -168,7 +182,7 @@ export default function WalletHistoryPage() {
           <Link href="/wallet" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Wallet History</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('walletHistory')}</h1>
           <div className="w-10"></div>
         </header>
 
@@ -185,7 +199,7 @@ export default function WalletHistoryPage() {
                     : 'bg-white/60 backdrop-blur-md text-[#45474b] hover:text-[#1c1b1b] border border-white/30'
                 }`}
               >
-                {range === 'all' ? 'All Time' : range === '7d' ? '7 Days' : range === '15d' ? '15 Days' : range === '30d' ? '30 Days' : range.charAt(0).toUpperCase() + range.slice(1)}
+                {range === 'all' ? t('allTime') : range === '7d' ? t('days7') : range === '15d' ? t('days15') : range === '30d' ? t('days30') : range === 'today' ? t('today') : range === 'yesterday' ? t('yesterday') : range.charAt(0).toUpperCase() + range.slice(1)}
               </button>
             ))}
           </div>
@@ -208,18 +222,18 @@ export default function WalletHistoryPage() {
                     <span className="material-symbols-outlined text-white text-xl">trending_up</span>
                   </div>
                   <div>
-                    <p className="text-white/70 text-xs font-semibold uppercase tracking-wider">Income Summary</p>
+                    <p className="text-white/70 text-xs font-semibold uppercase tracking-wider">{t('incomeSummary')}</p>
                     <p className="text-white/90 text-sm font-bold">{timeRangeLabel}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-white/70 text-xs font-semibold">{incomeStats.totalCredits} transactions</p>
+                    <p className="text-white/70 text-xs font-semibold">{t('transactionsCount', { count: incomeStats.totalCredits })}</p>
                 </div>
               </div>
 
               {/* Total Income */}
               <div className="mb-6">
-                <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Total Income</p>
+                <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">{t('totalIncome')}</p>
                 <p className="text-white text-4xl md:text-5xl font-extrabold tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                   ৳{incomeStats.totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
@@ -255,7 +269,7 @@ export default function WalletHistoryPage() {
 
               {incomeStats.categories.length === 0 && (
                 <div className="text-center py-4">
-                  <p className="text-white/50 text-sm">No income in this period</p>
+                  <p className="text-white/50 text-sm">{t('noIncomeInPeriod')}</p>
                 </div>
               )}
             </div>
@@ -264,9 +278,9 @@ export default function WalletHistoryPage() {
           {/* Transaction Type Tabs */}
           <div className="bg-white/60 backdrop-blur-md rounded-full p-1 flex border border-white/30">
             {[
-              { key: 'all', label: 'All' },
-              { key: 'credit', label: 'Credits' },
-              { key: 'debit', label: 'Debits' },
+              { key: 'all', label: t('all') },
+              { key: 'credit', label: t('credits') },
+              { key: 'debit', label: t('debits') },
             ].map(tab => (
               <button
                 key={tab.key}
@@ -283,7 +297,7 @@ export default function WalletHistoryPage() {
           {/* Transactions */}
           <div className="space-y-4">
             {filtered.length === 0 ? (
-              <div className="text-center py-10 text-[#45474b]">No transactions found</div>
+              <div className="text-center py-10 text-[#45474b]">{t('noTransactionsFound')}</div>
             ) : (
               filtered.map(tx => {
                 const info = getTypeInfo(tx.type);

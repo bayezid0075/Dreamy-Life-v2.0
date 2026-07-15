@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, FormEvent } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useI18n } from '../i18n';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,15 +28,16 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const { t } = useI18n();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
-    if (!form.username.trim()) newErrors.username = 'Username is required';
-    if (!form.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
-    if (form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    if (form.password !== form.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!form.username.trim()) newErrors.username = t('usernameIsRequired');
+    if (!form.phoneNumber.trim()) newErrors.phoneNumber = t('phoneNumberIsRequired');
+    if (form.password.length < 6) newErrors.password = t('passwordMinLength');
+    if (form.password !== form.confirmPassword) newErrors.confirmPassword = t('passwordsDoNotMatch');
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -59,7 +61,7 @@ export default function RegisterPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setErrors({ general: data.error?.message || 'Registration failed' });
+        setErrors({ general: data.error?.message || t('registrationFailed') });
         setLoading(false);
         return;
       }
@@ -67,7 +69,7 @@ export default function RegisterPage() {
       setAuth(data.data.accessToken, data.data.user);
       router.push(returnUrl);
     } catch (err) {
-      setErrors({ general: 'Connection error. Please try again.' });
+      setErrors({ general: t('connectionError') });
       setLoading(false);
     }
   };
@@ -75,7 +77,7 @@ export default function RegisterPage() {
   return (
     <>
       <Head>
-        <title>Dreamy Life - Sign Up</title>
+        <title>{t('titleRegister')}</title>
       </Head>
       <style jsx>{`
         @keyframes aurora {
@@ -107,8 +109,8 @@ export default function RegisterPage() {
 
           {/* Header */}
           <div className="text-center mb-8 w-full">
-            <h1 className="text-[32px] font-bold text-[#1c1b1b] mb-2">Join Dreamy Life</h1>
-            <p className="text-[16px] text-[#45474b]">Create your account to start your journey.</p>
+            <h1 className="text-[32px] font-bold text-[#1c1b1b] mb-2">{t('joinDreamyLife')}</h1>
+            <p className="text-[16px] text-[#45474b]">{t('createYourAccount')}</p>
           </div>
 
           {/* Error Banner */}
@@ -127,7 +129,7 @@ export default function RegisterPage() {
                 <span className="material-symbols-outlined text-[#76777b]">person</span>
                 <input
                   className="bg-transparent border-none focus:ring-0 p-0 w-full text-[16px] text-[#1c1b1b] placeholder:text-[#c6c6cb] outline-none"
-                  placeholder="Username"
+                  placeholder={t('username')}
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
                   required
@@ -143,7 +145,7 @@ export default function RegisterPage() {
                 <span className="material-symbols-outlined text-[#76777b]">phone_iphone</span>
                 <input
                   className="bg-transparent border-none focus:ring-0 p-0 w-full text-[16px] text-[#1c1b1b] placeholder:text-[#c6c6cb] outline-none"
-                  placeholder="Phone Number"
+                  placeholder={t('phoneNumber')}
                   type="tel"
                   value={form.phoneNumber}
                   onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
@@ -159,7 +161,7 @@ export default function RegisterPage() {
               <span className="material-symbols-outlined text-[#76777b]">lock</span>
               <input
                 className="bg-transparent border-none focus:ring-0 p-0 w-full text-[16px] text-[#1c1b1b] placeholder:text-[#c6c6cb] outline-none"
-                placeholder="Password"
+                placeholder={t('password')}
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -177,7 +179,7 @@ export default function RegisterPage() {
                 <span className="material-symbols-outlined text-[#76777b]">lock</span>
                 <input
                   className="bg-transparent border-none focus:ring-0 p-0 w-full text-[16px] text-[#1c1b1b] placeholder:text-[#c6c6cb] outline-none"
-                  placeholder="Confirm Password"
+                  placeholder={t('confirmPassword')}
                   type={showConfirm ? 'text' : 'password'}
                   value={form.confirmPassword}
                   onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
@@ -198,7 +200,7 @@ export default function RegisterPage() {
               <span className="material-symbols-outlined text-[#76777b]">redeem</span>
               <input
                 className="bg-transparent border-none focus:ring-0 p-0 w-full text-[16px] text-[#1c1b1b] placeholder:text-[#c6c6cb] outline-none"
-                placeholder="Referral Code (Optional)"
+                placeholder={t('referralCodeOptional')}
                 value={form.referCode}
                 onChange={(e) => setForm({ ...form, referCode: e.target.value })}
               />
@@ -210,7 +212,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="mt-4 w-full bg-[#1c1b1b] text-white rounded-full py-4 px-6 font-semibold text-[14px] tracking-[0.05em] hover:bg-[#313030] transition-all duration-300 shadow-[0_8px_16px_rgba(28,27,27,0.15)] flex items-center justify-center gap-2 group disabled:opacity-60"
             >
-              {loading ? 'Creating Account...' : 'Sign Up'}
+              {loading ? t('creatingAccount') : t('signUp')}
               {!loading && <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>}
             </button>
           </form>
@@ -218,9 +220,9 @@ export default function RegisterPage() {
           {/* Footer Links */}
           <div className="mt-8 text-center">
             <p className="text-[16px] text-[#45474b]">
-              Already have an account?{' '}
+              {t('alreadyHaveAccount')}{' '}
               <Link href="/login" className="text-[#2d666d] font-semibold text-[14px] tracking-[0.05em] hover:underline decoration-[#2d666d]/50 underline-offset-4">
-                Sign in
+                {t('signIn')}
               </Link>
             </p>
           </div>

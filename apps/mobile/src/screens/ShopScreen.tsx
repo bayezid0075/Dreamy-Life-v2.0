@@ -4,19 +4,20 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
-const CATEGORIES = [
-  { key: '', label: 'All' },
-  { key: 'home_decor', label: 'Home Decor' },
-  { key: 'furniture', label: 'Furniture' },
-  { key: 'lighting', label: 'Lighting' },
-  { key: 'textiles', label: 'Textiles' },
-];
-
 export default function ShopScreen() {
+  const { t } = useI18n();
   const router = useRouter();
+  const CATEGORIES = [
+    { key: '', label: t('all') },
+    { key: 'home_decor', label: t('homeDecor') },
+    { key: 'furniture', label: t('furniture') },
+    { key: 'lighting', label: t('lighting') },
+    { key: 'textiles', label: t('textiles') },
+  ];
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,7 +56,7 @@ export default function ShopScreen() {
         )}
         {item.stock <= 0 && (
           <View style={styles.outOfStockBadge}>
-            <Text style={styles.outOfStockText}>Out of Stock</Text>
+            <Text style={styles.outOfStockText}>{t('outOfStock')}</Text>
           </View>
         )}
       </View>
@@ -90,7 +91,7 @@ export default function ShopScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Text style={styles.backBtnText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Shop</Text>
+          <Text style={styles.headerTitle}>{t('shopTitle')}</Text>
           <TouchableOpacity onPress={() => router.push('/reselling/orders' as any)} style={styles.ordersBtn}>
             <Text style={styles.ordersBtnText}>🛍️</Text>
           </TouchableOpacity>
@@ -114,7 +115,7 @@ export default function ShopScreen() {
                   value={searchInput}
                   onChangeText={setSearchInput}
                   onSubmitEditing={handleSearch}
-                  placeholder="Search products..."
+                  placeholder={t('searchProducts')}
                   placeholderTextColor="rgba(69,71,75,0.5)"
                   returnKeyType="search"
                 />
@@ -148,7 +149,7 @@ export default function ShopScreen() {
             {products.length === 0 && (
               <View style={styles.emptyContainer}>
                 <Text style={{ fontSize: 48 }}>📦</Text>
-                <Text style={styles.emptyTitle}>No products found</Text>
+                <Text style={styles.emptyTitle}>{t('noProductsFound')}</Text>
               </View>
             )}
           </>

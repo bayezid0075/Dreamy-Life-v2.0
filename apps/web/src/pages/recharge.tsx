@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 interface Operator {
   id: string;
@@ -35,6 +36,7 @@ const quickAmounts = [20, 50, 100, 500, 1000, 1500, 2000, 2500];
 
 export default function RechargePage() {
   const router = useRouter();
+  const { t } = useI18n();
   const { accessToken, logout } = useAuthStore();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedOperator, setSelectedOperator] = useState<string>('');
@@ -69,16 +71,16 @@ export default function RechargePage() {
 
   const handleRecharge = async () => {
     if (!phoneNumber || phoneNumber.length !== 11) {
-      setMessage({ type: 'error', text: 'Please enter a valid 11-digit phone number' });
+      setMessage({ type: 'error', text: t('pleaseEnterValidPhoneNumber') });
       return;
     }
     if (!selectedOperator) {
-      setMessage({ type: 'error', text: 'Please select an operator' });
+      setMessage({ type: 'error', text: t('pleaseSelectOperator') });
       return;
     }
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) {
-      setMessage({ type: 'error', text: 'Please enter a valid amount' });
+      setMessage({ type: 'error', text: t('pleaseEnterValidAmount') });
       return;
     }
     if (!accessToken) return;
@@ -134,7 +136,7 @@ export default function RechargePage() {
         setModalVisible(true);
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      setMessage({ type: 'error', text: t('connectionError') });
     } finally {
       setLoading(false);
     }
@@ -152,7 +154,7 @@ export default function RechargePage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Recharge - Dreamy Life</title>
+        <title>{t('rechargeTitle')}</title>
       </Head>
       <style>{`
         body { min-height: max(884px, 100dvh); }
@@ -184,7 +186,7 @@ export default function RechargePage() {
           <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Mobile Recharge</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('mobileRecharge')}</h1>
           <Link href="/recharge/history" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">history</span>
           </Link>
@@ -195,7 +197,7 @@ export default function RechargePage() {
           <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Mobile Recharge</div>
+          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('mobileRecharge')}</div>
           <Link href="/recharge/history" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
             <span className="material-symbols-outlined">history</span>
           </Link>
@@ -204,7 +206,7 @@ export default function RechargePage() {
         <main className="max-w-[480px] mx-auto px-4 md:px-6 pt-20 space-y-6">
           {/* Phone Number Input */}
           <div className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-5 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] animate-fade-in">
-            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">Phone Number</label>
+            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">{t('phoneNumber')}</label>
             <div className="bg-white/40 backdrop-blur-md rounded-full px-5 py-3.5 border border-white/30 flex items-center">
               <span className="text-[#ff5c26] font-bold text-lg mr-3">+880</span>
               <input
@@ -219,7 +221,7 @@ export default function RechargePage() {
 
           {/* Operator Selection */}
           <div className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-5 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] animate-fade-in" style={{ animationDelay: '0.05s' }}>
-            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">Select Operator</label>
+            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">{t('selectOperator')}</label>
             <div className="grid grid-cols-6 gap-3">
               {operators.map((op) => (
                 <button
@@ -254,7 +256,7 @@ export default function RechargePage() {
 
           {/* Connection Type Toggle */}
           <div className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-5 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">Connection Type</label>
+            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">{t('connectionType')}</label>
             <div className="bg-white/40 backdrop-blur-md rounded-full p-1 flex border border-white/30">
               <button
                 onClick={() => setConnectionType('prepaid')}
@@ -264,7 +266,7 @@ export default function RechargePage() {
                     : 'text-[#45474b] hover:text-[#1c1b1b]'
                 }`}
               >
-                Prepaid
+                {t('prepaid')}
               </button>
               <button
                 onClick={() => setConnectionType('postpaid')}
@@ -274,14 +276,14 @@ export default function RechargePage() {
                     : 'text-[#45474b] hover:text-[#1c1b1b]'
                 }`}
               >
-                Postpaid
+                {t('postpaid')}
               </button>
             </div>
           </div>
 
           {/* Amount Input */}
           <div className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-5 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] animate-fade-in" style={{ animationDelay: '0.15s' }}>
-            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">Amount</label>
+            <label className="text-xs font-bold text-[#45474b] uppercase tracking-wider mb-3 block">{t('amount')}</label>
             <div className="bg-white/40 backdrop-blur-md rounded-full px-5 py-3.5 border border-white/30 flex items-center">
               <span className="text-[#ff5c26] font-bold text-lg mr-2">৳</span>
               <input
@@ -332,10 +334,10 @@ export default function RechargePage() {
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                Processing...
+                {t('processing')}
               </div>
             ) : (
-              'Confirm Recharge'
+              t('confirmRecharge')
             )}
           </button>
 
@@ -345,7 +347,7 @@ export default function RechargePage() {
             className="flex items-center justify-center gap-2 py-3 rounded-full bg-white/40 backdrop-blur-md border border-white/30 text-sm font-semibold text-[#45474b] hover:bg-white/60 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">history</span>
-            View Recharge History
+            {t('viewRechargeHistory')}
           </Link>
         </main>
 
@@ -362,30 +364,30 @@ export default function RechargePage() {
 
               {/* Title */}
               <h2 className={`text-2xl font-extrabold text-center mb-6 ${modalSuccess ? 'text-green-600' : 'text-red-600'}`}>
-                {modalSuccess ? 'Recharge Successful' : 'Recharge Failed'}
+                {modalSuccess ? t('rechargeSuccessful') : t('rechargeFailed')}
               </h2>
 
               {/* Details */}
               <div className="bg-gray-50 rounded-2xl p-5 mb-6 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 font-medium">Phone Number</span>
+                  <span className="text-sm text-gray-500 font-medium">{t('phoneNumber')}</span>
                   <span className="text-sm font-bold text-gray-900">+880{modalPhoneNumber}</span>
                 </div>
                 <div className="border-t border-gray-200" />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 font-medium">Operator</span>
+                  <span className="text-sm text-gray-500 font-medium">{t('operator')}</span>
                   <span className="text-sm font-bold text-gray-900">{OPERATOR_NAMES[modalOperator] || modalOperator}</span>
                 </div>
                 <div className="border-t border-gray-200" />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 font-medium">Amount</span>
+                  <span className="text-sm text-gray-500 font-medium">{t('amount')}</span>
                   <span className="text-sm font-bold text-gray-900">৳{modalAmount.toFixed(2)}</span>
                 </div>
                 {modalSuccess && (
                   <>
                     <div className="border-t border-gray-200" />
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500 font-medium">Remaining Funds</span>
+                      <span className="text-sm text-gray-500 font-medium">{t('remainingFunds')}</span>
                       <span className="text-base font-extrabold text-teal-600">৳{modalRemainingBalance.toFixed(2)}</span>
                     </div>
                   </>
@@ -398,7 +400,7 @@ export default function RechargePage() {
                   onClick={goToHistory}
                   className="flex-1 py-3.5 rounded-full border-2 border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
                 >
-                  View History
+                  {t('viewHistory')}
                 </button>
                 <button
                   onClick={closeModal}
@@ -406,7 +408,7 @@ export default function RechargePage() {
                     modalSuccess ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
                   }`}
                 >
-                  Done
+                  {t('done')}
                 </button>
               </div>
             </div>

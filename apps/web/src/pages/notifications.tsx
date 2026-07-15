@@ -7,6 +7,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 interface UserNotification {
   id: string;
@@ -36,7 +37,7 @@ const iconColors: Record<string, { bg: string; color: string }> = {
   default: { bg: '#e5e2e1', color: '#5d5e64' },
 };
 
-function getTimeAgo(dateStr: string): string {
+function getTimeAgo(dateStr: string, t: (key: any) => string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -44,7 +45,7 @@ function getTimeAgo(dateStr: string): string {
   const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return 'Just now';
+  if (diffMin < 1) return t('justNow');
   if (diffMin < 60) return `${diffMin}m`;
   if (diffHr < 24) return `${diffHr}h`;
   if (diffDay < 7) return `${diffDay}d`;
@@ -52,6 +53,7 @@ function getTimeAgo(dateStr: string): string {
 }
 
 export default function NotificationsPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const { accessToken } = useAuthStore();
   const { unreadCount: globalUnreadCount, setUnreadCount: setGlobalUnreadCount, resetCount } = useNotificationStore();
@@ -167,9 +169,9 @@ export default function NotificationsPage() {
   };
 
   const tabs = [
-    { key: 'all', label: 'All' },
-    { key: 'social', label: 'Social' },
-    { key: 'app', label: 'App' },
+    { key: 'all', label: t('all') },
+    { key: 'social', label: t('social') },
+    { key: 'app', label: t('app') },
   ];
 
   if (loading) {
@@ -183,7 +185,7 @@ export default function NotificationsPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Dreamy Life - Notifications</title>
+        <title>{t('notificationsTitle')}</title>
       </Head>
       <style>{`
         body {
@@ -230,7 +232,7 @@ export default function NotificationsPage() {
       </div>
 
       <DesktopHeader
-        title="Notifications"
+        title={t('notificationsTitle')}
         onMenuClick={() => setDrawerOpen(true)}
         avatarUrl={user?.info?.avatarUrl || ''}
         unreadNotifCount={unreadCount}
@@ -249,7 +251,7 @@ export default function NotificationsPage() {
         <button onClick={() => router.push('/dashboard')} className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Notifications</h1>
+        <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('notificationsTitle')}</h1>
         <div className="w-10"></div>
       </header>
 
@@ -273,7 +275,7 @@ export default function NotificationsPage() {
 
         <div className="flex justify-between items-end mb-8 w-full max-w-2xl mx-auto">
           <p className="text-sm text-[#45474b]">
-            {unreadCount > 0 ? `You have ${unreadCount} unread notifications.` : 'All caught up!'}
+            {unreadCount > 0 ? t('unreadNotifications').replace('{count}', String(unreadCount)) : t('allCaughtUp')}
           </p>
           {unreadCount > 0 && (
             <button
@@ -281,7 +283,7 @@ export default function NotificationsPage() {
               className="uppercase tracking-wider hover:opacity-70 transition-opacity text-sm font-semibold"
               style={{ letterSpacing: '0.05em', color: '#2d666d' }}
             >
-              Mark all read
+              {t('markAllRead')}
             </button>
           )}
         </div>
@@ -291,9 +293,9 @@ export default function NotificationsPage() {
             <div className="glass-panel rounded-xl p-12 text-center">
               <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4">notifications_none</span>
               <p className="text-[#45474b]">
-                {activeTab === 'social' && 'No social notifications'}
-                {activeTab === 'app' && 'No app notifications'}
-                {activeTab === 'all' && 'No notifications yet'}
+                {activeTab === 'social' && t('noSocialNotifications')}
+                {activeTab === 'app' && t('noAppNotifications')}
+                {activeTab === 'all' && t('noNotificationsYet')}
               </p>
             </div>
           )}
@@ -325,14 +327,14 @@ export default function NotificationsPage() {
                     <div className="flex items-center gap-2">
                       <h2 className="font-bold truncate text-[#1c1b1b]">{n.title}</h2>
                       {n.category === 'social' && (
-                        <span className="px-2 py-0.5 rounded-full bg-[#ffd1dc] text-[#78555e] text-[10px] font-semibold">Social</span>
+                        <span className="px-2 py-0.5 rounded-full bg-[#ffd1dc] text-[#78555e] text-[10px] font-semibold">{t('social')}</span>
                       )}
                       {n.link && (
                         <span className="material-symbols-outlined text-xs text-[#2d666d]">link</span>
                       )}
                     </div>
                     <span className="flex-shrink-0 ml-2 text-xs font-semibold text-[#76777b]">
-                      {n.sentAt ? getTimeAgo(n.sentAt) : getTimeAgo(n.createdAt)}
+                      {n.sentAt ? getTimeAgo(n.sentAt, t) : getTimeAgo(n.createdAt, t)}
                     </span>
                   </div>
                   <p className="line-clamp-1 text-sm text-[#45474b]">{n.body}</p>
@@ -346,7 +348,7 @@ export default function NotificationsPage() {
               onClick={handleLoadMore}
               className="glass-panel rounded-xl py-3 text-center text-sm font-semibold text-[#2d666d] hover:bg-white/30 transition-colors"
             >
-              Load more
+              {t('loadMore')}
             </button>
           )}
         </div>

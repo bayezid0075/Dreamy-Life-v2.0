@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 interface Transaction {
   id: string;
@@ -16,6 +17,7 @@ interface Transaction {
 export default function PointsHistoryPage() {
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
+  const { t } = useI18n();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [wallet, setWallet] = useState<{ pointsBalance: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,8 +82,8 @@ export default function PointsHistoryPage() {
   };
 
   const getTypeInfo = (type: string) => {
-    if (type === 'point_earned') return { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: 'Earned', positive: true };
-    return { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: 'Spent', positive: false };
+    if (type === 'point_earned') return { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: t('earned'), positive: true };
+    return { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: t('spent'), positive: false };
   };
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => filter === 'earned' ? t.type.includes('earned') : t.type.includes('spent'));
@@ -97,7 +99,7 @@ export default function PointsHistoryPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Points History - Dreamy Life</title>
+        <title>{t('pointsHistoryTitle')}</title>
       </Head>
       <style>{`
         body { min-height: max(884px, 100dvh); }
@@ -122,7 +124,7 @@ export default function PointsHistoryPage() {
               <span className="material-symbols-outlined">arrow_back</span>
             </Link>
           </div>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Points History</div>
+          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('pointsHistory')}</div>
           <div className="w-10"></div>
         </header>
 
@@ -131,14 +133,14 @@ export default function PointsHistoryPage() {
           <Link href="/wallet" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Points History</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('pointsHistory')}</h1>
           <div className="w-10"></div>
         </header>
 
         <main className="max-w-[1280px] mx-auto px-4 md:px-6 pt-6 space-y-6">
           {/* Total Points Display */}
           <div className="bg-white/60 backdrop-blur-xl rounded-xl p-8 flex flex-col items-center justify-center text-center border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-            <span className="text-sm font-bold text-[#45474b] mb-3 uppercase tracking-widest">Available Balance</span>
+            <span className="text-sm font-bold text-[#45474b] mb-3 uppercase tracking-widest">{t('availableBalance')}</span>
             <div className="flex items-center justify-center gap-3">
               <span className="material-symbols-outlined text-[#2d666d] text-[40px]" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
               <span className="text-[40px] font-extrabold text-[#1c1b1b]">{wallet?.pointsBalance?.toLocaleString() || '0'}</span>
@@ -157,7 +159,7 @@ export default function PointsHistoryPage() {
                     : 'bg-white/60 backdrop-blur-md text-[#45474b] hover:text-[#1c1b1b] border border-white/30'
                 }`}
               >
-                {range === 'all' ? 'All Time' : range === '7d' ? '7 Days' : range === '15d' ? '15 Days' : range === '30d' ? '30 Days' : range.charAt(0).toUpperCase() + range.slice(1)}
+                {range === 'all' ? t('allTime') : range === '7d' ? t('days7') : range === '15d' ? t('days15') : range === '30d' ? t('days30') : range === 'today' ? t('today') : range === 'yesterday' ? t('yesterday') : range.charAt(0).toUpperCase() + range.slice(1)}
               </button>
             ))}
           </div>
@@ -165,9 +167,9 @@ export default function PointsHistoryPage() {
           {/* Transaction Type Tabs */}
           <div className="bg-white/60 backdrop-blur-md rounded-full p-1 flex border border-white/30">
             {[
-              { key: 'all', label: 'All' },
-              { key: 'earned', label: 'Earned' },
-              { key: 'spent', label: 'Spent' },
+              { key: 'all', label: t('all') },
+              { key: 'earned', label: t('earned') },
+              { key: 'spent', label: t('spent') },
             ].map(tab => (
               <button
                 key={tab.key}
@@ -184,7 +186,7 @@ export default function PointsHistoryPage() {
           {/* Transactions */}
           <div className="space-y-4">
             {filtered.length === 0 ? (
-              <div className="text-center py-10 text-[#45474b]">No transactions found</div>
+              <div className="text-center py-10 text-[#45474b]">{t('noTransactionsFound')}</div>
             ) : (
               filtered.map(tx => {
                 const info = getTypeInfo(tx.type);

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 export default function CreatePostPage() {
   const router = useRouter();
   const { accessToken, user } = useAuthStore();
+  const { t } = useI18n();
   const [content, setContent] = useState('');
   const [posting, setPosting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -54,7 +56,7 @@ export default function CreatePostPage() {
 
   return (
     <AuthGuard>
-      <Head><title>Dreamy Life - Create Post</title></Head>
+      <Head><title>{t('createPostTitle')}</title></Head>
       <style>{`
         body { background-color: #fcf9f8; min-height: 100vh; }
         .glass-card { background: rgba(255,255,255,0.6); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.04); }
@@ -62,10 +64,10 @@ export default function CreatePostPage() {
 
       <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm">
         <div className="flex items-center justify-between w-full max-w-2xl mx-auto px-4 h-16">
-          <button onClick={() => router.back()} className="text-[#45474b] hover:text-[#1c1b1b] font-semibold">Cancel</button>
-          <h1 className="text-lg font-bold text-[#1c1b1b]">New Post</h1>
+          <button onClick={() => router.back()} className="text-[#45474b] hover:text-[#1c1b1b] font-semibold">{t('cancel')}</button>
+          <h1 className="text-lg font-bold text-[#1c1b1b]">{t('newPost')}</h1>
           <button onClick={handlePost} disabled={posting || (!content.trim() && !selectedFile)} className="text-[#2d666d] font-bold disabled:opacity-40">
-            {posting ? 'Posting...' : 'Post'}
+            {posting ? t('posting') : t('post')}
           </button>
         </div>
       </header>
@@ -81,13 +83,13 @@ export default function CreatePostPage() {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="What's on your mind?"
+            placeholder={t('whatsOnYourMind')}
             className="w-full min-h-[200px] bg-transparent border-none focus:ring-0 text-[#1c1b1b] text-[15px] placeholder:text-[#45474b]/50 resize-none outline-none"
             autoFocus
           />
           {previewUrl && (
             <div className="mt-2 relative">
-              <img src={previewUrl} alt="Preview" className="w-full rounded-xl max-h-[400px] object-cover" />
+              <img src={previewUrl} alt={t('preview')} className="w-full rounded-xl max-h-[400px] object-cover" />
               <button onClick={() => { setSelectedFile(null); setPreviewUrl(null); }} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center">
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
@@ -97,7 +99,7 @@ export default function CreatePostPage() {
         <div className="mt-4 glass-card rounded-2xl p-4">
           <label className="flex items-center gap-3 text-[#2d666d] hover:text-[#1c1b1b] cursor-pointer transition-colors">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>photo_library</span>
-            <span className="text-sm font-semibold">Add Photo</span>
+            <span className="text-sm font-semibold">{t('addPhoto')}</span>
             <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
           </label>
         </div>

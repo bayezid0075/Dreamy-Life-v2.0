@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 interface Transaction {
   id: string;
@@ -16,6 +17,7 @@ interface Transaction {
 export default function FundsHistoryPage() {
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
+  const { t } = useI18n();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -75,8 +77,8 @@ export default function FundsHistoryPage() {
   };
 
   const getTypeInfo = (type: string) => {
-    if (type === 'fund_credit') return { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: 'Credit', positive: true };
-    return { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: 'Debit', positive: false };
+    if (type === 'fund_credit') return { icon: 'south_east', color: '#2d666d', bg: '#e9fdff', label: t('credit'), positive: true };
+    return { icon: 'north_east', color: '#ba1a1a', bg: '#ffdad6', label: t('debit'), positive: false };
   };
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => filter === 'credit' ? t.type.includes('credit') : t.type.includes('debit'));
@@ -92,7 +94,7 @@ export default function FundsHistoryPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Funds History - Dreamy Life</title>
+        <title>{t('fundsHistoryTitle')}</title>
       </Head>
       <style>{`
         body { min-height: max(884px, 100dvh); }
@@ -117,7 +119,7 @@ export default function FundsHistoryPage() {
               <span className="material-symbols-outlined">arrow_back</span>
             </Link>
           </div>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Funds History</div>
+          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('fundsHistory')}</div>
           <div className="w-10"></div>
         </header>
 
@@ -126,7 +128,7 @@ export default function FundsHistoryPage() {
           <Link href="/wallet" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Funds History</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('fundsHistory')}</h1>
           <div className="w-10"></div>
         </header>
 
@@ -143,7 +145,7 @@ export default function FundsHistoryPage() {
                     : 'bg-white/60 backdrop-blur-md text-[#45474b] hover:text-[#1c1b1b] border border-white/30'
                 }`}
               >
-                {range === 'all' ? 'All Time' : range === '7d' ? '7 Days' : range === '15d' ? '15 Days' : range === '30d' ? '30 Days' : range.charAt(0).toUpperCase() + range.slice(1)}
+                {range === 'all' ? t('allTime') : range === '7d' ? t('days7') : range === '15d' ? t('days15') : range === '30d' ? t('days30') : range === 'today' ? t('today') : range === 'yesterday' ? t('yesterday') : range.charAt(0).toUpperCase() + range.slice(1)}
               </button>
             ))}
           </div>
@@ -151,9 +153,9 @@ export default function FundsHistoryPage() {
           {/* Transaction Type Tabs */}
           <div className="bg-white/60 backdrop-blur-md rounded-full p-1 flex border border-white/30">
             {[
-              { key: 'all', label: 'All' },
-              { key: 'credit', label: 'Credits' },
-              { key: 'debit', label: 'Debits' },
+              { key: 'all', label: t('all') },
+              { key: 'credit', label: t('credits') },
+              { key: 'debit', label: t('debits') },
             ].map(tab => (
               <button
                 key={tab.key}
@@ -170,7 +172,7 @@ export default function FundsHistoryPage() {
           {/* Transactions */}
           <div className="space-y-4">
             {filtered.length === 0 ? (
-              <div className="text-center py-10 text-[#45474b]">No transactions found</div>
+              <div className="text-center py-10 text-[#45474b]">{t('noTransactionsFound')}</div>
             ) : (
               filtered.map(tx => {
                 const info = getTypeInfo(tx.type);

@@ -8,6 +8,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../../i18n';
 
 interface PlanFeature {
   text: string;
@@ -29,7 +30,42 @@ interface MembershipPlan {
   commissionRates: number[];
 }
 
+const PLAN_NAME_MAP: Record<string, string> = {
+  user: 'planUser', basic: 'planBasic', standard: 'planStandard', smart: 'planSmart', vvip: 'planVvip',
+};
+const PLAN_DESC_MAP: Record<string, string> = {
+  user: 'planDescUser', basic: 'planDescBasic', standard: 'planDescStandard', smart: 'planDescSmart', vvip: 'planDescVvip',
+};
+const FEATURE_MAP: Record<string, string> = {
+  'Basic Access': 'featureBasicAccess',
+  'Community Feed': 'featureCommunityFeed',
+  '1x Reward Points': 'feature1xRewardPoints',
+  'Standard Support': 'featureStandardSupport',
+  'Member Newsletter': 'featureMemberNewsletter',
+  'Priority Support': 'featurePrioritySupport',
+  'Early Access to Sales': 'featureEarlyAccessToSales',
+  '2x Reward Points': 'feature2xRewardPoints',
+  'Exclusive Content': 'featureExclusiveContent',
+  '24/7 VIP Support': 'feature24x7VipSupport',
+  'Invite-Only Events': 'featureInviteOnlyEvents',
+  '3x Reward Points': 'feature3xRewardPoints',
+  'Free Shipping': 'featureFreeShipping',
+  '24/7 VIP Concierge': 'feature24x7VipConcierge',
+  '4x Reward Points': 'feature4xRewardPoints',
+  'Complimentary Shipping': 'featureComplimentaryShipping',
+  'Personal Account Manager': 'featurePersonalAccountManager',
+};
+const BUTTON_TEXT_MAP: Record<string, string> = {
+  'Current Plan': 'btnCurrentPlan',
+  'Choose Basic': 'btnChooseBasic',
+  'Choose Standard': 'btnChooseStandard',
+  'Choose Smart': 'btnChooseSmart',
+  'Choose VVIP': 'btnChooseVvip',
+  'Choose Plan': 'choosePlan',
+};
+
 export default function MembershipPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
@@ -117,10 +153,10 @@ export default function MembershipPage() {
       if (res.ok && data.success && data.data?.paymentUrl) {
         window.location.href = data.data.paymentUrl;
       } else {
-        alert(data.error?.message || data.message || 'Payment creation failed');
+        alert(data.error?.message || data.message || t('paymentCreationFailed'));
       }
     } catch (err) {
-      alert('Connection error');
+      alert(t('error'));
     } finally {
       setPurchasing(null);
     }
@@ -151,7 +187,7 @@ export default function MembershipPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Dreamy Life - Membership</title>
+        <title>{t('membershipTitle')}</title>
         <style>{`
           .glass-panel {
             background: rgba(255, 255, 255, 0.6);
@@ -197,7 +233,7 @@ export default function MembershipPage() {
       >
         {/* Desktop Header */}
         <DesktopHeader
-          title="Membership"
+          title={t('membership')}
           onMenuClick={() => setDrawerOpen(true)}
           avatarUrl={user?.info?.avatarUrl || ''}
           unreadNotifCount={unreadNotifCount}
@@ -218,7 +254,7 @@ export default function MembershipPage() {
           <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
             <span className="material-symbols-outlined text-[#1c1b1b]">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Membership</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('membership')}</h1>
           <div className="w-10"></div>
         </header>
 
@@ -226,10 +262,10 @@ export default function MembershipPage() {
           {/* Header Section */}
           <section className="text-center mb-16 animate-fade-up">
             <h2 className="text-[40px] md:text-[64px] leading-[1.2] md:leading-[1.1] tracking-[-0.02em] font-extrabold mb-4">
-              Elevate Your Experience
+              {t('elevateYourExperience')}
             </h2>
             <p className="text-[18px] leading-[1.6] text-[#45474b] max-w-2xl mx-auto">
-              Join the inner circle and unlock a world of exclusive benefits, early access, and premium support tailored just for you.
+              {t('joinInnerCircle')}
             </p>
           </section>
 
@@ -238,11 +274,11 @@ export default function MembershipPage() {
             <section className="glass-panel rounded-2xl p-6 mb-12 animate-fade-up">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] text-[#45474b] uppercase tracking-[0.05em] font-semibold">Current Plan</p>
-                  <h2 className="text-[24px] leading-[1.4] font-bold capitalize mt-1">{myMembership.currentPlan.name}</h2>
+                  <p className="text-[10px] text-[#45474b] uppercase tracking-[0.05em] font-semibold">{t('currentPlan')}</p>
+                  <h2 className="text-[24px] leading-[1.4] font-bold capitalize mt-1">{t(PLAN_NAME_MAP[myMembership.currentPlan.name] as any || 'planUser')}</h2>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-[#45474b]">Commission Earned</p>
+                  <p className="text-sm text-[#45474b]">{t('commissionEarned')}</p>
                   <p className="text-xl font-bold text-[#2d666d]">৳{myMembership.commissionEarned.toFixed(2)}</p>
                 </div>
               </div>
@@ -280,14 +316,14 @@ export default function MembershipPage() {
                   {/* Popular Badge */}
                   {plan.isPopular && (
                     <div className="absolute top-0 right-0 bg-[#2d666d] text-white text-[11px] font-bold uppercase tracking-wider py-1 px-4 rounded-bl-lg rounded-tr-3xl z-20">
-                      Most Popular
+                      {t('mostPopular')}
                     </div>
                   )}
 
                   {/* Current Badge */}
                   {isCurrentPlan && !plan.isPopular && (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-[#5d5e64] text-white text-[10px] rounded-full font-semibold z-20">
-                      Current
+                      {t('current')}
                     </div>
                   )}
 
@@ -299,13 +335,13 @@ export default function MembershipPage() {
                         ? 'text-[#2d666d]'
                         : 'text-[#5d5e64]'
                   }`}>
-                    {plan.name}
+                    {t(PLAN_NAME_MAP[plan.name] as any || 'planUser')}
                   </h3>
 
                   {/* Price */}
                   <div className="flex items-baseline mb-6 relative z-10">
                     <span className="text-[32px] leading-[1.3] font-bold">৳{Number(plan.price).toLocaleString()}</span>
-                    <span className="text-base text-[#45474b] ml-1">/mo</span>
+                    <span className="text-base text-[#45474b] ml-1">{t('perMonth')}</span>
                   </div>
 
                   {/* Features */}
@@ -321,7 +357,7 @@ export default function MembershipPage() {
                           >
                             check_circle
                           </span>
-                          <span className="text-base leading-[1.6]">{feature.text}</span>
+                          <span className="text-base leading-[1.6]">{t(FEATURE_MAP[feature.text] as any || 'featureBasicAccess')}</span>
                         </li>
                       ))}
                     </ul>
@@ -330,7 +366,7 @@ export default function MembershipPage() {
                   {/* Action Button */}
                   {isCurrentPlan ? (
                     <div className="w-full py-4 rounded-full bg-white/60 text-[#5d5e64] font-semibold text-sm text-center border border-white/40 relative z-10">
-                      Active
+                      {t('active')}
                     </div>
                   ) : (
                     <button
@@ -347,15 +383,15 @@ export default function MembershipPage() {
                       }`}
                     >
                       {purchasing === plan.id
-                        ? 'Processing...'
+                        ? t('processing')
                         : isLocked
-                          ? 'Already Upgraded'
-                          : plan.buttonText || 'Choose Plan'}
+                          ? t('alreadyUpgraded')
+                          : t(BUTTON_TEXT_MAP[plan.buttonText] as any || 'choosePlan')}
                     </button>
                   )}
 
                   {isLocked && !isCurrentPlan && (
-                    <p className="text-xs text-center text-[#45474b] mt-2 relative z-10">Already have this or higher</p>
+                    <p className="text-xs text-center text-[#45474b] mt-2 relative z-10">{t('alreadyHaveThis')}</p>
                   )}
                 </div>
               );
@@ -365,7 +401,7 @@ export default function MembershipPage() {
           {/* Commission History */}
           {myMembership?.commissionHistory?.length > 0 && (
             <section className="glass-panel rounded-3xl p-8 animate-fade-up">
-              <h2 className="text-[24px] leading-[1.4] font-bold mb-4">Commission History</h2>
+              <h2 className="text-[24px] leading-[1.4] font-bold mb-4">{t('commissionHistory')}</h2>
               <div className="space-y-2">
                 {myMembership.commissionHistory.map((c: any) => (
                   <div key={c.id} className="flex items-center justify-between bg-white/40 p-3 rounded-xl border border-white/30">
@@ -374,8 +410,8 @@ export default function MembershipPage() {
                         <span className="material-symbols-outlined text-sm text-[#2d666d]">payments</span>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold">Level {c.level} Commission</p>
-                        <p className="text-xs text-[#45474b]">{c.percentage}% earned from a referral purchase</p>
+                        <p className="text-sm font-semibold">{t('levelCommission', { level: String(c.level) })}</p>
+                        <p className="text-xs text-[#45474b]">{t('percentEarnedFromReferral', { percent: String(c.percentage) })}</p>
                       </div>
                     </div>
                     <span className="font-bold text-[#2d666d]">+৳{c.amount.toFixed(2)}</span>
@@ -394,15 +430,15 @@ export default function MembershipPage() {
             <div className="w-20 h-20 rounded-full bg-[#2d666d]/10 flex items-center justify-center mx-auto mb-6">
               <span className="text-5xl">🎉</span>
             </div>
-            <h3 className="text-[24px] font-bold text-[#1c1b1b] mb-3">Purchase Successful!</h3>
+            <h3 className="text-[24px] font-bold text-[#1c1b1b] mb-3">{t('purchaseSuccessful')}</h3>
             <p className="text-sm text-[#45474b] leading-relaxed mb-8">
-              Your account has been verified successfully. You now have access to all membership benefits.
+              {t('accountVerifiedSuccess')}
             </p>
             <button
               onClick={() => { setShowSuccess(false); router.push('/dashboard'); }}
               className="w-full py-4 rounded-full bg-[#1c1b1b] text-white font-semibold text-sm hover:bg-[#313030] transition-all"
             >
-              Continue to Dashboard
+              {t('continueToDashboard')}
             </button>
           </div>
         </div>

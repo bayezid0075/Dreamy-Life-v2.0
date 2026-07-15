@@ -15,6 +15,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 import { useNotificationStore } from '@/shared/stores/notificationStore';
+import { useI18n } from '../shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -46,25 +47,26 @@ const iconMap: Record<string, { emoji: string; bg: string }> = {
   default: { emoji: '🔔', bg: '#e5e2e1' },
 };
 
-function getTimeAgo(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m`;
-  if (diffHr < 24) return `${diffHr}h`;
-  if (diffDay < 7) return `${diffDay}d`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
 export default function NotificationsScreen() {
   const router = useRouter();
   const { isAuthenticated, accessToken } = useAuthStore();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
+
+  const getTimeAgo = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return t('justNow');
+    if (diffMin < 60) return `${diffMin}m`;
+    if (diffHr < 24) return `${diffHr}h`;
+    if (diffDay < 7) return `${diffDay}d`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -170,15 +172,15 @@ export default function NotificationsScreen() {
   }
 
   const tabs = [
-    { key: 'all', label: 'All' },
-    { key: 'social', label: 'Social' },
-    { key: 'app', label: 'App' },
+    { key: 'all', label: t('all') },
+    { key: 'social', label: t('social') },
+    { key: 'app', label: t('app') },
   ];
 
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Notifications" showBack showSearch={false} showNotification={false} />
+      <TopBar title={t('notifications')} showBack showSearch={false} showNotification={false} />
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
@@ -198,11 +200,11 @@ export default function NotificationsScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.headerText}>
-            {unreadCount > 0 ? `You have ${unreadCount} unread notifications.` : 'All caught up!'}
+            {unreadCount > 0 ? t('unreadNotifications', { count: String(unreadCount) }) : t('allCaughtUp')}
           </Text>
           {unreadCount > 0 && (
             <TouchableOpacity onPress={handleMarkAllAsRead}>
-              <Text style={styles.clearBtn}>MARK ALL READ</Text>
+              <Text style={styles.clearBtn}>{t('markAllRead')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -212,9 +214,9 @@ export default function NotificationsScreen() {
             <GlassPanel borderRadius={12} style={styles.emptyCard}>
               <Text style={styles.emptyIcon}>🔔</Text>
               <Text style={styles.emptyText}>
-                {activeTab === 'social' && 'No social notifications'}
-                {activeTab === 'app' && 'No app notifications'}
-                {activeTab === 'all' && 'No notifications yet'}
+                {activeTab === 'social' && t('noSocialNotifications')}
+                {activeTab === 'app' && t('noAppNotifications')}
+                {activeTab === 'all' && t('noNotificationsYet')}
               </Text>
             </GlassPanel>
           )}
@@ -248,7 +250,7 @@ export default function NotificationsScreen() {
                           <Text style={styles.notifTitle} numberOfLines={1}>{n.title}</Text>
                           {n.category === 'social' && (
                             <View style={styles.socialBadge}>
-                              <Text style={styles.socialBadgeText}>Social</Text>
+                              <Text style={styles.socialBadgeText}>{t('social')}</Text>
                             </View>
                           )}
                           {n.link ? <Text style={styles.linkIcon}>🔗</Text> : null}
@@ -268,7 +270,7 @@ export default function NotificationsScreen() {
           {hasMore && notifications.length > 0 && (
             <TouchableOpacity onPress={handleLoadMore} style={styles.loadMoreBtn}>
               <GlassPanel borderRadius={12} style={styles.loadMoreCard}>
-                <Text style={styles.loadMoreText}>Load more</Text>
+                <Text style={styles.loadMoreText}>{t('loadMore')}</Text>
               </GlassPanel>
             </TouchableOpacity>
           )}

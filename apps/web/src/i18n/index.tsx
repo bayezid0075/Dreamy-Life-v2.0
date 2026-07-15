@@ -9,7 +9,7 @@ const translations: Record<Locale, Record<string, string>> = { en, bn } as any;
 
 interface I18nContextValue {
   locale: Locale;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string;
   setLocale: (locale: Locale) => void;
 }
 
@@ -38,8 +38,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const t = useCallback((key: TranslationKey): string => {
-    return translations[locale]?.[key] || translations.en[key] || key;
+  const t = useCallback((key: TranslationKey, params?: Record<string, string | number>): string => {
+    let value = translations[locale]?.[key] || translations.en[key] || key;
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      });
+    }
+    return value;
   }, [locale]);
 
   return (

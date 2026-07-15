@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -23,6 +24,7 @@ interface FriendRequest extends FriendUser {
 }
 
 export default function FriendsPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const { accessToken } = useAuthStore();
   const { unreadCount: unreadNotifCount } = useNotificationStore();
@@ -202,10 +204,10 @@ export default function FriendsPage() {
   });
 
   const tabs = [
-    { key: 'find' as const, label: 'Discover', icon: 'explore', count: null },
-    { key: 'friends' as const, label: 'Friends', icon: 'group', count: friends.length },
-    { key: 'requests' as const, label: 'Requests', icon: 'inbox', count: receivedRequests.length },
-    { key: 'sent' as const, label: 'Sent', icon: 'send', count: sentRequests.length },
+    { key: 'find' as const, label: t('discover'), icon: 'explore', count: null },
+    { key: 'friends' as const, label: t('friends'), icon: 'group', count: friends.length },
+    { key: 'requests' as const, label: t('requests'), icon: 'inbox', count: receivedRequests.length },
+    { key: 'sent' as const, label: t('sent'), icon: 'send', count: sentRequests.length },
   ];
 
   const renderFriendButton = (u: FriendUser & { friendshipStatus: string }) => {
@@ -214,19 +216,19 @@ export default function FriendsPage() {
         return (
           <span className="px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 text-[13px] font-semibold flex items-center gap-1 border border-emerald-200/50">
             <span className="material-symbols-outlined text-[16px]">check_circle</span>
-            Friends
+            {t('friends')}
           </span>
         );
       case 'request_sent':
         return (
           <span className="px-4 py-2 rounded-full bg-white/60 text-[#45474b] text-[13px] font-semibold border border-white/40">
-            Sent
+            {t('sent')}
           </span>
         );
       case 'request_received':
         return (
           <span className="px-4 py-2 rounded-full bg-amber-500/10 text-amber-600 text-[13px] font-semibold border border-amber-200/50">
-            Pending
+            {t('pending')}
           </span>
         );
       default:
@@ -236,7 +238,7 @@ export default function FriendsPage() {
             disabled={actionLoading === u.id}
             className="px-4 py-2 rounded-full bg-gradient-to-r from-[#2d666d] to-[#1a4a50] text-white text-[13px] font-semibold hover:shadow-lg hover:shadow-[#2d666d]/20 transition-all duration-300 disabled:opacity-50 active:scale-95"
           >
-            {actionLoading === u.id ? '...' : 'Add Friend'}
+            {actionLoading === u.id ? '...' : t('addFriend')}
           </button>
         );
     }
@@ -245,7 +247,7 @@ export default function FriendsPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Friends - Dreamy Life</title>
+        <title>{t('friendsTitle')}</title>
       </Head>
       <div className="min-h-screen bg-[#fcf9f8]">
         {/* Background orbs */}
@@ -261,7 +263,7 @@ export default function FriendsPage() {
             <Link href="/social-feed" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/40 transition-colors active:scale-95 text-[#5d5e64]">
               <span className="material-symbols-outlined">arrow_back</span>
             </Link>
-            <h1 className="text-[24px] font-bold text-[#5d5e64] tracking-tight">Friends</h1>
+            <h1 className="text-[24px] font-bold text-[#5d5e64] tracking-tight">{t('friends')}</h1>
           </div>
         </header>
 
@@ -280,7 +282,7 @@ export default function FriendsPage() {
                 }`}>search</span>
                 <input
                   type="text"
-                  placeholder="Search by name or username..."
+                  placeholder={t('searchByNameOrUsername')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
@@ -334,15 +336,15 @@ export default function FriendsPage() {
               {searchQuery.length >= 2 && searchResults.length === 0 && (
                 <div className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-12 text-center border border-white/30">
                   <span className="material-symbols-outlined text-5xl text-[#45474b]/30 mb-4 block">person_search</span>
-                  <p className="text-[#45474b] text-lg font-semibold">No users found</p>
-                  <p className="text-[#45474b]/50 text-sm mt-2">Try a different search term</p>
+                  <p className="text-[#45474b] text-lg font-semibold">{t('noUsersFound')}</p>
+                  <p className="text-[#45474b]/50 text-sm mt-2">{t('tryDifferentSearch')}</p>
                 </div>
               )}
 
               {!searchQuery && searchResults.length === 0 && (
                 <div className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-12 text-center border border-white/30">
                   <span className="material-symbols-outlined text-5xl text-[#45474b]/30 mb-4 block">people</span>
-                  <p className="text-[#45474b] text-lg font-semibold">No users available</p>
+                  <p className="text-[#45474b] text-lg font-semibold">{t('noUsersAvailable')}</p>
                 </div>
               )}
 
@@ -381,7 +383,7 @@ export default function FriendsPage() {
                 <span className="material-symbols-outlined text-[#45474b]/60">search</span>
                 <input
                   type="text"
-                  placeholder="Search your friends..."
+                  placeholder={t('searchByNameOrUsername')}
                   value={friendQuery}
                   onChange={(e) => setFriendQuery(e.target.value)}
                   className="bg-transparent border-none outline-none w-full text-[#1c1b1b] placeholder:text-[#45474b]/40 text-[15px]"
@@ -396,17 +398,17 @@ export default function FriendsPage() {
                 <div className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-12 text-center border border-white/30">
                   <span className="material-symbols-outlined text-5xl text-[#45474b]/30 mb-4 block">people</span>
                   <p className="text-[#45474b] text-lg font-semibold">
-                    {friendQuery ? 'No friends match your search' : 'No friends yet'}
+                    {friendQuery ? t('noFriendsMatchSearch') : t('noFriendsYet')}
                   </p>
                   <p className="text-[#45474b]/50 text-sm mt-2">
-                    {friendQuery ? 'Try a different search' : 'Discover people and send friend requests'}
+                    {friendQuery ? t('tryDifferentSearch') : t('discoverPeopleAndSendRequests')}
                   </p>
                   {!friendQuery && (
                     <button
                       onClick={() => setActiveTab('find')}
                       className="mt-6 px-6 py-3 rounded-full bg-gradient-to-r from-[#2d666d] to-[#1a4a50] text-white text-sm font-semibold hover:shadow-lg hover:shadow-[#2d666d]/20 transition-all duration-300 active:scale-95"
                     >
-                      Discover People
+                      {t('discoverPeople')}
                     </button>
                   )}
                 </div>
@@ -436,7 +438,7 @@ export default function FriendsPage() {
                         <button
                           onClick={() => handleStartChat(friend.id)}
                           className="w-10 h-10 rounded-full bg-gradient-to-br from-[#e9fdff] to-[#d4f5f8] flex items-center justify-center hover:shadow-md hover:shadow-[#2d666d]/10 transition-all duration-300"
-                          title="Message"
+                          title={t('message')}
                         >
                           <span className="material-symbols-outlined text-[#2d666d] text-xl">chat</span>
                         </button>
@@ -444,7 +446,7 @@ export default function FriendsPage() {
                           onClick={() => handleRemoveFriend(friend.id)}
                           disabled={actionLoading === friend.id}
                           className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center hover:bg-rose-100 hover:shadow-md hover:shadow-rose-500/10 transition-all duration-300 disabled:opacity-50"
-                          title="Remove friend"
+                          title={t('removeFriend')}
                         >
                           <span className="material-symbols-outlined text-rose-500 text-xl">person_remove</span>
                         </button>
@@ -466,8 +468,8 @@ export default function FriendsPage() {
               ) : receivedRequests.length === 0 ? (
                 <div className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-12 text-center border border-white/30">
                   <span className="material-symbols-outlined text-5xl text-[#45474b]/30 mb-4 block">inbox</span>
-                  <p className="text-[#45474b] text-lg font-semibold">No pending requests</p>
-                  <p className="text-[#45474b]/50 text-sm mt-2">Friend requests from others will appear here</p>
+                  <p className="text-[#45474b] text-lg font-semibold">{t('noPendingRequests')}</p>
+                  <p className="text-[#45474b]/50 text-sm mt-2">{t('friendRequestsFromOthersAppearHere')}</p>
                 </div>
               ) : (
                 receivedRequests.map((req) => (
@@ -493,14 +495,14 @@ export default function FriendsPage() {
                         disabled={actionLoading === req.id}
                         className="px-4 py-2 rounded-full bg-gradient-to-r from-[#2d666d] to-[#1a4a50] text-white text-[13px] font-semibold hover:shadow-lg hover:shadow-[#2d666d]/20 transition-all duration-300 disabled:opacity-50 active:scale-95"
                       >
-                        {actionLoading === req.id ? '...' : 'Accept'}
+                        {actionLoading === req.id ? '...' : t('accept')}
                       </button>
                       <button
                         onClick={() => handleRejectRequest(req.id)}
                         disabled={actionLoading === req.id}
                         className="px-4 py-2 rounded-full bg-white/60 text-[#45474b] text-[13px] font-semibold hover:bg-white/80 transition-all duration-300 disabled:opacity-50 border border-white/40"
                       >
-                        Decline
+                        {t('decline')}
                       </button>
                     </div>
                   </div>
@@ -519,8 +521,8 @@ export default function FriendsPage() {
               ) : sentRequests.length === 0 ? (
                 <div className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-12 text-center border border-white/30">
                   <span className="material-symbols-outlined text-5xl text-[#45474b]/30 mb-4 block">send</span>
-                  <p className="text-[#45474b] text-lg font-semibold">No sent requests</p>
-                  <p className="text-[#45474b]/50 text-sm mt-2">Friend requests you send will appear here</p>
+                  <p className="text-[#45474b] text-lg font-semibold">{t('noSentRequests')}</p>
+                  <p className="text-[#45474b]/50 text-sm mt-2">{t('friendRequestsYouSendAppearHere')}</p>
                 </div>
               ) : (
                 sentRequests.map((req) => (
@@ -545,7 +547,7 @@ export default function FriendsPage() {
                       disabled={actionLoading === req.id}
                       className="px-4 py-2 rounded-full bg-white/60 text-rose-500 text-[13px] font-semibold hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 disabled:opacity-50 border border-white/40 active:scale-95"
                     >
-                      {actionLoading === req.id ? '...' : 'Cancel'}
+                      {actionLoading === req.id ? '...' : t('cancel')}
                     </button>
                   </div>
                 ))

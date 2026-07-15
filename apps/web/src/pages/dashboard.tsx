@@ -8,9 +8,11 @@ import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import { VendorProfile } from '@/features/vendor/api';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const { accessToken, logout } = useAuthStore();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Dreamy Life - Dashboard</title>
+        <title>{t('dreamyLifeDashboard')}</title>
       </Head>
       <style>{`
         body {
@@ -110,7 +112,7 @@ export default function DashboardPage() {
       >
         {/* TopAppBar - Desktop */}
         <DesktopHeader
-          title="Dreamy Life"
+          title={t('dreamyLife')}
           onMenuClick={() => setDrawerOpen(true)}
           avatarUrl={avatarUrl}
           unreadNotifCount={unreadNotifCount}
@@ -127,7 +129,7 @@ export default function DashboardPage() {
           </button>
           <div onClick={() => router.push('/wallet')} className="bg-white/50 backdrop-blur-[20px] px-6 py-2 rounded-full flex items-center gap-2 cursor-pointer hover:bg-white/60 transition-colors border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <span className="material-symbols-outlined text-[#5d5e64]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
-            <span className="text-[14px] font-semibold tracking-[0.05em] text-[#1c1b1b]">Tap for Balance</span>
+            <span className="text-[14px] font-semibold tracking-[0.05em] text-[#1c1b1b]">{t('tapForBalance')}</span>
           </div>
           <div className="flex gap-2">
             <button
@@ -163,10 +165,10 @@ export default function DashboardPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-[#e9fdff]/80 to-transparent flex items-center p-8">
                 <div className="max-w-sm space-y-2">
                   <h2 className="text-[32px] font-bold text-[#1c1b1b] drop-shadow-md leading-tight">
-                    Seamless Delivery
+                    {t('seamlessDelivery')}
                   </h2>
                   <p className="text-[16px] text-[#45474b]">
-                    Manage all your shipments in one elegant space.
+                    {t('manageYourShipments')}
                   </p>
                 </div>
               </div>
@@ -183,31 +185,31 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-full bg-[#e9fdff] text-[#437b81] flex items-center justify-center group-hover:bg-[#2d666d] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">add_box</span>
               </div>
-              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Add Parcel</span>
+              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('addParcel')}</span>
             </button>
             <button className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#ffd1dc] text-[#7a5761] flex items-center justify-center group-hover:bg-[#78555e] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">local_shipping</span>
               </div>
-              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Pickup Request</span>
+              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('pickupRequest')}</span>
             </button>
             <button className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#e2e2e9] text-[#45474c] flex items-center justify-center group-hover:bg-[#5d5e64] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">bolt</span>
               </div>
-              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Express Delivery</span>
+              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('expressDelivery')}</span>
             </button>
             <Link href="/social-feed" className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#e0f7fa] text-[#00838f] flex items-center justify-center group-hover:bg-[#00838f] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">public</span>
               </div>
-              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Social Feed</span>
+              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('socialFeed')}</span>
             </Link>
             <button className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#ffdad6] text-[#93000a] flex items-center justify-center group-hover:bg-[#ba1a1a] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">sync_alt</span>
               </div>
-              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">Pick &amp; Drop</span>
+              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('pickAndDrop')}</span>
             </button>
           </section>
 
@@ -216,37 +218,37 @@ export default function DashboardPage() {
             <div className="grid grid-cols-4 gap-y-8 gap-x-4">
               {(() => {
                 const features = [
-                  { icon: 'phone_iphone', label: 'Mobile Recharge', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/recharge' },
-                  { icon: 'directions_car', label: 'Easy Drive', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
-                  { icon: 'storefront', label: 'Reselling', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]', href: '/reseller-shop' },
-                  { icon: 'business', label: 'Vendorship', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]', href: '/vendor/apply' },
-                  { icon: 'shopping_cart', label: 'Cart', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]', href: '/cart' },
-                  { icon: 'local_shipping', label: 'My Orders', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/reselling/orders' },
-                  { icon: 'groups', label: 'Drive Pack', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/drive-pack' },
-                  { icon: 'receipt_long', label: 'Pay Bill', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
-                  { icon: 'send', label: 'Telegram Sell', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
-                  { icon: 'mail', label: 'Gmail Sell', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
-                  { icon: 'chat', label: 'WhatsApp Sell', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
-                  { icon: 'star', label: 'Premium Apps', bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
-                  { icon: 'task_alt', label: 'Micro Jobs', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/marketplace' },
-                  { icon: 'share', label: 'Social Media', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/social-feed' },
-                  { icon: 'work', label: 'Job Post', bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]', href: '/marketplace/post' },
-                  { icon: 'keyboard', label: 'Typing Work', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
-                  { icon: 'quiz', label: 'Quiz Work', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
-                  { icon: 'calculate', label: 'Math Work', bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
-                  { icon: 'code', label: 'Code Entry', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
-                  { icon: 'videocam', label: 'Video Ads', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
-                  { icon: 'sports_soccer', label: 'Football Game', bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
-                  { icon: 'sports', label: 'Carrom Game', bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
-                  { icon: 'card_giftcard', label: 'Welcome Bonus', bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
-                  { icon: 'my_location', label: 'Target Bonus', bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
-                  { icon: 'date_range', label: 'Weekly Bonus', bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
-                  { icon: 'today', label: 'Daily Bonus', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
-                  { icon: 'calendar_month', label: 'Monthly Bonus', bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
-                  { icon: 'redeem', label: 'Gift Code', bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
-                  { icon: 'health_and_safety', label: 'Daily Service', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
-                  { icon: 'bloodtype', label: 'Blood', bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
-                  { icon: 'store', label: 'Outlet', bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                  { icon: 'phone_iphone', label: t('mobileRecharge'), bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/recharge' },
+                  { icon: 'directions_car', label: t('easyDrive'), bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
+                  { icon: 'storefront', label: t('reselling'), bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]', href: '/reseller-shop' },
+                  { icon: 'business', label: t('vendorship'), bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]', href: '/vendor/apply' },
+                  { icon: 'shopping_cart', label: t('cart'), bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]', href: '/cart' },
+                  { icon: 'local_shipping', label: t('myOrders'), bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/reselling/orders' },
+                  { icon: 'groups', label: t('drivePack'), bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/drive-pack' },
+                  { icon: 'receipt_long', label: t('payBill'), bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
+                  { icon: 'send', label: t('telegramSell'), bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
+                  { icon: 'mail', label: t('gmailSell'), bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'chat', label: t('whatsappSell'), bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
+                  { icon: 'star', label: t('premiumApps'), bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
+                  { icon: 'task_alt', label: t('microJobs'), bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/marketplace' },
+                  { icon: 'share', label: t('socialMedia'), bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]', href: '/social-feed' },
+                  { icon: 'work', label: t('jobPost'), bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]', href: '/marketplace/post' },
+                  { icon: 'keyboard', label: t('typingWork'), bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
+                  { icon: 'quiz', label: t('quizWork'), bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
+                  { icon: 'calculate', label: t('mathWork'), bg: 'bg-[#e0f7fa]', text: 'text-[#00838f]' },
+                  { icon: 'code', label: t('codeEntry'), bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
+                  { icon: 'videocam', label: t('videoAds'), bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'sports_soccer', label: t('footballGame'), bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' },
+                  { icon: 'sports', label: t('carromGame'), bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
+                  { icon: 'card_giftcard', label: t('welcomeBonus'), bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]' },
+                  { icon: 'my_location', label: t('targetBonus'), bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' },
+                  { icon: 'date_range', label: t('weeklyBonus'), bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]' },
+                  { icon: 'today', label: t('dailyBonus'), bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
+                  { icon: 'calendar_month', label: t('monthlyBonus'), bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' },
+                  { icon: 'redeem', label: t('giftCode'), bg: 'bg-[#fffde7]', text: 'text-[#f9a825]' },
+                  { icon: 'health_and_safety', label: t('dailyService'), bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'bloodtype', label: t('blood'), bg: 'bg-[#fce4ec]', text: 'text-[#c62828]' },
+                  { icon: 'store', label: t('outlet'), bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]' },
                 ];
                 const visible = showAll ? features : features.slice(0, 12);
                 return visible.map((item) => {
@@ -278,7 +280,7 @@ export default function DashboardPage() {
                 onClick={() => setShowAll(true)}
                 className="mt-8 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/60 backdrop-blur-[20px] border border-white/40 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:bg-white/70 transition-all duration-300"
               >
-                <span className="text-sm font-semibold text-[#45474b]">See More</span>
+                <span className="text-sm font-semibold text-[#45474b]">{t('seeMore')}</span>
                 <span className="material-symbols-outlined text-[#45474b] text-lg">expand_more</span>
               </button>
             )}
@@ -287,7 +289,7 @@ export default function DashboardPage() {
                 onClick={() => setShowAll(false)}
                 className="mt-8 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/60 backdrop-blur-[20px] border border-white/40 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:bg-white/70 transition-all duration-300"
               >
-                <span className="text-sm font-semibold text-[#45474b]">Show Less</span>
+                <span className="text-sm font-semibold text-[#45474b]">{t('showLess')}</span>
                 <span className="material-symbols-outlined text-[#45474b] text-lg">expand_less</span>
               </button>
             )}
@@ -300,25 +302,25 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center text-[#2d666d]">
                   <span className="material-symbols-outlined">support_agent</span>
                 </div>
-                <span className="text-sm text-center text-[#45474b]">Support</span>
+                <span className="text-sm text-center text-[#45474b]">{t('support')}</span>
               </button>
               <button className="flex flex-col items-center justify-start gap-3 hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center text-[#78555e]">
                   <span className="material-symbols-outlined">pin_drop</span>
                 </div>
-                <span className="text-sm text-center text-[#45474b]">Pickup Points</span>
+                <span className="text-sm text-center text-[#45474b]">{t('pickupPoints')}</span>
               </button>
               <button className="flex flex-col items-center justify-start gap-3 hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center text-[#5d5e64]">
                   <span className="material-symbols-outlined">map</span>
                 </div>
-                <span className="text-sm text-center text-[#45474b]">Coverage</span>
+                <span className="text-sm text-center text-[#45474b]">{t('coverage')}</span>
               </button>
               <button className="flex flex-col items-center justify-start gap-3 hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center text-[#5d5e64]">
                   <span className="material-symbols-outlined">calculate</span>
                 </div>
-                <span className="text-sm text-center text-[#45474b]">Pricing</span>
+                <span className="text-sm text-center text-[#45474b]">{t('pricing')}</span>
               </button>
             </div>
           </section>
@@ -398,7 +400,7 @@ export default function DashboardPage() {
                 <input
                   autoFocus
                   className="bg-transparent border-none focus:ring-0 flex-1 text-[16px] text-[#1c1b1b] outline-none placeholder:text-[#45474b]/60"
-                  placeholder="Search services, parcels..."
+                  placeholder={t('searchPlaceholder')}
                   type="text"
                 />
                 <button onClick={() => setSearchOpen(false)} className="flex items-center justify-center p-1 rounded-full hover:bg-white/40 transition-colors text-[#45474b]">
@@ -410,26 +412,26 @@ export default function DashboardPage() {
               <div className="mt-10 space-y-8">
                 <div>
                   <h3 className="text-[14px] font-semibold tracking-[0.05em] text-[#45474b] uppercase tracking-widest mb-4 px-2 opacity-80">
-                    Suggestions
+                    {t('suggestions')}
                   </h3>
                   <div className="space-y-3">
                     <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/50 backdrop-blur-[20px] border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 text-left group">
                       <div className="w-12 h-12 rounded-full bg-[#e9fdff]/80 backdrop-blur-md text-[#2d666d] border border-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <span className="material-symbols-outlined">package_2</span>
                       </div>
-                      <span className="text-[18px] font-semibold text-[#1c1b1b]">Track a Parcel</span>
+                      <span className="text-[18px] font-semibold text-[#1c1b1b]">{t('trackParcel')}</span>
                     </button>
                     <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/50 backdrop-blur-[20px] border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 text-left group">
                       <div className="w-12 h-12 rounded-full bg-[#ffd1dc]/80 backdrop-blur-md text-[#78555e] border border-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <span className="material-symbols-outlined">credit_card</span>
                       </div>
-                      <span className="text-[18px] font-semibold text-[#1c1b1b]">Pay Invoice</span>
+                      <span className="text-[18px] font-semibold text-[#1c1b1b]">{t('payInvoice')}</span>
                     </button>
                     <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/50 backdrop-blur-[20px] border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 text-left group">
                       <div className="w-12 h-12 rounded-full bg-[#e2e2e9]/80 backdrop-blur-md text-[#5d5e64] border border-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <span className="material-symbols-outlined">location_on</span>
                       </div>
-                      <span className="text-[18px] font-semibold text-[#1c1b1b]">Nearby Pickup</span>
+                      <span className="text-[18px] font-semibold text-[#1c1b1b]">{t('nearbyPickup')}</span>
                     </button>
                   </div>
                 </div>
@@ -437,17 +439,17 @@ export default function DashboardPage() {
                 {/* Recent Searches Section */}
                 <div>
                   <h3 className="text-[14px] font-semibold tracking-[0.05em] text-[#45474b] uppercase tracking-widest mb-4 px-2 opacity-80">
-                    Recent Searches
+                    {t('recentSearches')}
                   </h3>
                   <div className="flex flex-wrap gap-3 px-2">
                     <span className="px-5 py-2.5 bg-white/50 backdrop-blur-[20px] rounded-full text-[16px] text-[#45474b] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer transition-all duration-300 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-                      Express delivery
+                      {t('expressDeliverySearch')}
                     </span>
                     <span className="px-5 py-2.5 bg-white/50 backdrop-blur-[20px] rounded-full text-[16px] text-[#45474b] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer transition-all duration-300 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-                      Luna Glo Lamp
+                      {t('lunaGloLamp')}
                     </span>
                     <span className="px-5 py-2.5 bg-white/50 backdrop-blur-[20px] rounded-full text-[16px] text-[#45474b] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer transition-all duration-300 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-                      Shipping rates
+                      {t('shippingRates')}
                     </span>
                   </div>
                 </div>

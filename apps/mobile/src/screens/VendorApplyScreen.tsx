@@ -6,60 +6,62 @@ import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
+import { useI18n } from '@/shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
-const VENDOR_TERMS = [
-  {
-    title: 'Shop Responsibilities',
-    items: [
-      'Maintain accurate product listings with up-to-date inventory',
-      'Provide honest and detailed product descriptions',
-      'Set fair and competitive pricing for all listed items',
-      'Respond to customer inquiries within 24 hours',
-    ],
-  },
-  {
-    title: 'Product Quality Standards',
-    items: [
-      'All products must meet Dreamy Life quality guidelines',
-      'No counterfeit, prohibited, or restricted items allowed',
-      'Proper packaging and labeling is required for all orders',
-      'Product images must accurately represent the actual item',
-    ],
-  },
-  {
-    title: 'Payment & Fees',
-    items: [
-      'One-time vendorship fee: Tk 700 (free for VVIP members)',
-      'Platform commission applies on each completed sale',
-      'Payments are processed securely via UddoktaPay',
-      'Payouts are transferred to your registered account',
-    ],
-  },
-  {
-    title: 'Order Fulfillment',
-    items: [
-      'Process and ship orders within the stated delivery timeframe',
-      'Handle returns and refunds according to platform policy',
-      'Maintain responsive communication with buyers',
-      'Provide tracking information for all shipped orders',
-    ],
-  },
-  {
-    title: 'Termination',
-    items: [
-      'Dreamy Life reserves the right to suspend vendors violating terms',
-      'Vendors may voluntarily deactivate their shop at any time',
-      'Upon termination, pending orders must be fulfilled or refunded',
-      'Repeated policy violations will result in permanent ban',
-    ],
-  },
-];
-
 export default function VendorApplyScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { isAuthenticated, accessToken } = useAuthStore();
+
+  const VENDOR_TERMS = [
+    {
+      title: t('shopResponsibilitiesTitle'),
+      items: [
+        t('maintainAccurateListings'),
+        t('provideHonestDescriptions'),
+        t('setFairPricing'),
+        t('respondToInquiries'),
+      ],
+    },
+    {
+      title: t('productQualityStandardsTitle'),
+      items: [
+        t('meetQualityGuidelines'),
+        t('noCounterfeitItems'),
+        t('properPackaging'),
+        t('accurateImages'),
+      ],
+    },
+    {
+      title: t('paymentFeesTitle'),
+      items: [
+        t('oneTimeVendorshipFee'),
+        t('platformCommission'),
+        t('securePayments'),
+        t('payoutToAccount'),
+      ],
+    },
+    {
+      title: t('orderFulfillmentTitle'),
+      items: [
+        t('processAndShipOrders'),
+        t('handleReturns'),
+        t('responsiveCommunication'),
+        t('provideTrackingInfo'),
+      ],
+    },
+    {
+      title: t('terminationTitle'),
+      items: [
+        t('suspendVendors'),
+        t('voluntaryDeactivate'),
+        t('fulfillOrRefund'),
+        t('permanentBan'),
+      ],
+    },
+  ];
   const [step, setStep] = useState<'terms' | 'form'>('terms');
   const [agreed, setAgreed] = useState(false);
   const [shopName, setShopName] = useState('');
@@ -93,7 +95,7 @@ export default function VendorApplyScreen() {
   };
 
   const handleApply = async () => {
-    if (!shopName.trim() || !address.trim()) { Alert.alert('Error', 'Please fill in all required fields'); return; }
+    if (!shopName.trim() || !address.trim()) { Alert.alert(t('error'), t('pleaseSelectImageFile')); return; }
     setLoading(true);
     try {
       const res = await authFetch(`${API_URL}/vendor/apply`, {
@@ -101,13 +103,13 @@ export default function VendorApplyScreen() {
         body: JSON.stringify({ shopName, address, bannerUrl: bannerUrl || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) { Alert.alert('Error', data.error?.message || 'Failed to apply'); return; }
+      if (!res.ok) { Alert.alert(t('error'), data.error?.message || t('failedToApply')); return; }
       if (data.data.paymentUrl) {
-        Alert.alert('Payment', 'You will be redirected to payment page');
+        Alert.alert(t('vendorApplication'), t('vendorPaymentRedirect'));
       } else {
-        Alert.alert('Success', 'Vendor profile created!', [{ text: 'OK', onPress: () => router.replace('/vendor/dashboard') }]);
+        Alert.alert(t('success'), t('vendorProfileCreated'), [{ text: 'OK', onPress: () => router.replace('/vendor/dashboard') }]);
       }
-    } catch { Alert.alert('Error', 'Connection failed'); }
+    } catch { Alert.alert(t('error'), t('connectionFailed')); }
     finally { setLoading(false); }
   };
 
@@ -115,7 +117,7 @@ export default function VendorApplyScreen() {
     <View style={styles.container}>
       <AuroraBackground />
       <TopBar
-        title="Become a Vendor"
+        title={t('becomeAVendor')}
         showBack
         onBack={() => (step === 'form' ? setStep('terms') : router.back())}
         showSearch={false}
@@ -128,12 +130,12 @@ export default function VendorApplyScreen() {
             <Text style={styles.iconEmoji}>🏪</Text>
           </View>
           <Text style={styles.iconTitle}>
-            {step === 'terms' ? 'Vendor Agreement' : 'Application Form'}
+            {step === 'terms' ? t('vendorAgreement') : t('applicationForm')}
           </Text>
           <Text style={styles.iconDesc}>
             {step === 'terms'
-              ? 'Please review and accept the terms before proceeding'
-              : 'Fill in your shop details to get started'}
+              ? t('reviewAndAcceptTerms')
+              : t('fillShopDetails')}
           </Text>
         </View>
 
@@ -173,9 +175,9 @@ export default function VendorApplyScreen() {
                 {agreed && <Text style={styles.checkmark}>✓</Text>}
               </View>
               <Text style={styles.checkboxLabel}>
-                I have read and agree to the{' '}
-                <Text style={styles.checkboxLabelText}>Vendor Terms & Conditions</Text>{' '}
-                of Dreamy Life marketplace
+                {t('agreedToTerms')}{' '}
+                <Text style={styles.checkboxLabelText}>{t('vendorTermsAndConditions')}</Text>{' '}
+                {t('vendorMarketplaceOf')}
               </Text>
             </TouchableOpacity>
 
@@ -186,7 +188,7 @@ export default function VendorApplyScreen() {
                 onPress={() => router.back()}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.continueBtn, !agreed && styles.continueBtnDisabled]}
@@ -194,7 +196,7 @@ export default function VendorApplyScreen() {
                 disabled={!agreed}
                 activeOpacity={0.7}
               >
-                <Text style={styles.continueBtnText}>Continue</Text>
+                <Text style={styles.continueBtnText}>{t('continue')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -209,26 +211,26 @@ export default function VendorApplyScreen() {
                   <Text style={{ fontSize: 24 }}>🏪</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.statusTitle}>Vendor Application</Text>
+                  <Text style={styles.statusTitle}>{t('vendorApplication')}</Text>
                   <Text style={styles.statusDesc}>
-                    {vvipStatus === null ? 'Checking membership...' : vvipStatus ? 'VVIP - Free vendorship!' : 'Fee: Tk 700 (UddoktaPay)'}
+                    {vvipStatus === null ? t('checkingMembership') : vvipStatus ? t('vvipFreeVendorship') : t('feeOneTime')}
                   </Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => setStep('terms')}>
-                <Text style={styles.reviewTermsLink}>Review Terms & Conditions</Text>
+                <Text style={styles.reviewTermsLink}>{t('reviewTermsAndConditions')}</Text>
               </TouchableOpacity>
             </GlassPanel>
 
             <GlassPanel borderRadius={16} style={styles.formCard}>
-              <Text style={styles.label}>Shop Name *</Text>
-              <TextInput style={styles.input} value={shopName} onChangeText={setShopName} placeholder="e.g. Premium Store" placeholderTextColor="rgba(69,71,75,0.5)" />
+              <Text style={styles.label}>{t('shopName')}</Text>
+              <TextInput style={styles.input} value={shopName} onChangeText={setShopName} placeholder={t('shopNamePlaceholder')} placeholderTextColor="rgba(69,71,75,0.5)" />
 
-              <Text style={styles.label}>Shop Address *</Text>
-              <TextInput style={styles.input} value={address} onChangeText={setAddress} placeholder="House 12, Road 5, Dhaka" placeholderTextColor="rgba(69,71,75,0.5)" />
+              <Text style={styles.label}>{t('shopAddress')}</Text>
+              <TextInput style={styles.input} value={address} onChangeText={setAddress} placeholder={t('shopAddressPlaceholder')} placeholderTextColor="rgba(69,71,75,0.5)" />
 
-              <Text style={styles.label}>Banner URL (optional)</Text>
-              <TextInput style={styles.input} value={bannerUrl} onChangeText={setBannerUrl} placeholder="https://example.com/banner.jpg" placeholderTextColor="rgba(69,71,75,0.5)" />
+              <Text style={styles.label}>{t('uploadShopBanner')}</Text>
+              <TextInput style={styles.input} value={bannerUrl} onChangeText={setBannerUrl} placeholder={t('dragDropOrClick')} placeholderTextColor="rgba(69,71,75,0.5)" />
 
               <View style={styles.formActions}>
                 <TouchableOpacity
@@ -236,7 +238,7 @@ export default function VendorApplyScreen() {
                   onPress={() => router.back()}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                  <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.submitBtn, (loading || vvipStatus === null) && { opacity: 0.6 }]}
@@ -245,7 +247,7 @@ export default function VendorApplyScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={styles.submitBtnText}>
-                    {loading ? 'Processing...' : vvipStatus ? 'Create Vendor Profile (Free)' : 'Pay Tk 700 & Create'}
+                    {loading ? t('processing') : vvipStatus ? t('createVendorProfileFree') : t('payAndCreateVendorProfile')}
                   </Text>
                 </TouchableOpacity>
               </View>

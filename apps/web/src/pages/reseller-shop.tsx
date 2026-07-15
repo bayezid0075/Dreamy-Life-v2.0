@@ -5,11 +5,13 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ShopPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const { accessToken } = useAuthStore();
   const { items, addItem } = useCartStore();
   const [products, setProducts] = useState<any[]>([]);
@@ -62,19 +64,19 @@ export default function ShopPage() {
   };
 
   const categories = [
-    { key: '', label: 'All' },
-    { key: 'home_decor', label: 'Home Decor' },
-    { key: 'furniture', label: 'Furniture' },
-    { key: 'lighting', label: 'Lighting' },
-    { key: 'textiles', label: 'Textiles' },
-    { key: 'seating', label: 'Seating' },
-    { key: 'tables', label: 'Tables' },
-    { key: 'decor', label: 'Decor' },
+    { key: '', label: t('all') },
+    { key: 'home_decor', label: t('homeDecor') },
+    { key: 'furniture', label: t('furniture') },
+    { key: 'lighting', label: t('lighting') },
+    { key: 'textiles', label: t('textiles') },
+    { key: 'seating', label: t('seating') },
+    { key: 'tables', label: t('tables') },
+    { key: 'decor', label: t('decor') },
   ];
 
   return (
     <AuthGuard>
-      <Head><title>Shop - Dreamy Life</title></Head>
+      <Head><title>{t('shopTitle')}</title></Head>
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -117,7 +119,7 @@ export default function ShopPage() {
             <section className="mb-8">
               <div className="flex justify-between items-end">
                 <h2 className="text-[40px] md:text-[64px] font-extrabold text-[#1c1b1b] max-w-[80%] leading-tight" style={{ fontFamily: 'Plus Jakarta Sans', letterSpacing: '-0.02em' }}>
-                  Find the one you prefer.
+                  {t('findWhatYouPrefer')}
                 </h2>
                 <button onClick={() => setSearchOpen(!searchOpen)} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors mb-2" style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.3)' }}>
                   <span className="material-symbols-outlined text-[28px]">search</span>
@@ -131,11 +133,11 @@ export default function ShopPage() {
                 <form onSubmit={handleSearch} className="flex gap-3">
                   <div className="flex-1 flex items-center rounded-full px-6 py-3" style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.3)' }}>
                     <span className="material-symbols-outlined text-[#45474b] mr-3 opacity-60">search</span>
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..."
+                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={t('searchProducts')}
                       className="bg-transparent border-none outline-none text-base text-[#1c1b1b] w-full placeholder:text-[#45474b]/50" />
                   </div>
                   <button type="submit" className="px-6 py-3 rounded-full bg-[#1c1b1b] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                    Search
+                    {t('search')}
                   </button>
                 </form>
               </section>
@@ -166,7 +168,7 @@ export default function ShopPage() {
             ) : products.length === 0 ? (
               <div className="text-center py-20">
                 <span className="material-symbols-outlined text-6xl text-[#5d5e64]/20">inventory_2</span>
-                <p className="text-[#45474b] mt-4 font-semibold">No products found</p>
+                <p className="text-[#45474b] mt-4 font-semibold">{t('noProductsFound')}</p>
               </div>
             ) : (
               <section className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
@@ -192,7 +194,7 @@ export default function ShopPage() {
                       )}
                       {product.stock <= 0 && (
                         <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(4px)' }}>
-                          <span className="text-xs font-bold text-[#93000a] bg-[#ffdad6] px-3 py-1 rounded-full">Out of Stock</span>
+                          <span className="text-xs font-bold text-[#93000a] bg-[#ffdad6] px-3 py-1 rounded-full">{t('outOfStock')}</span>
                         </div>
                       )}
                     </div>
