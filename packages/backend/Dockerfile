@@ -46,5 +46,8 @@ COPY --from=builder /app/packages/backend/src/infrastructure/database/schema.ts 
 COPY --from=builder /app/packages/backend/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
+# Create logs directory for error file logging
+RUN mkdir -p /app/logs
+
 EXPOSE 4000
 CMD ["./docker-entrypoint.sh"]

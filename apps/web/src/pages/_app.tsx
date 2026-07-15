@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { I18nProvider } from '@/i18n';
 import { useNotificationSocket } from '@/hooks/useNotificationSocket';
+import ErrorBoundary from '@/shared/components/ErrorBoundary';
 import '@/styles/globals.css';
 
 const queryClient = new QueryClient();
@@ -19,12 +20,14 @@ export default function App({ Component, pageProps }: AppProps) {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <NotificationSocketProvider>
-          <Component {...pageProps} />
-        </NotificationSocketProvider>
-      </I18nProvider>
-    </QueryClientProvider>
+    <ErrorBoundary source="frontend-web">
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <NotificationSocketProvider>
+            <Component {...pageProps} />
+          </NotificationSocketProvider>
+        </I18nProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

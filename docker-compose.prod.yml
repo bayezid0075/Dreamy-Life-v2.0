@@ -65,6 +65,7 @@ services:
       - REDIS_PORT=6379
       - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       - FRONTEND_URL=http://${VPS_HOST}
+      - ERROR_LOG_DIR=/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,6 +73,8 @@ services:
         condition: service_healthy
     env_file:
       - packages/backend/.env
+    volumes:
+      - backend-logs:/app/logs
     deploy:
       resources:
         limits:
@@ -123,3 +126,4 @@ services:
 
 volumes:
   pgdata:
+  backend-logs:

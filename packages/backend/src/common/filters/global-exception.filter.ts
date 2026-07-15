@@ -1,6 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import * as Sentry from '@sentry/nestjs';
+import { FileLoggerService } from '../../logger/file-logger.service';
 
 export interface StandardErrorResponse {
   success: boolean;
@@ -19,6 +20,8 @@ const allowedOrigins = [
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly fileLogger = new FileLoggerService();
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -58,6 +61,19 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
       console.error(`[Error] ${request.method} ${request.url}`, exception);
       Sentry.captureException(exception);
+
+      // Write to error file
+      this.fileLogger.logError({
+        source: 'backend',
+        type: exception instanceof Error ? exception.constructor.name : 'unknown',
+        message: message,
+        stack: exception instanceof Error ? exception.stack : undefined,
+        request: {
+          method: request.method,
+          url: request.url,
+          ip: request.ip,
+        },
+      });
     }
 
     response.status(status).json(errorResponse);
