@@ -209,7 +209,7 @@ export default function DrivePackConfigPage() {
           Buyer Commission (Cashback)
         </h2>
         <p className="text-on-surface-variant text-sm mb-4">
-          Percentage of drive pack amount credited back to the buyer's wallet after successful purchase
+          Percentage of drive pack amount credited back to the buyer&apos;s wallet after successful purchase
         </p>
         <div className="flex items-center gap-3">
           <input

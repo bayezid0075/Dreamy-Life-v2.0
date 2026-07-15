@@ -9,6 +9,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -24,17 +25,17 @@ interface Post {
   authorAvatar?: string;
 }
 
-function getTimeAgo(dateStr: string): string {
+function getTimeAgo(dateStr: string, t: (key: any) => string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
+  if (diffMin < 1) return t('justNow');
+  if (diffMin < 60) return `${diffMin}${t('minuteAgo')}`;
+  if (diffHr < 24) return `${diffHr}${t('hourAgo')}`;
+  if (diffDay < 7) return `${diffDay}${t('dayAgo')}`;
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -61,6 +62,7 @@ export default function FeedPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
+  const { t } = useI18n();
 
   const fetchPosts = useCallback(
     async (pageNum: number, append = false) => {
@@ -194,7 +196,7 @@ export default function FeedPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Dreamy Life - Feed</title>
+        <title>{t('feedTitle')}</title>
       </Head>
       <style>{`
         body { background-color: #fcf9f8; position: relative; min-height: 100vh; overflow-x: hidden; }
@@ -264,21 +266,21 @@ export default function FeedPage() {
               onClick={() => setComposerOpen(true)}
               className="bg-[#f6f3f2]/60 hover:bg-[#f6f3f2] transition-colors rounded-full px-5 py-2.5 flex-grow text-left cursor-pointer text-[#45474b] text-[15px]"
             >
-              What&apos;s on your mind?
+              {t('whatsOnYourMind')}
             </button>
           </div>
           <div className="flex justify-between items-center px-1">
             <button className="flex-1 flex justify-center items-center gap-2 text-[#45474b] hover:text-[#ba1a1a] transition-colors py-2 rounded-lg hover:bg-[#ffdad6]/30">
               <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontVariationSettings: "'FILL' 1" }}>videocam</span>
-              <span className="text-sm font-semibold">Live</span>
+               <span className="text-sm font-semibold">{t('live')}</span>
             </button>
             <button onClick={() => setComposerOpen(true)} className="flex-1 flex justify-center items-center gap-2 text-[#45474b] hover:text-[#2d666d] transition-colors py-2 rounded-lg hover:bg-[#e9fdff]/40">
               <span className="material-symbols-outlined text-[#2d666d]" style={{ fontVariationSettings: "'FILL' 1" }}>photo_library</span>
-              <span className="text-sm font-semibold">Photo</span>
+              <span className="text-sm font-semibold">{t('photo')}</span>
             </button>
             <button className="flex-1 flex justify-center items-center gap-2 text-[#45474b] hover:text-[#78555e] transition-colors py-2 rounded-lg hover:bg-[#ffd1dc]/30">
               <span className="material-symbols-outlined text-[#78555e]" style={{ fontVariationSettings: "'FILL' 1" }}>video_call</span>
-              <span className="text-sm font-semibold">Room</span>
+              <span className="text-sm font-semibold">{t('room')}</span>
             </button>
           </div>
         </section>
@@ -293,7 +295,7 @@ export default function FeedPage() {
                 : 'glass-card text-[#45474b] hover:bg-white/70'
             }`}
           >
-            All Posts
+            {t('allPosts')}
           </button>
           <button
             onClick={() => setFeedType('friends')}
@@ -315,7 +317,7 @@ export default function FeedPage() {
           {posts.length === 0 && (
             <div className="glass-card rounded-2xl p-12 text-center mx-4 sm:mx-0">
               <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">post_add</span>
-              <p className="text-[#45474b] text-lg">No posts yet. Be the first to share something!</p>
+               <p className="text-[#45474b] text-lg">{t('noPostsYet')}</p>
             </div>
           )}
 
@@ -334,7 +336,7 @@ export default function FeedPage() {
                   <div>
                     <h3 className="text-[15px] text-[#1c1b1b] font-bold hover:underline cursor-pointer">{post.authorName}</h3>
                     <div className="flex items-center gap-1 text-[#45474b] text-[13px]">
-                      <p>{getTimeAgo(post.createdAt)}</p>
+                       <p>{getTimeAgo(post.createdAt, t)}</p>
                       <span className="text-[10px]">&bull;</span>
                       <span className="material-symbols-outlined text-[14px]">public</span>
                     </div>
@@ -375,7 +377,7 @@ export default function FeedPage() {
                 </div>
                 <div className="flex gap-3">
                   {post.commentsCount > 0 && (
-                    <Link href={`/posts/${post.id}`} className="hover:underline">{post.commentsCount} comments</Link>
+                    <Link href={`/posts/${post.id}`} className="hover:underline">{post.commentsCount} {t('comments')}</Link>
                   )}
                 </div>
               </div>
@@ -387,18 +389,18 @@ export default function FeedPage() {
                   className="flex-1 flex justify-center items-center gap-2 py-2 rounded-lg text-[#45474b] hover:bg-[#e5e2e1]/30 transition-colors group"
                 >
                   <span className="material-symbols-outlined group-hover:scale-110 transition-transform">thumb_up</span>
-                  <span className="text-[14px] font-semibold">Like</span>
+                   <span className="text-[14px] font-semibold">{t('like')}</span>
                 </button>
                 <Link
                   href={`/posts/${post.id}`}
                   className="flex-1 flex justify-center items-center gap-2 py-2 rounded-lg text-[#45474b] hover:bg-[#e5e2e1]/30 transition-colors group"
                 >
                   <span className="material-symbols-outlined group-hover:scale-110 transition-transform">chat_bubble_outline</span>
-                  <span className="text-[14px] font-semibold">Comment</span>
+                   <span className="text-[14px] font-semibold">{t('comment')}</span>
                 </Link>
                 <button className="flex-1 flex justify-center items-center gap-2 py-2 rounded-lg text-[#45474b] hover:bg-[#e5e2e1]/30 transition-colors group">
                   <span className="material-symbols-outlined group-hover:scale-110 transition-transform">share</span>
-                  <span className="text-[14px] font-semibold">Share</span>
+                   <span className="text-[14px] font-semibold">{t('share')}</span>
                 </button>
               </div>
             </article>
@@ -407,9 +409,9 @@ export default function FeedPage() {
           {hasMore && posts.length > 0 && (
             <button
               onClick={() => { const next = page + 1; setPage(next); fetchPosts(next, true); }}
-              className="glass-card rounded-2xl py-3 text-center text-sm font-semibold text-[#2d666d] hover:bg-white/70 transition-colors mx-4 sm:mx-0"
-            >
-              Load more
+               className="glass-card rounded-2xl py-3 text-center text-sm font-semibold text-[#2d666d] hover:bg-white/70 transition-colors mx-4 sm:mx-0"
+             >
+               {t('loadMore')}
             </button>
           )}
         </div>
@@ -421,14 +423,14 @@ export default function FeedPage() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setComposerOpen(false)} />
           <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e2e1]/40">
-              <button onClick={() => setComposerOpen(false)} className="text-[#45474b] hover:text-[#1c1b1b] font-semibold">Cancel</button>
-              <h2 className="font-bold text-[#1c1b1b]">Create Post</h2>
+              <button onClick={() => setComposerOpen(false)} className="text-[#45474b] hover:text-[#1c1b1b] font-semibold">{t('cancel')}</button>
+              <h2 className="font-bold text-[#1c1b1b]">{t('createPost')}</h2>
               <button
                 onClick={handleCreatePost}
                 disabled={posting || (!postContent.trim() && !selectedFile)}
                 className="text-[#2d666d] font-bold disabled:opacity-40"
               >
-                {posting ? 'Posting...' : 'Post'}
+                {posting ? t('posting') : t('post')}
               </button>
             </div>
             <div className="p-4">
@@ -441,7 +443,7 @@ export default function FeedPage() {
               <textarea
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
-                placeholder="What's on your mind?"
+                placeholder={t('whatsOnYourMind')}
                 className="w-full min-h-[120px] bg-transparent border-none focus:ring-0 text-[#1c1b1b] text-[15px] placeholder:text-[#45474b]/50 resize-none outline-none"
                 autoFocus
               />
@@ -460,7 +462,7 @@ export default function FeedPage() {
             <div className="border-t border-[#e5e2e1]/40 px-4 py-3 flex items-center gap-4">
               <label className="flex items-center gap-2 text-[#2d666d] hover:text-[#1c1b1b] cursor-pointer transition-colors">
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>photo_library</span>
-                <span className="text-sm font-semibold">Photo</span>
+                <span className="text-sm font-semibold">{t('photo')}</span>
                 <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
               </label>
             </div>

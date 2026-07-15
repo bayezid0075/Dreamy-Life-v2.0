@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useI18n } from '../i18n';
 
 interface OfferPack {
   _operator: string;
@@ -102,6 +103,7 @@ export default function DrivePackPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOperator, setSelectedOperator] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const { t } = useI18n();
 
   useEffect(() => {
     if (accessToken) fetchPacks();
@@ -132,7 +134,7 @@ export default function DrivePackPage() {
       const key = getOperatorKey(pack._operator);
       if (!seen.has(key)) seen.set(key, pack._operator);
     });
-    const list: OperatorFilter[] = [{ id: 'ALL', name: 'All Operators', color: '#45474b', bg: '#e5e2e9' }];
+    const list: OperatorFilter[] = [{ id: 'ALL', name: t('allOperators'), color: '#45474b', bg: '#e5e2e9' }];
     seen.forEach((name, id) => {
       const info = getOperatorInfo(id, name);
       list.push({ id, name: info.name, color: info.color, bg: info.bg });
@@ -145,12 +147,12 @@ export default function DrivePackPage() {
     packs.forEach((pack) => {
       if (pack._offer_type) seen.add(pack._offer_type);
     });
-    const list: CategoryFilter[] = [{ id: 'ALL', name: 'All Packs' }];
+    const list: CategoryFilter[] = [{ id: 'ALL', name: t('allPacks') }];
     seen.forEach((id) => {
-      list.push({ id, name: getCategoryLabel(id) });
+      list.push({ id, name: t(getCategoryLabel(id).toLowerCase() as any) || getCategoryLabel(id) });
     });
     return list;
-  }, [packs]);
+  }, [packs, t]);
 
   const filteredPacks = useMemo(() => {
     return packs.filter((pack) => {
@@ -176,7 +178,7 @@ export default function DrivePackPage() {
   return (
     <AuthGuard>
       <Head>
-        <title>Drive Pack - Dreamy Life</title>
+        <title>{t('drivePackTitle')}</title>
       </Head>
       <style>{`
         body { min-height: max(884px, 100dvh); }
@@ -202,7 +204,7 @@ export default function DrivePackPage() {
           <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Drive Pack</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('drivePackTitle').split(' - ')[0]}</h1>
           <Link href="/drive-pack/history" className="w-10 h-10 rounded-full flex items-center justify-center bg-white/50 border border-white/40 shadow-sm text-[#45474b]">
             <span className="material-symbols-outlined">history</span>
           </Link>
@@ -213,7 +215,7 @@ export default function DrivePackPage() {
           <Link href="/dashboard" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
-          <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">Drive Pack</div>
+           <div className="text-lg font-extrabold tracking-tight text-[#1c1b1b]">{t('drivePackTitle').split(' - ')[0]}</div>
           <Link href="/drive-pack/history" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors text-[#45474b]">
             <span className="material-symbols-outlined">history</span>
           </Link>
@@ -275,7 +277,7 @@ export default function DrivePackPage() {
           )}
 
           {/* Pack Count */}
-          <p className="text-xs font-semibold text-[#45474b]/60">{filteredPacks.length} packs found</p>
+          <p className="text-xs font-semibold text-[#45474b]/60">{t('packsFound').replace('{count}', String(filteredPacks.length))}</p>
 
           {/* Pack Cards */}
           {loading ? (
@@ -285,8 +287,8 @@ export default function DrivePackPage() {
           ) : filteredPacks.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-4xl mb-4">📭</p>
-              <p className="text-lg font-bold text-[#45474b] mb-2">No Packs Found</p>
-              <p className="text-sm text-[#45474b]/50">Try a different operator or category filter.</p>
+               <p className="text-lg font-bold text-[#45474b] mb-2">{t('noPacksFound')}</p>
+               <p className="text-sm text-[#45474b]/50">{t('tryDifferentOperatorFilter')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -326,7 +328,7 @@ export default function DrivePackPage() {
                       {pack._minute_pack && pack._minute_pack !== '0' && pack._minute_pack !== '' && (
                         <div className="flex items-center gap-1.5">
                           <span>📞</span>
-                          <span className="text-sm font-semibold text-[#1c1b1b]">{pack._minute_pack} Min</span>
+                           <span className="text-sm font-semibold text-[#1c1b1b]">{pack._minute_pack} {t('min')}</span>
                         </div>
                       )}
                       {pack._internet_pack && pack._internet_pack !== '0' && pack._internet_pack !== '' && (
@@ -338,7 +340,7 @@ export default function DrivePackPage() {
                       {pack._sms_pack && pack._sms_pack !== '0' && pack._sms_pack !== '' && (
                         <div className="flex items-center gap-1.5">
                           <span>💬</span>
-                          <span className="text-sm font-semibold text-[#1c1b1b]">{pack._sms_pack} SMS</span>
+                           <span className="text-sm font-semibold text-[#1c1b1b]">{pack._sms_pack} {t('sms')}</span>
                         </div>
                       )}
                     </div>
@@ -352,14 +354,14 @@ export default function DrivePackPage() {
                       <div>
                         <span className="text-xl font-extrabold text-[#1c1b1b]">৳{pack._amount}</span>
                         {pack._commission_amount && pack._commission_amount !== '0' && (
-                          <span className="ml-2 text-xs font-semibold text-[#0d9488]">Earn ৳{pack._commission_amount}</span>
+                           <span className="ml-2 text-xs font-semibold text-[#0d9488]">{t('earn')} ৳{pack._commission_amount}</span>
                         )}
                       </div>
                       <button
                         onClick={() => handleBuyPack(pack)}
                         className="px-6 py-2.5 rounded-full bg-[#ff5c26] text-white text-sm font-bold hover:bg-[#e8521e] transition-all shadow-[0_4px_14px_rgba(255,92,38,0.3)] hover:shadow-[0_6px_20px_rgba(255,92,38,0.4)] active:scale-95"
                       >
-                        Get Pack
+                        {t('getPack')}
                       </button>
                     </div>
                   </div>

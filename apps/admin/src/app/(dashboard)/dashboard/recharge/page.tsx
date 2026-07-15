@@ -321,7 +321,7 @@ export default function RechargeConfigPage() {
           User Commission
         </h2>
         <p className="text-on-surface-variant text-sm mb-3">
-          Percentage of recharge amount credited back to the user's wallet
+          Percentage of recharge amount credited back to the user&apos;s wallet
         </p>
         <div className="flex items-center gap-2">
           <input
