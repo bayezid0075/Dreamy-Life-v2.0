@@ -129,14 +129,14 @@ jobs:
             echo ">>> Waiting for health check (migrations may take a minute)..."
             for i in 1 2 3 4 5 6; do
               sleep 15
-              if curl -sf http://localhost:4000/health; then
+              if curl -sf http://localhost:4000/; then
                 echo ">>> Backend is healthy!"
                 break
               fi
               echo ">>> Attempt $i/6 - backend not ready yet, waiting..."
             done
 
-            curl -sf http://localhost:4000/health || \
+            curl -sf http://localhost:4000/ || \
               (echo ">>> Backend health check failed after 90s!" && \
                docker compose -f docker-compose.prod.yml logs backend --tail=50 && \
                exit 1)
