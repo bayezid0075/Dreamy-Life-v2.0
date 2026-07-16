@@ -13,6 +13,9 @@ cd "$APP_DIR"
 echo "=== Pulling latest code ==="
 git pull origin master
 
+echo "=== Pulling latest images from GHCR ==="
+docker compose -f "$COMPOSE_FILE" pull --ignore-buildable || true
+
 echo "=== Building (low-memory mode) ==="
 COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
   docker compose -f "$COMPOSE_FILE" build \
@@ -25,13 +28,16 @@ echo "=== Pruning old images ==="
 docker image prune -f
 
 echo "=== Waiting for health check ==="
-sleep 10
+sleep 15
 
-if curl -sf http://localhost:4000/health > /dev/null 2>&1; then
+if curl -sf http://localhost:4000/ > /dev/null 2>&1; then
   echo "Backend is healthy!"
 else
   echo "WARNING: Backend health check failed. Checking logs..."
-  docker compose -f "$COMPOSE_FILE" logs backend --tail=20
+  docker compose -f "$COMPOSE_FILE" logs backend --tail=30
 fi
+
+echo "=== Container status ==="
+docker compose -f "$COMPOSE_FILE" ps
 
 echo "=== Done ==="

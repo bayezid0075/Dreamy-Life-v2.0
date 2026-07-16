@@ -32,6 +32,9 @@ RUN /app/node_modules/.bin/tsc -p /app/packages/shared-types/tsconfig.json && \
 FROM node:20-bookworm-slim
 WORKDIR /app
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # Copy built assets and node_modules from builder
 COPY --from=builder /app/packages/backend/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
@@ -45,6 +48,9 @@ COPY --from=builder /app/packages/backend/src/infrastructure/database/schema.ts 
 # Copy entrypoint script (runs migrations then starts server)
 COPY --from=builder /app/packages/backend/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
+
+# Copy Firebase private key if it exists (optional — push notifications won't work without it)
+COPY --from=builder /app/packages/backend/firebase-private-key.pem ./firebase-private-key.pem
 
 # Create logs directory for error file logging
 RUN mkdir -p /app/logs

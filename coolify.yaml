@@ -5,4 +5,4 @@
 service: dreamy-life-backend
 environment: production
 deploy_strategy: rolling-update
-health_check: /health
+health_check: /
