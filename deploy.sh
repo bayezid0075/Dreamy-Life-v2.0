@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Dreamy Life — VPS Deploy
-# Run on VPS: bash deploy.sh
-# Flow: pull → build → migrate → restart → health check
+# Dreamy Life — VPS Deploy (Fast Mode)
+# Build on PC, pull on VPS. Total VPS time: ~2 minutes.
+# Usage: bash deploy.sh
 # =============================================================================
 set -euo pipefail
 
@@ -12,36 +12,58 @@ COMPOSE="docker compose -f docker-compose.prod.yml"
 cd "$APP_DIR"
 
 echo "==========================================="
-echo "  Dreamy Life Deploy"
+echo "  Dreamy Life Deploy (Fast Mode)"
 echo "==========================================="
 
-# ── Step 0: Ensure swap exists (critical for 1-core / 2GB VPS) ──────────
+# ── Step 0: Ensure swap (one-time, critical for 2GB VPS) ────────────────
 if [ ! -f /swapfile ]; then
-  echo ">>> No swap found. Creating 2GB swap (one-time setup)..."
+  echo ">>> Creating 2GB swap (one-time)..."
   fallocate -l 2G /swapfile
   chmod 600 /swapfile
   mkswap /swapfile
   swapon /swapfile
   echo '/swapfile none swap sw 0 0' >> /etc/fstab
-  echo ">>> Swap created."
   free -h
 fi
 
-# ── Step 1: Pull latest code ────────────────────────────────────────────
-echo ">>> [1/5] Pulling latest code..."
+# ── Step 1: Pre-flight checks ──────────────────────────────────────────
+echo ">>> [1/6] Pre-flight checks..."
+
+# Disk space check (need at least 2GB free)
+DISK_FREE=$(df -BG / | awk 'NR==2 {print $4}' | tr -d 'G')
+if [ "$DISK_FREE" -lt 2 ]; then
+  echo ">>> WARNING: Only ${DISK_FREE}GB disk free. Cleaning up..."
+  docker system prune -f
+  docker builder prune -f
+fi
+
+# Memory check
+MEM_AVAIL=$(free -m | awk '/Mem:/ {print $7}')
+if [ "$MEM_AVAIL" -lt 200 ]; then
+  echo ">>> WARNING: Only ${MEM_AVAIL}MB memory available."
+  echo ">>> Consider stopping non-essential services."
+fi
+
+echo ">>> Disk: ${DISK_FREE}GB free | Memory: ${MEM_AVAIL}MB available"
+
+# ── Step 2: Pull latest code ────────────────────────────────────────────
+echo ">>> [2/6] Pulling latest code..."
 git pull origin master
 
-# ── Step 2: Build images ───────────────────────────────────────────────
-echo ">>> [2/5] Building images (5-10 min on 1-core VPS)..."
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
-  $COMPOSE build --build-arg NODE_OPTIONS="--max-old-space-size=512"
+# ── Step 3: Pull pre-built images from GHCR ─────────────────────────────
+echo ">>> [3/6] Pulling images from GHCR..."
+$COMPOSE pull migrate backend web admin
 
-# ── Step 3: Restart containers ──────────────────────────────────────────
-echo ">>> [3/5] Restarting containers..."
+# ── Step 4: Run migrations ──────────────────────────────────────────────
+echo ">>> [4/6] Running database migrations..."
+$COMPOSE run --rm migrate
+
+# ── Step 5: Restart all services ────────────────────────────────────────
+echo ">>> [5/6] Restarting services..."
 $COMPOSE up -d --remove-orphans
 
-# ── Step 4: Health check (backend runs migrations on startup) ───────────
-echo ">>> [4/5] Waiting for backend (migrations running inside container)..."
+# ── Step 6: Health check ────────────────────────────────────────────────
+echo ">>> [6/6] Health check..."
 for i in $(seq 1 12); do
   sleep 10
   if curl -sf http://localhost:4000/ > /dev/null 2>&1; then
@@ -57,9 +79,10 @@ for i in $(seq 1 12); do
   fi
 done
 
-# ── Step 5: Cleanup ─────────────────────────────────────────────────────
-echo ">>> [5/5] Cleaning up old Docker images..."
+# ── Cleanup ─────────────────────────────────────────────────────────────
+echo ">>> Cleaning up..."
 docker image prune -f
+docker builder prune -f 2>/dev/null || true
 
 echo ""
 echo "==========================================="

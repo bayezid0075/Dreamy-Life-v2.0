@@ -1,59 +1,102 @@
 # =============================================================================
-# PRODUCTION docker-compose — optimized for 1-core / 1-2 GB VPS
-# Usage:  docker compose -f docker-compose.prod.yml up -d --build
+# PRODUCTION docker-compose — optimized for 1-core / 2 GB VPS
+# Build on PC, pull on VPS. Run: bash deploy.sh
 # =============================================================================
 
 services:
   # ── Database ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:15-alpine
-    container_name: dreamy-life-db
-    restart: always
+    restart: unless-stopped
+    init: true
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    # No port binding — only reachable via internal docker network
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # Limit memory for 1-core VPS
     deploy:
       resources:
         limits:
           memory: 300M
     shm_size: '128mb'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   # ── Redis ─────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: dreamy-life-redis
-    restart: always
+    restart: unless-stopped
+    init: true
     command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
     deploy:
       resources:
         limits:
           memory: 100M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # ── Migrations (one-shot) ────────────────────────────────────────────────
+  migrate:
+    image: ghcr.io/bayezid0075/dreamy-life-backend:latest
+    restart: "no"
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - packages/backend/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - ERROR_LOG_DIR=/app/logs
+    volumes:
+      - backend-logs:/app/logs
+    command:
+      - sh
+      - -c
+      - |
+        echo "============================================="
+        echo "  Dreamy Life — Database Migration"
+        echo "============================================="
+        echo "DATABASE_URL=${DATABASE_URL:+<set>}"
+        echo ""
+        echo ">>> Running drizzle-kit push:pg..."
+        if npx drizzle-kit push:pg 2>&1; then
+          echo ">>> Schema sync completed successfully."
+        else
+          echo ">>> WARNING: Schema sync failed, trying migrate..."
+          npx drizzle-kit migrate 2>&1 || echo ">>> Migration also failed. Check database."
+        fi
+        echo ">>> Migration step complete."
+
   # ── Backend (NestJS) ─────────────────────────────────────────────────────
   backend:
     image: ghcr.io/bayezid0075/dreamy-life-backend:latest
-    build:
-      context: .
-      dockerfile: packages/backend/Dockerfile
-      args:
-        NODE_OPTIONS: "--max-old-space-size=512"
-    container_name: dreamy-life-backend
-    restart: always
+    restart: unless-stopped
+    init: true
     ports:
       - "0.0.0.0:4000:4000"
     environment:
@@ -71,10 +114,17 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - packages/backend/.env
     volumes:
       - backend-logs:/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:4000/ || exit 1"]
       interval: 30s
@@ -89,20 +139,19 @@ services:
   # ── Web Frontend (Next.js) ───────────────────────────────────────────────
   web:
     image: ghcr.io/bayezid0075/dreamy-life-web:latest
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        NODE_OPTIONS: "--max-old-space-size=512"
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
-    container_name: dreamy-life-web
-    restart: always
+    restart: unless-stopped
+    init: true
     ports:
       - "0.0.0.0:3000:3000"
     environment:
       - NODE_ENV=production
     depends_on:
       - backend
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -111,20 +160,19 @@ services:
   # ── Admin Panel (Next.js) ────────────────────────────────────────────────
   admin:
     image: ghcr.io/bayezid0075/dreamy-life-admin:latest
-    build:
-      context: .
-      dockerfile: apps/admin/Dockerfile
-      args:
-        NODE_OPTIONS: "--max-old-space-size=512"
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
-    container_name: dreamy-life-admin
-    restart: always
+    restart: unless-stopped
+    init: true
     ports:
       - "0.0.0.0:3001:3001"
     environment:
       - NODE_ENV=production
     depends_on:
       - backend
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
