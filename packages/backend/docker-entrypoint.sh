@@ -12,11 +12,16 @@ echo "ERROR_LOG_DIR=$ERROR_LOG_DIR"
 
 cd /app
 
-echo ">>> Running database migrations..."
-if npx drizzle-kit migrate 2>&1; then
-  echo ">>> Migrations completed successfully."
+echo ">>> Syncing database schema..."
+if npx drizzle-kit push:pg 2>&1; then
+  echo ">>> Schema sync completed successfully."
 else
-  echo ">>> WARNING: Migrations failed (exit $?), continuing anyway..."
+  echo ">>> WARNING: Schema sync failed (exit $?), trying migration fallback..."
+  if npx drizzle-kit migrate 2>&1; then
+    echo ">>> Migration fallback completed."
+  else
+    echo ">>> ERROR: Both push and migrate failed. Starting server anyway..."
+  fi
 fi
 
 echo ">>> Starting backend server..."
