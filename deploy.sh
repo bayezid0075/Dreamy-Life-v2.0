@@ -64,6 +64,18 @@ $COMPOSE pull migrate backend web admin
 echo ">>> [4/6] Starting database and running migrations..."
 $COMPOSE up -d postgres redis
 sleep 10
+
+# Verify postgres accepts our password — if not, volume has stale creds
+echo ">>> Verifying database connection..."
+if ! docker run --rm --network "prod_default" postgres:15-alpine \
+  psql "postgresql://postgres:2516@postgres:5432/dreamy_life" -c "SELECT 1;" >/dev/null 2>&1; then
+  echo ">>> Postgres rejected password. Volume has stale credentials."
+  echo ">>> Recreating database volume (no real data yet)..."
+  $COMPOSE down -v
+  $COMPOSE up -d postgres redis
+  sleep 15
+fi
+
 $COMPOSE run --rm migrate
 
 # ── Step 5: Restart all services ────────────────────────────────────────
