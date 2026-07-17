@@ -12,11 +12,13 @@ export interface StandardErrorResponse {
   };
 }
 
-const allowedOrigins = [
+const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:8081',
 ];
+const envOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(s => s.trim()) : [];
+const allowedOrigins = [...defaultOrigins, ...envOrigins];
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {

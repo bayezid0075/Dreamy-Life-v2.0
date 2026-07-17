@@ -110,7 +110,7 @@ services:
       - DB_NAME=dl_data
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - FRONTEND_URL=http://bayezid.dreamy-life.com
+      - FRONTEND_URL=http://107.167.94.254:3000,http://107.167.94.254:3001,http://bayezid.dreamy-life.com
       - ERROR_LOG_DIR=/app/logs
     depends_on:
       postgres:
