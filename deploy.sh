@@ -7,7 +7,7 @@
 set -euo pipefail
 
 APP_DIR="/root/Dreamy-Life-v2.0"
-COMPOSE="docker compose -f docker-compose.prod.yml"
+COMPOSE="docker compose -p prod -f docker-compose.prod.yml"
 
 cd "$APP_DIR"
 
@@ -26,10 +26,17 @@ if [ ! -f /swapfile ]; then
   free -h
 fi
 
-# ── Step 1: Pre-flight checks ──────────────────────────────────────────
+# ── Step 1: Pre-flight checks + stop conflicting containers ─────────────
 echo ">>> [1/6] Pre-flight checks..."
 
-# Disk space check (need at least 2GB free)
+# Stop dev containers if running (prevents network conflicts)
+echo ">>> Stopping dev containers (if any)..."
+docker compose -f docker-compose.yml down 2>/dev/null || true
+
+# Stop old prod containers without -p flag (from previous deploys)
+docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+
+# Disk space check
 DISK_FREE=$(df -BG / | awk 'NR==2 {print $4}' | tr -d 'G')
 if [ "$DISK_FREE" -lt 2 ]; then
   echo ">>> WARNING: Only ${DISK_FREE}GB disk free. Cleaning up..."
@@ -41,7 +48,6 @@ fi
 MEM_AVAIL=$(free -m | awk '/Mem:/ {print $7}')
 if [ "$MEM_AVAIL" -lt 200 ]; then
   echo ">>> WARNING: Only ${MEM_AVAIL}MB memory available."
-  echo ">>> Consider stopping non-essential services."
 fi
 
 echo ">>> Disk: ${DISK_FREE}GB free | Memory: ${MEM_AVAIL}MB available"
@@ -54,12 +60,14 @@ git pull origin master
 echo ">>> [3/6] Pulling images from GHCR..."
 $COMPOSE pull migrate backend web admin
 
-# ── Step 4: Run migrations ──────────────────────────────────────────────
-echo ">>> [4/6] Running database migrations..."
+# ── Step 4: Start postgres + redis first, then run migrations ───────────
+echo ">>> [4/6] Starting database and running migrations..."
+$COMPOSE up -d postgres redis
+sleep 10
 $COMPOSE run --rm migrate
 
 # ── Step 5: Restart all services ────────────────────────────────────────
-echo ">>> [5/6] Restarting services..."
+echo ">>> [5/6] Restarting all services..."
 $COMPOSE up -d --remove-orphans
 
 # ── Step 6: Health check ────────────────────────────────────────────────
