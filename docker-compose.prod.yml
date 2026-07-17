@@ -142,6 +142,11 @@ services:
   # ── Web Frontend (Next.js) ───────────────────────────────────────────────
   web:
     image: ghcr.io/bayezid0075/dreamy-life-web:latest
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://bayezid.dreamy-life.com:4000
     restart: unless-stopped
     init: true
     ports:
@@ -163,6 +168,11 @@ services:
   # ── Admin Panel (Next.js) ────────────────────────────────────────────────
   admin:
     image: ghcr.io/bayezid0075/dreamy-life-admin:latest
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://bayezid.dreamy-life.com:4000
     restart: unless-stopped
     init: true
     ports:
