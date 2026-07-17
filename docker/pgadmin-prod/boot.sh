@@ -61,8 +61,8 @@ for attempt in range(10):
             INSERT INTO server (
                 user_id, servergroup_id, name, host, port,
                 maintenance_db, username, save_password, shared,
-                service, bgcolor, fgcolor
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 2, 0, 'pg', NULL, NULL)
+                bgcolor, fgcolor
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 2, 0, NULL, NULL)
         """, (
             user_id, servergroup_id,
             "Dreamy Life DB", "postgres", 5432,
