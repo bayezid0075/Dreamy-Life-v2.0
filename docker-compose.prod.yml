@@ -10,9 +10,9 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-2516}
-      POSTGRES_DB: ${DB_NAME:-dreamy_life}
+      POSTGRES_USER: Dreamy_life
+      POSTGRES_PASSWORD: '@0075Dreamy_Life_DB6915$'
+      POSTGRES_DB: dl_data
     volumes:
       - pgdata:/var/lib/postgresql/data
     deploy:
@@ -26,7 +26,7 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d dreamy_life"]
+      test: ["CMD-SHELL", "pg_isready -U Dreamy_life -d dl_data"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,9 +68,9 @@ services:
       - PORT=4000
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=2516
-      - DB_NAME=dreamy_life
+      - DB_USER=Dreamy_life
+      - DB_PASSWORD=@0075Dreamy_Life_DB6915$
+      - DB_NAME=dl_data
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - ERROR_LOG_DIR=/app/logs
@@ -106,9 +106,9 @@ services:
       - PORT=4000
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=2516
-      - DB_NAME=dreamy_life
+      - DB_USER=Dreamy_life
+      - DB_PASSWORD=@0075Dreamy_Life_DB6915$
+      - DB_NAME=dl_data
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - FRONTEND_URL=http://bayezid.dreamy-life.com

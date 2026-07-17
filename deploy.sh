@@ -67,8 +67,8 @@ sleep 10
 
 # Verify postgres accepts our password — if not, volume has stale creds
 echo ">>> Verifying database connection..."
-if ! docker run --rm --network "prod_default" postgres:15-alpine \
-  psql "postgresql://postgres:2516@postgres:5432/dreamy_life" -c "SELECT 1;" >/dev/null 2>&1; then
+if !   docker run --rm --network "prod_default" -e PGPASSWORD='@0075Dreamy_Life_DB6915$' postgres:15-alpine \
+  psql -h postgres -U Dreamy_life -d dl_data -c "SELECT 1;" >/dev/null 2>&1; then
   echo ">>> Postgres rejected password. Volume has stale credentials."
   echo ">>> Recreating database volume (no real data yet)..."
   $COMPOSE down -v
