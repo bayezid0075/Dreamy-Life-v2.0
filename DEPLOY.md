@@ -17,8 +17,8 @@ VPS: bash deploy.sh → pull → migrate → restart (~2 min)
 ### Step 1: From your PC
 
 ```bash
-# Push code to master
-git push origin master
+# Pull latest code
+git pull origin master
 
 # Build and push images to GHCR
 bash build-and-push.sh
@@ -28,10 +28,11 @@ bash build-and-push.sh
 
 ```bash
 # SSH into VPS
-ssh root@bayezid.dreamy-life.com
+ssh root@107.167.94.254
 
-# Deploy
+# Pull latest code and deploy
 cd /root/Dreamy-Life-v2.0
+git pull origin master
 bash deploy.sh
 ```
 
@@ -118,7 +119,7 @@ This will:
 | 1 | Pre-flight checks (disk, memory) | 1 sec |
 | 2 | `git pull origin master` | 5 sec |
 | 3 | `docker compose pull` — pull images from GHCR | ~30 sec |
-| 4 | `docker compose run --rm migrate` — run drizzle-kit push:pg | ~10 sec |
+| 4 | `docker compose run --rm migrate` — run drizzle-kit migrate + push fallback | ~10 sec |
 | 5 | `docker compose up -d` — restart all services | ~30 sec |
 | 6 | Health check — wait for backend | ~10-30 sec |
 | 7 | Cleanup old images | ~5 sec |
@@ -165,9 +166,9 @@ This will:
 
 | Service | Port | URL |
 |---------|------|-----|
-| Web Frontend | 3000 | http://bayezid.dreamy-life.com:3000 |
-| Admin Panel | 3001 | http://bayezid.dreamy-life.com:3001 |
-| Backend API | 4000 | http://bayezid.dreamy-life.com:4000 |
+| Web Frontend | 3000 | http://107.167.94.254:3000 |
+| Admin Panel | 3001 | http://107.167.94.254:3001 |
+| Backend API | 4000 | http://107.167.94.254:4000 |
 | PostgreSQL | 5432 | internal only |
 | Redis | 6379 | internal only |
 
@@ -182,7 +183,7 @@ This will:
 cat /root/Dreamy-Life-v2.0/logs/errors.json
 
 # View Docker logs
-docker compose -f docker-compose.prod.yml logs backend --tail=100
+docker compose -p prod -f docker-compose.prod.yml logs backend --tail=100
 ```
 
 ### Development errors (on PC)
@@ -198,22 +199,25 @@ cat logs/dev-errors.json
 
 ```bash
 # Check container status
-docker compose -f docker-compose.prod.yml ps
+docker compose -p prod -f docker-compose.prod.yml ps
 
 # View logs (all)
-docker compose -f docker-compose.prod.yml logs -f
+docker compose -p prod -f docker-compose.prod.yml logs -f
 
 # View logs (backend only)
-docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -p prod -f docker-compose.prod.yml logs -f backend
 
 # Restart one service
-docker compose -f docker-compose.prod.yml restart backend
+docker compose -p prod -f docker-compose.prod.yml restart backend
 
 # Stop everything
-docker compose -f docker-compose.prod.yml down
+docker compose -p prod -f docker-compose.prod.yml down
+
+# Stop everything + delete database volume (fresh start)
+docker compose -p prod -f docker-compose.prod.yml down -v
 
 # Manual migration
-docker compose -f docker-compose.prod.yml run --rm migrate
+docker compose -p prod -f docker-compose.prod.yml run --rm migrate
 
 # Check memory
 docker stats --no-stream
@@ -231,10 +235,14 @@ docker system prune -a --volumes
 
 | Problem | Fix |
 |---------|-----|
-| Backend keeps restarting | `docker compose -f docker-compose.prod.yml logs backend` |
+| Backend keeps restarting | `docker compose -p prod -f docker-compose.prod.yml logs backend` |
 | GHCR login failed | Check PAT has `read:packages` + `write:packages` scope |
-| Tables missing | `docker compose -f docker-compose.prod.yml run --rm migrate` |
-| Port already in use | `docker compose -f docker-compose.prod.yml down` then `bash deploy.sh` |
+| Tables missing | `docker compose -p prod -f docker-compose.prod.yml run --rm migrate` |
+| Port already in use | `docker compose -p prod -f docker-compose.prod.yml down` then `bash deploy.sh` |
 | Out of disk space | `docker system prune -a --volumes` (WARNING: deletes everything) |
 | OOM killed | Check swap: `free -h`. Ensure 2GB swap exists. |
 | Build fails on PC | Check Docker Desktop is running. Try `docker system prune`. |
+| CORS errors | Ensure `FRONTEND_URL` in `docker-compose.prod.yml` includes your access origin (IP or domain) |
+| ERR_NAME_NOT_RESOLVED | DNS not configured. Use VPS IP directly: `http://107.167.94.254:3000` |
+| DB auth failed (28P01) | Stale volume. Run: `docker compose -p prod -f docker-compose.prod.yml down -v` then `bash deploy.sh` |
+| Table does not exist (42P01) | Migration didn't run. Run: `docker compose -p prod -f docker-compose.prod.yml run --rm migrate` |
