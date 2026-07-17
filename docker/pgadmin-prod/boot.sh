@@ -62,7 +62,7 @@ for attempt in range(10):
                 user_id, servergroup_id, name, host, port,
                 maintenance_db, username, save_password, shared,
                 service, bgcolor, fgcolor
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 'pg', NULL, NULL)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 2, 0, 'pg', NULL, NULL)
         """, (
             user_id, servergroup_id,
             "Dreamy Life DB", "postgres", 5432,
