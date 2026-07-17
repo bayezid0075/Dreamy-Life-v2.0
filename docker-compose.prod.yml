@@ -191,6 +191,34 @@ services:
         limits:
           memory: 350M
 
+  # ── pgAdmin (Database UI) ────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    init: true
+    ports:
+      - "0.0.0.0:5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@dreamy-life.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin-prod/boot.sh:/pgadmin4/boot.sh
+    entrypoint: ["/bin/bash", "/pgadmin4/boot.sh"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   pgdata:
   backend-logs:
+  pgadmin_data:
