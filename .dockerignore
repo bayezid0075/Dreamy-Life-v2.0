@@ -9,6 +9,7 @@ build
 *.md
 *.yml
 *.yaml
+!pnpm-workspace.yaml
 turbo.json
 tsconfig.json
 .dockerignore
