@@ -83,14 +83,13 @@ services:
         echo "============================================="
         echo "  Dreamy Life — Database Migration"
         echo "============================================="
-        echo "DATABASE_URL=${DATABASE_URL:+<set>}"
         echo ""
-        echo ">>> Running drizzle-kit push:pg..."
-        if npx drizzle-kit push:pg 2>&1; then
-          echo ">>> Schema sync completed successfully."
+        echo ">>> Running drizzle-kit migrate..."
+        if npx drizzle-kit migrate 2>&1; then
+          echo ">>> Migration completed successfully."
         else
-          echo ">>> WARNING: Schema sync failed, trying migrate..."
-          npx drizzle-kit migrate 2>&1 || echo ">>> Migration also failed. Check database."
+          echo ">>> WARNING: migrate failed, trying push..."
+          npx drizzle-kit push 2>&1 || echo ">>> Both migration methods failed. Check database."
         fi
         echo ">>> Migration step complete."
 
