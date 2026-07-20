@@ -128,40 +128,13 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
                   <span className="font-semibold">{t('dashboard')}</span>
                 </Link>
-                <Link href="/recharge" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                  <span className="material-symbols-outlined">phone_iphone</span>
-                  <span className="font-semibold">{t('mobileRecharge')}</span>
-                </Link>
-                <Link href="/social-feed" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                  <span className="material-symbols-outlined">public</span>
-                  <span>{t('socialFeed')}</span>
-                </Link>
-                <Link href="/marketplace" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                  <span className="material-symbols-outlined">work</span>
-                  <span>{t('marketplace')}</span>
-                </Link>
                 <Link href="/referral" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">share</span>
                   <span>{t('referral')}</span>
                 </Link>
-                <Link href="/membership" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                  <span className="material-symbols-outlined">card_membership</span>
-                  <span>{t('membership')}</span>
-                </Link>
-                <Link href="/wallet" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                  <span className="material-symbols-outlined">account_balance_wallet</span>
-                  <span>{t('wallet')}</span>
-                </Link>
                 <Link href="/withdraw" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
                   <span className="material-symbols-outlined">account_balance_wallet</span>
                   <span>{t('withdraw')}</span>
-                </Link>
-                <Link href="/notifications" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
-                  <span className="material-symbols-outlined">notifications</span>
-                  <span>{t('notifications')}</span>
-                  {unreadCount > 0 && (
-                    <span className="ml-auto bg-[#ff6b6b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>
-                  )}
                 </Link>
               </div>
             </div>
@@ -177,6 +150,21 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                 </div>
               </div>
             )}
+
+            <div>
+              <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">{t('groupAndContact')}</h4>
+              <div className="space-y-1">
+                <Link href="/telegram-groups" className="flex items-center gap-4 px-4 py-3 rounded-xl text-[#45474b] hover:bg-black/5 transition-all">
+                  <span className="material-symbols-outlined">group</span>
+                  <span>{t('telegramGroup')}</span>
+                  <span className="ml-auto">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <path d="M21 3L14 13M21 3L14.5 21L10 13M21 3L3 10L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                </Link>
+              </div>
+            </div>
 
             <div>
               <h4 className="text-xs font-bold text-[#45474b]/50 uppercase tracking-widest px-4 mb-3">{t('vendor')}</h4>

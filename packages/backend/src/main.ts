@@ -18,11 +18,25 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // CORS
-  const defaultOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4000'];
-  const envOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(s => s.trim()) : [];
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:4000',
+    ...(process.env.FRONTEND_URL
+      ? process.env.FRONTEND_URL.split(',').map(s => s.trim())
+      : []),
+  ];
   app.enableCors({
-    origin: [...defaultOrigins, ...envOrigins],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, origin || false);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
   });
 
   // Cookie parser
