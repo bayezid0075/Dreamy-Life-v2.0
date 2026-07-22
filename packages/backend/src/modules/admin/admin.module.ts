@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdminController } from './admin.controller';
+import { AdminAuthController } from './admin-auth.controller';
 import { AdminService } from './admin.service';
 import { AdminGuard } from './guards/admin.guard';
 import { WalletModule } from '../wallet/wallet.module';
+import { PasswordService } from '../auth/domain/services/password.service';
 
 @Module({
   imports: [
@@ -19,8 +21,8 @@ import { WalletModule } from '../wallet/wallet.module';
     }),
     WalletModule,
   ],
-  controllers: [AdminController],
-  providers: [AdminService, AdminGuard],
+  controllers: [AdminController, AdminAuthController],
+  providers: [AdminService, AdminGuard, PasswordService],
   exports: [AdminService, AdminGuard],
 })
 export class AdminModule {}

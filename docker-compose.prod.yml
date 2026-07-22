@@ -111,6 +111,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - FRONTEND_URL=https://dreamy-life.com,https://www.dreamy-life.com,https://admin.dreamy-life.com
+      - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:5001
       - ERROR_LOG_DIR=/app/logs
     depends_on:
       postgres:
@@ -119,6 +120,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      whatsapp-gateway:
+        condition: service_started
     env_file:
       - packages/backend/.env
     volumes:
@@ -222,7 +225,33 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ── WhatsApp OTP Gateway (Baileys) ─────────────────────────────────────
+  whatsapp-gateway:
+    build:
+      context: .
+      dockerfile: packages/whatsapp-gateway/Dockerfile
+    container_name: dreamy-life-whatsapp
+    restart: unless-stopped
+    init: true
+    ports:
+      - "0.0.0.0:5001:5001"
+    environment:
+      - PORT=5001
+      - SESSION_DIR=/app/sessions
+    volumes:
+      - whatsapp_sessions:/app/sessions
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   pgdata:
   backend-logs:
   pgadmin_data:
+  whatsapp_sessions:

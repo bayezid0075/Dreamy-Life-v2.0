@@ -22,7 +22,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { returnUrl } = useLocalSearchParams<{ returnUrl?: string }>();
   const { setAuth, isAuthenticated, hydrated } = useAuthStore();
-  const [username, setUsername] = useState('');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +35,7 @@ export default function LoginScreen() {
   }, [isAuthenticated, hydrated, returnUrl, router]);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
+    if (!emailOrPhone.trim() || !password.trim()) {
       setError('Please fill in all fields');
       return;
     }
@@ -45,7 +45,7 @@ export default function LoginScreen() {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ emailOrPhone, password }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -91,16 +91,16 @@ export default function LoginScreen() {
             </View>
           )}
 
-          {/* Username */}
+          {/* Email or Phone */}
           <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>USERNAME OR PHONE</Text>
+            <Text style={styles.inputLabel}>EMAIL OR PHONE NUMBER</Text>
             <View style={styles.inputRow}>
               <TextInput
                 style={styles.input}
-                placeholder="Enter username or phone"
+                placeholder="Enter email or phone number"
                 placeholderTextColor="rgba(69,71,75,0.4)"
-                value={username}
-                onChangeText={setUsername}
+                value={emailOrPhone}
+                onChangeText={setEmailOrPhone}
                 autoCapitalize="none"
               />
             </View>
@@ -125,7 +125,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotBtn}>
+          <TouchableOpacity style={styles.forgotBtn} onPress={() => router.push('/forgot-password')}>
             <Text style={styles.forgotText}>Forgot Password?</Text>
           </TouchableOpacity>
 

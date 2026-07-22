@@ -22,6 +22,7 @@ export class AuthService {
 
   async register(data: {
     username: string;
+    email: string;
     phoneNumber: string;
     password: string;
     referCode?: string;
@@ -32,6 +33,14 @@ export class AuthService {
     });
     if (existingUsername) {
       throw new ConflictException('Username already taken');
+    }
+
+    // Check if email already exists
+    const existingEmail = await this.db.query.users.findFirst({
+      where: eq(schema.users.email, data.email),
+    });
+    if (existingEmail) {
+      throw new ConflictException('Email already registered');
     }
 
     // Check if phone number already exists
@@ -65,6 +74,7 @@ export class AuthService {
       .insert(schema.users)
       .values({
         username: data.username,
+        email: data.email,
         phoneNumber: data.phoneNumber,
         password: passwordHash,
         ownRefercode,
@@ -104,6 +114,7 @@ export class AuthService {
       user: {
         id: newUser.id,
         username: newUser.username,
+        email: newUser.email,
         phoneNumber: newUser.phoneNumber,
         ownRefercode: newUser.ownRefercode,
         memberStatus: newUser.memberStatus,
@@ -112,12 +123,12 @@ export class AuthService {
     };
   }
 
-  async login(username: string, password: string) {
-    // Find user by username or phone number
+  async login(emailOrPhone: string, password: string) {
+    // Find user by email or phone number
     const user = await this.db.query.users.findFirst({
       where: or(
-        eq(schema.users.username, username),
-        eq(schema.users.phoneNumber, username),
+        eq(schema.users.email, emailOrPhone),
+        eq(schema.users.phoneNumber, emailOrPhone),
       ),
     });
 
@@ -146,6 +157,7 @@ export class AuthService {
       user: {
         id: user.id,
         username: user.username,
+        email: user.email,
         phoneNumber: user.phoneNumber,
         ownRefercode: user.ownRefercode,
         memberStatus: user.memberStatus,
@@ -220,6 +232,7 @@ export class AuthService {
       user: {
         id: user.id,
         username: user.username,
+        email: user.email,
         phoneNumber: user.phoneNumber,
         ownRefercode: user.ownRefercode,
         memberStatus: user.memberStatus,
@@ -275,6 +288,173 @@ export class AuthService {
     });
 
     return updated;
+  }
+
+  async requestForgotPasswordOtp(phoneNumber: string) {
+    // Check if user exists with this phone number
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.phoneNumber, phoneNumber),
+    });
+
+    if (!user) {
+      throw new ConflictException('No account found with this phone number');
+    }
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Set expiry to 10 minutes from now
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Delete any existing OTPs for this phone number and type
+    await this.db
+      .delete(schema.otpVerifications)
+      .where(
+        and(
+          eq(schema.otpVerifications.phoneNumber, phoneNumber),
+          eq(schema.otpVerifications.type, 'forgot_password'),
+        ),
+      );
+
+    // Store OTP in database
+    await this.db.insert(schema.otpVerifications).values({
+      phoneNumber,
+      otpCode,
+      type: 'forgot_password',
+      expiresAt,
+    });
+
+    // Send OTP via WhatsApp Gateway
+    const whatsappGatewayUrl = process.env.WHATSAPP_GATEWAY_URL || 'http://whatsapp-gateway:5001';
+    try {
+      const response = await fetch(`${whatsappGatewayUrl}/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneNumber, otp: otpCode }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('WhatsApp gateway returned error:', response.status, errorData);
+        throw new ConflictException(
+          errorData.error || 'WhatsApp service is temporarily unavailable. Please try again later.',
+        );
+      }
+    } catch (err) {
+      if (err instanceof ConflictException) throw err;
+      console.error('Failed to connect to WhatsApp gateway:', err);
+      throw new ConflictException(
+        'Unable to send OTP. The messaging service is currently unavailable.',
+      );
+    }
+
+    return { message: 'OTP sent to your WhatsApp', phoneNumber };
+  }
+
+  async verifyForgotPasswordOtp(phoneNumber: string, otpCode: string) {
+    // Find the OTP record
+    const otpRecord = await this.db.query.otpVerifications.findFirst({
+      where: and(
+        eq(schema.otpVerifications.phoneNumber, phoneNumber),
+        eq(schema.otpVerifications.type, 'forgot_password'),
+        eq(schema.otpVerifications.verified, false),
+      ),
+    });
+
+    if (!otpRecord) {
+      throw new ConflictException('No OTP request found. Please request a new one.');
+    }
+
+    // Check if OTP is expired
+    if (new Date() > otpRecord.expiresAt) {
+      throw new ConflictException('OTP has expired. Please request a new one.');
+    }
+
+    // Verify OTP
+    if (otpRecord.otpCode !== otpCode) {
+      throw new ConflictException('Invalid OTP code');
+    }
+
+    // Mark OTP as verified
+    await this.db
+      .update(schema.otpVerifications)
+      .set({ verified: true })
+      .where(eq(schema.otpVerifications.id, otpRecord.id));
+
+    return { message: 'OTP verified successfully', phoneNumber, verified: true };
+  }
+
+  async resetPassword(phoneNumber: string, otpCode: string, newPassword: string) {
+    // Find verified OTP record
+    const otpRecord = await this.db.query.otpVerifications.findFirst({
+      where: and(
+        eq(schema.otpVerifications.phoneNumber, phoneNumber),
+        eq(schema.otpVerifications.type, 'forgot_password'),
+        eq(schema.otpVerifications.verified, true),
+      ),
+    });
+
+    if (!otpRecord) {
+      throw new ConflictException('OTP not verified. Please verify OTP first.');
+    }
+
+    // Check if OTP is still valid (within 10 minutes of verification)
+    if (new Date() > otpRecord.expiresAt) {
+      throw new ConflictException('OTP session expired. Please start over.');
+    }
+
+    // Find user
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.phoneNumber, phoneNumber),
+    });
+
+    if (!user) {
+      throw new ConflictException('User not found');
+    }
+
+    // Hash new password
+    const passwordHash = await this.passwordService.hash(newPassword);
+
+    // Update password
+    await this.db
+      .update(schema.users)
+      .set({ password: passwordHash, updatedAt: new Date() })
+      .where(eq(schema.users.id, user.id));
+
+    // Delete used OTP
+    await this.db
+      .delete(schema.otpVerifications)
+      .where(eq(schema.otpVerifications.id, otpRecord.id));
+
+    // Invalidate all sessions for this user
+    await this.db
+      .delete(schema.sessions)
+      .where(eq(schema.sessions.userId, user.id));
+
+    return { message: 'Password reset successfully' };
+  }
+
+  async checkWhatsAppNumber(phoneNumber: string) {
+    const whatsappGatewayUrl = process.env.WHATSAPP_GATEWAY_URL || 'http://whatsapp-gateway:5001';
+    try {
+      const response = await fetch(`${whatsappGatewayUrl}/check-number`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneNumber }),
+      });
+
+      if (!response.ok) {
+        console.error('WhatsApp gateway check-number returned:', response.status);
+        throw new ConflictException('WhatsApp service is temporarily unavailable.');
+      }
+
+      const data = await response.json();
+      return { exists: data.exists, phone: phoneNumber };
+    } catch (err) {
+      if (err instanceof ConflictException) throw err;
+      console.error('Failed to connect to WhatsApp gateway:', err);
+      throw new ConflictException('Unable to verify WhatsApp number. The messaging service is currently unavailable.');
+    }
   }
 
   private async generateUniqueReferCode(): Promise<string> {

@@ -55,13 +55,13 @@ export default function Sidebar() {
   };
 
   return (
-    <nav className="hidden md:flex flex-col h-full py-md glass-panel text-primary font-body-lg text-body-lg fixed left-0 top-0 w-sidebar-width border-r border-outline-variant z-20">
+    <nav className="hidden md:flex flex-col h-screen py-md glass-panel text-primary font-body-lg text-body-lg fixed left-0 top-0 w-sidebar-width border-r border-outline-variant z-20">
       <div className="px-md mb-xl">
         <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Dreamy Life</h1>
         <p className="text-on-surface-variant font-body-sm text-body-sm mt-xs">Admin Console</p>
       </div>
 
-      <div className="flex-1 flex flex-col gap-xs px-sm">
+      <div className="flex-1 flex flex-col gap-xs px-sm overflow-y-auto">
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (

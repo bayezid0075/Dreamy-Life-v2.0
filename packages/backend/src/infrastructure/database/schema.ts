@@ -8,6 +8,7 @@ export type MemberStatus = 'super_admin' | 'user' | 'basic' | 'standard' | 'smar
 export const users = pgTable('users', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
   username: varchar('username', { length: 100 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
   phoneNumber: varchar('phone_number', { length: 20 }).notNull().unique(),
   password: text('password').notNull(),
   ownRefercode: varchar('own_refercode', { length: 8 }).notNull().unique(),
@@ -19,6 +20,7 @@ export const users = pgTable('users', {
 }, (table) => ({
   refercodeIdx: uniqueIndex('refercode_idx').on(table.ownRefercode),
   usernameIdx: uniqueIndex('username_idx').on(table.username),
+  emailIdx: uniqueIndex('email_idx').on(table.email),
   phoneIdx: uniqueIndex('phone_idx').on(table.phoneNumber),
 }));
 
@@ -632,3 +634,32 @@ export const withdrawConfig = pgTable('withdraw_config', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+// ─── OTP Verifications Table ─────────────────────────────────────────
+// ─── Admins Table ───────────────────────────────────────────────────────
+export const admins = pgTable('admins', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  accessCode: varchar('access_code', { length: 50 }).notNull(),
+  password: text('password').notNull(),
+  failedAttempts: integer('failed_attempts').notNull().default(0),
+  lockedUntil: timestamp('locked_until'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  adminEmailIdx: uniqueIndex('admin_email_idx').on(table.email),
+}));
+
+// ─── OTP Verifications Table ─────────────────────────────────────────
+export const otpVerifications = pgTable('otp_verifications', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  phoneNumber: varchar('phone_number', { length: 20 }).notNull(),
+  otpCode: varchar('otp_code', { length: 6 }).notNull(),
+  type: varchar('type', { length: 20 }).notNull(), // 'registration' | 'forgot_password'
+  expiresAt: timestamp('expires_at').notNull(),
+  verified: boolean('verified').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  otpPhoneIdx: index('otp_phone_idx').on(table.phoneNumber),
+  otpTypeIdx: index('otp_type_idx').on(table.type),
+}));

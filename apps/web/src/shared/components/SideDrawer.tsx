@@ -27,7 +27,7 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
         onClick={onClose}
       ></div>
       <div
-        className={`absolute top-0 left-0 h-full w-[320px] bg-white/70 backdrop-blur-3xl border-r border-white/30 flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`absolute top-0 left-0 h-full w-[85vw] max-w-[320px] bg-white/70 backdrop-blur-3xl border-r border-white/30 flex flex-col transition-transform duration-500 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-6 flex flex-col h-full">
           {/* Drawer Header */}

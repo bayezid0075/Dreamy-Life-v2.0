@@ -19,6 +19,7 @@ export default function RegisterPage() {
   }, [isAuthenticated, router, returnUrl]);
   const [form, setForm] = useState({
     username: '',
+    email: '',
     phoneNumber: '',
     password: '',
     confirmPassword: '',
@@ -35,6 +36,7 @@ export default function RegisterPage() {
     const newErrors: Record<string, string> = {};
 
     if (!form.username.trim()) newErrors.username = t('usernameIsRequired');
+    if (!form.email.trim()) newErrors.email = t('emailIsRequired');
     if (!form.phoneNumber.trim()) newErrors.phoneNumber = t('phoneNumberIsRequired');
     if (form.password.length < 6) newErrors.password = t('passwordMinLength');
     if (form.password !== form.confirmPassword) newErrors.confirmPassword = t('passwordsDoNotMatch');
@@ -53,6 +55,7 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: form.username,
+          email: form.email,
           phoneNumber: form.phoneNumber,
           password: form.password,
           referCode: form.referCode || undefined,
@@ -137,6 +140,23 @@ export default function RegisterPage() {
                 {errors.username && <span className="material-symbols-outlined text-[#ba1a1a] text-[20px]">error</span>}
               </div>
               {errors.username && <p className="text-[12px] font-semibold text-[#ba1a1a] px-6">{errors.username}</p>}
+            </div>
+
+            {/* Email */}
+            <div className="flex flex-col gap-1.5">
+              <div className={`rounded-full px-6 py-4 flex items-center gap-3 transition-all bg-white/50 backdrop-blur-[10px] border ${errors.email ? 'bg-[#ffdad6]/20 border-[#ba1a1a]/30 ring-1 ring-[#ba1a1a]/20' : 'border-white/40'}`}>
+                <span className="material-symbols-outlined text-[#76777b]">email</span>
+                <input
+                  className="bg-transparent border-none focus:ring-0 p-0 w-full text-[16px] text-[#1c1b1b] placeholder:text-[#c6c6cb] outline-none"
+                  placeholder={t('email')}
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  required
+                />
+                {errors.email && <span className="material-symbols-outlined text-[#ba1a1a] text-[20px]">error</span>}
+              </div>
+              {errors.email && <p className="text-[12px] font-semibold text-[#ba1a1a] px-6">{errors.email}</p>}
             </div>
 
             {/* Phone Number */}

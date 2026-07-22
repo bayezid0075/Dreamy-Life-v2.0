@@ -57,6 +57,9 @@ export class AuthUserResponse {
   @ApiProperty({ example: 'john_doe' })
   username: string;
 
+  @ApiProperty({ example: 'john@example.com' })
+  email: string;
+
   @ApiProperty({ example: '+8801712345678' })
   phoneNumber: string;
 
@@ -143,6 +146,9 @@ class ProfileUserResponse {
 
   @ApiProperty()
   username: string;
+
+  @ApiProperty()
+  email: string;
 
   @ApiProperty()
   phoneNumber: string;
@@ -455,6 +461,9 @@ class DownlineMember {
   @ApiProperty({ example: 'referee1' })
   username: string;
 
+  @ApiProperty({ example: 'john@example.com' })
+  email: string;
+
   @ApiProperty({ example: '+8801722222222' })
   phoneNumber: string;
 
@@ -493,6 +502,9 @@ class DownlineTreeNode {
 
   @ApiProperty({ example: 'referee1' })
   username: string;
+
+  @ApiProperty()
+  email: string;
 
   @ApiProperty()
   phoneNumber: string;
@@ -629,6 +641,9 @@ class AdminUserInfo {
   @ApiProperty({ example: 'john_doe' })
   username: string;
 
+  @ApiProperty({ example: 'john@example.com' })
+  email: string;
+
   @ApiProperty({ example: '+8801712345678' })
   phoneNumber: string;
 
@@ -649,9 +664,6 @@ class AdminUserInfo {
 
   @ApiPropertyOptional({ nullable: true })
   fullName?: string | null;
-
-  @ApiPropertyOptional({ nullable: true })
-  email?: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   avatarUrl?: string | null;
@@ -690,6 +702,9 @@ class AdminUserDetailStats {
   username: string;
 
   @ApiProperty()
+  email: string;
+
+  @ApiProperty()
   phoneNumber: string;
 
   @ApiProperty()
@@ -709,9 +724,6 @@ class AdminUserDetailStats {
 
   @ApiPropertyOptional({ nullable: true })
   fullName?: string | null;
-
-  @ApiPropertyOptional({ nullable: true })
-  email?: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   avatarUrl?: string | null;

@@ -23,6 +23,7 @@ export default function RegisterScreen() {
   const { ref, returnUrl } = useLocalSearchParams<{ ref?: string; returnUrl?: string }>();
   const { setAuth, isAuthenticated, hydrated } = useAuthStore();
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,6 +42,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     const newErrors: Record<string, string> = {};
     if (!username.trim()) newErrors.username = 'Username is required';
+    if (!email.trim()) newErrors.email = 'Email is required';
     if (!phone.trim()) newErrors.phone = 'Phone number is required';
     if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
@@ -56,7 +58,7 @@ export default function RegisterScreen() {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, phoneNumber: phone, password, referCode: referCode || undefined }),
+        body: JSON.stringify({ username, email, phoneNumber: phone, password, referCode: referCode || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -108,6 +110,24 @@ export default function RegisterScreen() {
               {errors.username && <Text style={styles.inputErrorIcon}>⚠️</Text>}
             </View>
             {errors.username && <Text style={styles.errorMsg}>{errors.username}</Text>}
+          </View>
+
+          {/* Email */}
+          <View style={styles.inputWrap}>
+            <View style={[styles.inputRow, errors.email && styles.inputError]}>
+              <Text style={styles.inputIcon}>✉️</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="rgba(198,198,203,1)"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {errors.email && <Text style={styles.inputErrorIcon}>⚠️</Text>}
+            </View>
+            {errors.email && <Text style={styles.errorMsg}>{errors.email}</Text>}
           </View>
 
           {/* Phone */}

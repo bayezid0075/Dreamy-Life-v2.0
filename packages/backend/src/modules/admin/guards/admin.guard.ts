@@ -3,7 +3,6 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -29,7 +28,7 @@ export class AdminGuard implements CanActivate {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    let payload: { userId: string; username: string };
+    let payload: { adminId: string; email: string };
     try {
       payload = this.jwtService.verify(token, {
         secret: this.configService.get('JWT_SECRET') || 'super_secret_jwt_key',
@@ -38,19 +37,15 @@ export class AdminGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    const user = await this.db.query.users.findFirst({
-      where: eq(schema.users.id, payload.userId),
+    const admin = await this.db.query.admins.findFirst({
+      where: eq(schema.admins.id, payload.adminId),
     });
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    if (!admin) {
+      throw new UnauthorizedException('Admin not found');
     }
 
-    if (user.memberStatus !== 'super_admin') {
-      throw new ForbiddenException('Access denied. Admin privileges required.');
-    }
-
-    request.user = { userId: user.id, username: user.username, memberStatus: user.memberStatus };
+    request.user = { adminId: admin.id, email: admin.email };
     return true;
   }
 }

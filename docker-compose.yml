@@ -64,11 +64,14 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:5001
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      whatsapp-gateway:
+        condition: service_started
     env_file:
       - packages/backend/.env
 
@@ -100,6 +103,22 @@ services:
     depends_on:
       - backend
 
+  whatsapp-gateway:
+    build:
+      context: .
+      dockerfile: packages/whatsapp-gateway/Dockerfile
+    container_name: dreamy-life-whatsapp
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - ADMIN_PASSWORD=${WHATSAPP_GATEWAY_PASSWORD:-whatsapp_gateway_admin_2024}
+      - SESSION_DIR=/app/sessions
+    volumes:
+      - whatsapp_sessions:/app/sessions
+
 volumes:
   pgdata:
   pgadmin_data:
+  whatsapp_sessions:

@@ -34,7 +34,7 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register a new user (with optional referral code)' })
   @ApiResponse({ status: 201, description: 'User registered successfully', type: RegisterResponse })
-  @ApiResponse({ status: 409, description: 'Username already taken, phone number already registered, or invalid referral code' })
+  @ApiResponse({ status: 409, description: 'Username already taken, email already registered, phone number already registered, or invalid referral code' })
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -59,14 +59,14 @@ export class AuthController {
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login with username/phone and password' })
+  @ApiOperation({ summary: 'Login with email or phone number and password' })
   @ApiResponse({ status: 200, description: 'Logged in successfully', type: LoginResponse })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(body.username, body.password);
+    const result = await this.authService.login(body.emailOrPhone, body.password);
 
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
@@ -168,6 +168,54 @@ export class AuthController {
       }
     }
     const result = await this.authService.updateProfile(userId, updateData);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Post('forgot-password/request')
+  @ApiOperation({ summary: 'Request OTP for password reset via WhatsApp' })
+  @ApiResponse({ status: 200, description: 'OTP sent to WhatsApp' })
+  @ApiResponse({ status: 409, description: 'No account found or failed to send OTP' })
+  async requestForgotPassword(@Body() body: { phoneNumber: string }) {
+    const result = await this.authService.requestForgotPasswordOtp(body.phoneNumber);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Post('forgot-password/verify')
+  @ApiOperation({ summary: 'Verify OTP code for password reset' })
+  @ApiResponse({ status: 200, description: 'OTP verified successfully' })
+  @ApiResponse({ status: 409, description: 'Invalid or expired OTP' })
+  async verifyForgotPasswordOtp(@Body() body: { phoneNumber: string; otpCode: string }) {
+    const result = await this.authService.verifyForgotPasswordOtp(body.phoneNumber, body.otpCode);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Post('forgot-password/reset')
+  @ApiOperation({ summary: 'Reset password after OTP verification' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 409, description: 'OTP not verified or expired' })
+  async resetPassword(@Body() body: { phoneNumber: string; otpCode: string; newPassword: string }) {
+    const result = await this.authService.resetPassword(body.phoneNumber, body.otpCode, body.newPassword);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Post('check-whatsapp')
+  @ApiOperation({ summary: 'Check if phone number exists on WhatsApp' })
+  @ApiResponse({ status: 200, description: 'WhatsApp check result' })
+  @ApiResponse({ status: 409, description: 'Failed to check WhatsApp' })
+  async checkWhatsApp(@Body() body: { phoneNumber: string }) {
+    const result = await this.authService.checkWhatsAppNumber(body.phoneNumber);
     return {
       success: true,
       data: result,

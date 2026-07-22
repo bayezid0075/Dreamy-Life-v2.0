@@ -3,7 +3,8 @@
 import { useState, FormEvent } from 'react';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [accessCode, setAccessCode] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -17,11 +18,11 @@ export default function LoginPage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/admin/auth/login`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ email, accessCode, password }),
         }
       );
 
@@ -29,12 +30,6 @@ export default function LoginPage() {
 
       if (!res.ok) {
         setError(data.error?.message || 'Invalid credentials');
-        setLoading(false);
-        return;
-      }
-
-      if (data.data?.user?.memberStatus !== 'super_admin') {
-        setError('Access denied. Admin privileges required.');
         setLoading(false);
         return;
       }
@@ -81,26 +76,51 @@ export default function LoginPage() {
           )}
 
           <form className="space-y-md" onSubmit={handleSubmit}>
-            {/* Username Field */}
+            {/* Email Field */}
             <div className="space-y-xs">
               <label
                 className="font-label-md text-label-md text-on-surface-variant ml-xs"
-                htmlFor="username"
+                htmlFor="email"
               >
-                Username
+                Email
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none text-outline">
-                  <span className="material-symbols-outlined text-[20px]">person</span>
+                  <span className="material-symbols-outlined text-[20px]">mail</span>
                 </div>
                 <input
                   className="w-full h-[56px] pl-[52px] pr-md rounded-xl input-glass font-body-md text-on-surface placeholder-outline/60 focus:outline-none"
-                  id="username"
-                  name="username"
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="admin@dreamylife.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Access Code Field */}
+            <div className="space-y-xs">
+              <label
+                className="font-label-md text-label-md text-on-surface-variant ml-xs"
+                htmlFor="accessCode"
+              >
+                Access Code
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none text-outline">
+                  <span className="material-symbols-outlined text-[20px]">vpn_key</span>
+                </div>
+                <input
+                  className="w-full h-[56px] pl-[52px] pr-md rounded-xl input-glass font-body-md text-on-surface placeholder-outline/60 focus:outline-none"
+                  id="accessCode"
+                  name="accessCode"
                   type="text"
-                  placeholder="admin"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="ADMIN001"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
                   required
                 />
               </div>
@@ -115,12 +135,6 @@ export default function LoginPage() {
                 >
                   Password
                 </label>
-                <a
-                  className="font-label-sm text-label-sm text-primary hover:underline transition-all"
-                  href="#"
-                >
-                  Forgot Password?
-                </a>
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none text-outline">

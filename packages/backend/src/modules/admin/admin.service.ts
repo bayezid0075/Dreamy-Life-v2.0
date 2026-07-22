@@ -1,12 +1,21 @@
-import { Injectable, NotFoundException, Inject, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, sql, like, or, desc, count, sum, asc } from 'drizzle-orm';
 import * as schema from '../../infrastructure/database/schema';
+import { PasswordService } from '../auth/domain/services/password.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
 
 @Injectable()
 export class AdminService {
   constructor(
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
+    private readonly passwordService: PasswordService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async getDashboardStats() {
@@ -76,6 +85,7 @@ export class AdminService {
       return or(
         or(
           like(schema.users.username, `%${search}%`),
+          like(schema.users.email, `%${search}%`),
           like(schema.users.phoneNumber, `%${search}%`),
         ),
         eq(schema.users.memberStatus, status),
@@ -84,6 +94,7 @@ export class AdminService {
     if (search) {
       return or(
         like(schema.users.username, `%${search}%`),
+        like(schema.users.email, `%${search}%`),
         like(schema.users.phoneNumber, `%${search}%`),
       );
     }
@@ -101,6 +112,7 @@ export class AdminService {
       .select({
         id: schema.users.id,
         username: schema.users.username,
+        email: schema.users.email,
         phoneNumber: schema.users.phoneNumber,
         ownRefercode: schema.users.ownRefercode,
         referredBy: schema.users.referredBy,
@@ -109,7 +121,6 @@ export class AdminService {
         createdAt: schema.users.createdAt,
         updatedAt: schema.users.updatedAt,
         fullName: schema.userInfo.fullName,
-        email: schema.userInfo.email,
         avatarUrl: schema.userInfo.avatarUrl,
       })
       .from(schema.users)
@@ -145,6 +156,7 @@ export class AdminService {
       .select({
         id: schema.users.id,
         username: schema.users.username,
+        email: schema.users.email,
         phoneNumber: schema.users.phoneNumber,
         ownRefercode: schema.users.ownRefercode,
         referredBy: schema.users.referredBy,
@@ -153,7 +165,6 @@ export class AdminService {
         createdAt: schema.users.createdAt,
         updatedAt: schema.users.updatedAt,
         fullName: schema.userInfo.fullName,
-        email: schema.userInfo.email,
         avatarUrl: schema.userInfo.avatarUrl,
         address: schema.userInfo.address,
         city: schema.userInfo.city,
@@ -482,5 +493,80 @@ export class AdminService {
         count: Number(u.count),
       })),
     };
+  }
+
+  // ─── Admin Login ───────────────────────────────────────────────────────
+
+  async adminLogin(email: string, accessCode: string, password: string) {
+    const admin = await this.db.query.admins.findFirst({
+      where: eq(schema.admins.email, email),
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check lockout
+    if (admin.lockedUntil && new Date() < admin.lockedUntil) {
+      const remainingMs = admin.lockedUntil.getTime() - Date.now();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      throw new UnauthorizedException(
+        `Account locked. Try again in ${remainingMin} minute${remainingMin > 1 ? 's' : ''}.`,
+      );
+    }
+
+    // Verify access code
+    if (admin.accessCode !== accessCode) {
+      await this.handleFailedLogin(admin.id, admin.failedAttempts);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Verify password
+    const isMatch = await this.passwordService.compare(password, admin.password);
+    if (!isMatch) {
+      await this.handleFailedLogin(admin.id, admin.failedAttempts);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Success — reset failed attempts
+    await this.db
+      .update(schema.admins)
+      .set({ failedAttempts: 0, lockedUntil: null, updatedAt: new Date() })
+      .where(eq(schema.admins.id, admin.id));
+
+    // Generate tokens
+    const accessToken = this.jwtService.sign(
+      { adminId: admin.id, email: admin.email },
+      {
+        secret: this.configService.get('JWT_SECRET'),
+        expiresIn: this.configService.get('JWT_EXPIRES_IN') || '15m',
+      },
+    );
+
+    return {
+      accessToken,
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        accessCode: admin.accessCode,
+      },
+    };
+  }
+
+  private async handleFailedLogin(adminId: string, currentAttempts: number) {
+    const newAttempts = currentAttempts + 1;
+    const updateData: Record<string, any> = {
+      failedAttempts: newAttempts,
+      updatedAt: new Date(),
+    };
+
+    if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+      updateData.lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000);
+    }
+
+    await this.db
+      .update(schema.admins)
+      .set(updateData)
+      .where(eq(schema.admins.id, adminId));
   }
 }

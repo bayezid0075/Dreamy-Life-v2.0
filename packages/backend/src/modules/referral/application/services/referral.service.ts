@@ -131,6 +131,7 @@ export class ReferralService {
         .select({
           id: schema.users.id,
           username: schema.users.username,
+          email: schema.users.email,
           phoneNumber: schema.users.phoneNumber,
           memberStatus: schema.users.memberStatus,
           ownRefercode: schema.users.ownRefercode,
@@ -145,6 +146,7 @@ export class ReferralService {
         nodes.push({
           userId: child.id,
           username: child.username,
+          email: child.email,
           phoneNumber: child.phoneNumber,
           memberStatus: child.memberStatus,
           level: currentLevel,
@@ -183,6 +185,7 @@ export class ReferralService {
         .select({
           id: schema.users.id,
           username: schema.users.username,
+          email: schema.users.email,
           phoneNumber: schema.users.phoneNumber,
           memberStatus: schema.users.memberStatus,
           ownRefercode: schema.users.ownRefercode,
@@ -200,6 +203,7 @@ export class ReferralService {
         members.push({
           userId: child.id,
           username: child.username,
+          email: child.email,
           phoneNumber: child.phoneNumber,
           memberStatus: child.memberStatus,
           level: currentLevel,

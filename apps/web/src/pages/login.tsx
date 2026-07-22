@@ -8,7 +8,7 @@ import { useI18n } from '../i18n';
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth, isAuthenticated } = useAuthStore();
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ emailOrPhone: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { t } = useI18n();
@@ -116,17 +116,17 @@ export default function LoginPage() {
           {/* Form */}
           <form className="w-full space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-[14px] font-semibold tracking-[0.05em] text-[#1c1b1b] block ml-1" htmlFor="username">
-                {t('username')}
+              <label className="text-[14px] font-semibold tracking-[0.05em] text-[#1c1b1b] block ml-1" htmlFor="emailOrPhone">
+                {t('emailOrPhone')}
               </label>
               <div className="relative">
                 <input
-                  id="username"
+                  id="emailOrPhone"
                   type="text"
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  value={form.emailOrPhone}
+                  onChange={(e) => setForm({ ...form, emailOrPhone: e.target.value })}
                   className="w-full h-[56px] px-5 rounded-full text-[16px] text-[#1c1b1b] bg-white/50 border border-[rgba(118,119,123,0.2)] focus:bg-white focus:border-[#5d5e64] focus:shadow-[0_0_0_2px_rgba(93,94,100,0.1)] outline-none transition-all placeholder:text-[#45474b]/50"
-                  placeholder={t('enterUsernameOrPhone')}
+                  placeholder={t('enterEmailOrPhone')}
                   required
                 />
               </div>
@@ -146,6 +146,11 @@ export default function LoginPage() {
                   placeholder={t('enterPassword')}
                   required
                 />
+              </div>
+              <div className="flex justify-end mt-1">
+                <Link href="/forgot-password" className="text-[13px] font-semibold text-[#2d666d] hover:underline decoration-[#2d666d]/50 underline-offset-4">
+                  {t('forgotPassword')}
+                </Link>
               </div>
             </div>
 
