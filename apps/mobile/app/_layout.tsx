@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { I18nProvider } from '@/shared/i18n';
@@ -11,10 +11,37 @@ function NotificationSocketProvider({ children }: { children: React.ReactNode })
   return <>{children}</>;
 }
 
+function useGlobal401Interceptor() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const originalFetch = globalThis.fetch;
+    let redirecting = false;
+
+    globalThis.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+
+      if (response.status === 401 && !redirecting) {
+        redirecting = true;
+        useAuthStore.getState().clearAuth();
+        router.replace('/login');
+      }
+
+      return response;
+    };
+
+    return () => {
+      globalThis.fetch = originalFetch;
+    };
+  }, [router]);
+}
+
 export default function RootLayout() {
   useEffect(() => {
     useAuthStore.getState().hydrate();
   }, []);
+
+  useGlobal401Interceptor();
 
   return (
     <SafeAreaProvider>

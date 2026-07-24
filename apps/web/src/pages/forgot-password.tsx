@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <Head>
-        <title>{t('forgotPassword')}</title>
+        <title>{t('forgotPasswordTitle')}</title>
       </Head>
 
       <div
@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
 
           {/* Header */}
           <div className="text-center mb-8 w-full">
-            <h1 className="text-[32px] font-bold text-[#1c1b1b] mb-2">{t('forgotPassword')}</h1>
+            <h1 className="text-[32px] font-bold text-[#1c1b1b] mb-2">{t('forgotPasswordTitle')}</h1>
             <p className="text-[16px] text-[#45474b]">{t('enterPhoneForOtp')}</p>
           </div>
 

@@ -118,7 +118,7 @@ const bn = {
   pleaseFillInAllFields: 'অনুগ্রহ করে সব ক্ষেত্র পূরণ করুন',
 
   // Forgot Password
-  forgotPassword: 'পাসওয়ার্ড ভুলে গেছেন',
+  forgotPasswordTitle: 'পাসওয়ার্ড ভুলে গেছেন',
   enterPhoneForOtp: 'WhatsApp-এর মাধ্যমে যাচাইকরণ কোড পেতে আপনার ফোন নম্বর লিখুন',
   sendOtp: 'OTP পাঠান',
   sendingOtp: 'OTP পাঠানো হচ্ছে...',

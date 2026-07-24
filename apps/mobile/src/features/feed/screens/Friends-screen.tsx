@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { io, Socket } from 'socket.io-client';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
@@ -31,6 +32,7 @@ interface FriendUser {
 
 interface FriendRequest extends FriendUser {
   requestId?: string;
+  userId?: string;
 }
 
 export default function FriendsScreen() {
@@ -46,6 +48,7 @@ export default function FriendsScreen() {
   const [friendQuery, setFriendQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem('accessToken').then((t) => {
@@ -54,6 +57,36 @@ export default function FriendsScreen() {
       else setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const socket = io(`${API_URL}/notifications`, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+    });
+
+    socketRef.current = socket;
+
+    socket.on('friend_request:received', (payload: {
+      requestId: string;
+      userId: string;
+      username: string;
+      fullName?: string;
+      avatarUrl?: string;
+      createdAt: string;
+    }) => {
+      setReceivedRequests((prev) => {
+        if (prev.some((r) => r.requestId === payload.requestId)) return prev;
+        return [{ id: payload.userId, requestId: payload.requestId, username: payload.username, fullName: payload.fullName, avatarUrl: payload.avatarUrl, createdAt: payload.createdAt }, ...prev];
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [token]);
 
   const fetchAll = async (t: string) => {
     setLoading(true);
@@ -164,6 +197,14 @@ export default function FriendsScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
+        const data = await res.json();
+        const user = searchResults.find((u) => u.id === userId);
+        if (user) {
+          setSentRequests((prev) => [
+            { id: data.id, userId, username: user.username, fullName: user.fullName, avatarUrl: user.avatarUrl, createdAt: data.createdAt || new Date().toISOString() },
+            ...prev,
+          ]);
+        }
         setSearchResults((prev) =>
           prev.map((u) => (u.id === userId ? { ...u, friendshipStatus: 'request_sent' } : u)),
         );
@@ -262,17 +303,17 @@ export default function FriendsScreen() {
       <View style={styles.userActions}>
         <TouchableOpacity
           style={styles.acceptBtn}
-          onPress={() => handleAcceptRequest(item.id)}
-          disabled={actionLoading === item.id}
+          onPress={() => handleAcceptRequest(item.requestId || item.id)}
+          disabled={actionLoading === (item.requestId || item.id)}
         >
-          <Text style={styles.acceptBtnText}>{actionLoading === item.id ? '...' : '✓'}</Text>
+          <Text style={styles.acceptBtnText}>{actionLoading === (item.requestId || item.id) ? '...' : '✓'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.declineBtn}
-          onPress={() => handleRejectRequest(item.id)}
-          disabled={actionLoading === item.id}
+          onPress={() => handleRejectRequest(item.requestId || item.id)}
+          disabled={actionLoading === (item.requestId || item.id)}
         >
-          <Text style={styles.declineBtnText}>{actionLoading === item.id ? '...' : '✕'}</Text>
+          <Text style={styles.declineBtnText}>{actionLoading === (item.requestId || item.id) ? '...' : '✕'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -295,10 +336,10 @@ export default function FriendsScreen() {
       </View>
       <TouchableOpacity
         style={styles.cancelBtn}
-        onPress={() => handleCancelRequest(item.id)}
-        disabled={actionLoading === item.id}
+        onPress={() => handleCancelRequest(item.requestId || item.id)}
+        disabled={actionLoading === (item.requestId || item.id)}
       >
-          <Text style={styles.cancelBtnText}>{actionLoading === item.id ? '...' : t('cancel')}</Text>
+          <Text style={styles.cancelBtnText}>{actionLoading === (item.requestId || item.id) ? '...' : t('cancel')}</Text>
       </TouchableOpacity>
     </View>
   );

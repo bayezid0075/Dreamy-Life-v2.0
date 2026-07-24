@@ -67,6 +67,17 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     }
   }
 
+  notifyFriendRequestReceived(userId: string, payload: {
+    requestId: string;
+    userId: string;
+    username: string;
+    fullName?: string;
+    avatarUrl?: string;
+    createdAt: string;
+  }) {
+    this.server.to(`user:${userId}`).emit('friend_request:received', payload);
+  }
+
   isUserConnected(userId: string): boolean {
     return this.userSockets.has(userId);
   }

@@ -105,7 +105,7 @@ export class AuthService {
     await this.db.insert(schema.sessions).values({
       userId: newUser.id,
       refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date('2099-12-31T23:59:59.000Z'),
     });
 
     return {
@@ -148,7 +148,7 @@ export class AuthService {
     await this.db.insert(schema.sessions).values({
       userId: user.id,
       refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date('2099-12-31T23:59:59.000Z'),
     });
 
     return {

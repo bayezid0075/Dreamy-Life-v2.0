@@ -19,7 +19,7 @@ import { UserGuard } from './guards/user.guard';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get('JWT_SECRET') || 'super_secret_jwt_key',
-        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '15m' },
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '100y' },
       }),
     }),
   ],

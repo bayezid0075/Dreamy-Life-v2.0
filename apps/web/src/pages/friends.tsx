@@ -1,7 +1,8 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import AuthGuard from '@/shared/components/AuthGuard';
@@ -21,6 +22,7 @@ interface FriendUser {
 
 interface FriendRequest extends FriendUser {
   requestId?: string;
+  userId?: string;
 }
 
 export default function FriendsPage() {
@@ -38,11 +40,42 @@ export default function FriendsPage() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (accessToken) {
       fetchAll();
     }
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const socket = io(`${API_URL}/notifications`, {
+      auth: { token: accessToken },
+      transports: ['websocket', 'polling'],
+    });
+
+    socketRef.current = socket;
+
+    socket.on('friend_request:received', (payload: {
+      requestId: string;
+      userId: string;
+      username: string;
+      fullName?: string;
+      avatarUrl?: string;
+      createdAt: string;
+    }) => {
+      setReceivedRequests((prev) => {
+        if (prev.some((r) => r.requestId === payload.requestId)) return prev;
+        return [{ id: payload.userId, requestId: payload.requestId, username: payload.username, fullName: payload.fullName, avatarUrl: payload.avatarUrl, createdAt: payload.createdAt }, ...prev];
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
   }, [accessToken]);
 
   const fetchAll = async () => {
@@ -149,6 +182,14 @@ export default function FriendsPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
+        const data = await res.json();
+        const user = searchResults.find((u) => u.id === userId);
+        if (user) {
+          setSentRequests((prev) => [
+            { id: data.id, userId, username: user.username, fullName: user.fullName, avatarUrl: user.avatarUrl, createdAt: data.createdAt || new Date().toISOString() },
+            ...prev,
+          ]);
+        }
         setSearchResults((prev) =>
           prev.map((u) => (u.id === userId ? { ...u, friendshipStatus: 'request_sent' } : u)),
         );
@@ -474,7 +515,7 @@ export default function FriendsPage() {
               ) : (
                 receivedRequests.map((req) => (
                   <div key={req.id} className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-4 flex items-center gap-4 border border-white/30 hover:bg-white/70 hover:shadow-lg hover:shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 group">
-                    <Link href={`/users/${req.id}`} className="flex-shrink-0">
+                    <Link href={`/users/${req.userId || req.id}`} className="flex-shrink-0">
                       {req.avatarUrl ? (
                         <img src={req.avatarUrl} alt={req.username} className="w-14 h-14 rounded-full object-cover ring-2 ring-white group-hover:ring-rose-200 transition-all duration-300" />
                       ) : (
@@ -484,7 +525,7 @@ export default function FriendsPage() {
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/users/${req.id}`}>
+                      <Link href={`/users/${req.userId || req.id}`}>
                         <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate hover:underline">{req.fullName || req.username}</h3>
                       </Link>
                       <p className="text-[13px] text-[#45474b] truncate">@{req.username}</p>
@@ -527,7 +568,7 @@ export default function FriendsPage() {
               ) : (
                 sentRequests.map((req) => (
                   <div key={req.id} className="bg-white/50 backdrop-blur-[24px] rounded-2xl p-4 flex items-center gap-4 border border-white/30 hover:bg-white/70 hover:shadow-lg hover:shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 group">
-                    <Link href={`/users/${req.id}`} className="flex-shrink-0">
+                    <Link href={`/users/${req.userId || req.id}`} className="flex-shrink-0">
                       {req.avatarUrl ? (
                         <img src={req.avatarUrl} alt={req.username} className="w-14 h-14 rounded-full object-cover ring-2 ring-white group-hover:ring-violet-200 transition-all duration-300" />
                       ) : (
@@ -537,17 +578,17 @@ export default function FriendsPage() {
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/users/${req.id}`}>
+                      <Link href={`/users/${req.userId || req.id}`}>
                         <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate hover:underline">{req.fullName || req.username}</h3>
                       </Link>
                       <p className="text-[13px] text-[#45474b] truncate">@{req.username}</p>
                     </div>
                     <button
-                      onClick={() => handleCancelRequest(req.id)}
-                      disabled={actionLoading === req.id}
+                      onClick={() => handleCancelRequest(req.requestId || req.id)}
+                      disabled={actionLoading === (req.requestId || req.id)}
                       className="px-4 py-2 rounded-full bg-white/60 text-rose-500 text-[13px] font-semibold hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 disabled:opacity-50 border border-white/40 active:scale-95"
                     >
-                      {actionLoading === req.id ? '...' : t('cancel')}
+                      {actionLoading === (req.requestId || req.id) ? '...' : t('cancel')}
                     </button>
                   </div>
                 ))

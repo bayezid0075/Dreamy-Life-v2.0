@@ -80,7 +80,7 @@ REDIS_PORT=6379
 
 # JWT
 JWT_SECRET=your-super-secret-key-change-in-production
-JWT_EXPIRES_IN=15m
+JWT_EXPIRES_IN=100y
 JWT_REFRESH_SECRET=your-refresh-secret-key-change-in-production
 JWT_REFRESH_EXPIRES_IN=7d
 

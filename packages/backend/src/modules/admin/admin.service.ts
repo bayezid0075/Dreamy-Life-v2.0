@@ -539,7 +539,7 @@ export class AdminService {
       { adminId: admin.id, email: admin.email },
       {
         secret: this.configService.get('JWT_SECRET'),
-        expiresIn: this.configService.get('JWT_EXPIRES_IN') || '15m',
+        expiresIn: this.configService.get('JWT_EXPIRES_IN') || '100y',
       },
     );
 

@@ -14,7 +14,7 @@ export class TokenService {
       { userId, username },
       {
         secret: this.config.get('JWT_SECRET'),
-        expiresIn: this.config.get('JWT_EXPIRES_IN') || '15m',
+        expiresIn: this.config.get('JWT_EXPIRES_IN') || '100y',
       },
     );
   }
@@ -24,7 +24,7 @@ export class TokenService {
       { userId },
       {
         secret: this.config.get('JWT_REFRESH_SECRET'),
-        expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
+        expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '100y',
       },
     );
   }

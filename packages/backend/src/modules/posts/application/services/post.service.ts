@@ -527,6 +527,22 @@ export class PostService {
 
     this.sendSocialNotification(receiverId, senderId, 'Friend Request', 'sent you a friend request', 'person_add');
 
+    const senderUser = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, senderId),
+    });
+    const senderInfo = await this.db.query.userInfo.findFirst({
+      where: eq(schema.userInfo.userId, senderId),
+    });
+
+    this.notificationGateway.notifyFriendRequestReceived(receiverId, {
+      requestId: request.id,
+      userId: senderId,
+      username: senderUser?.username || '',
+      fullName: senderInfo?.fullName ?? undefined,
+      avatarUrl: senderInfo?.avatarUrl ?? undefined,
+      createdAt: request.createdAt?.toISOString() || new Date().toISOString(),
+    });
+
     return request;
   }
 

@@ -14,7 +14,7 @@ const telegramGroups = [
     id: 1,
     nameKey: 'officialGroup' as const,
     descKey: 'officialGroupDesc' as const,
-    url: 'https://t.me/dreamylife_official',
+    url: 'https://t.me/Dreamylifeofficais1',
     icon: 'campaign',
     color: 'from-[#0088cc] to-[#005f8f]',
     members: '50K+',

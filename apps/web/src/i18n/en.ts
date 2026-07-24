@@ -118,7 +118,7 @@ const en = {
   pleaseFillInAllFields: 'Please fill in all fields',
 
   // Forgot Password
-  forgotPassword: 'Forgot Password',
+  forgotPasswordTitle: 'Forgot Password',
   enterPhoneForOtp: 'Enter your phone number to receive a verification code via WhatsApp',
   sendOtp: 'Send OTP',
   sendingOtp: 'Sending OTP...',
