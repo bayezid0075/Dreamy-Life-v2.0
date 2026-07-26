@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../../i18n';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -208,6 +209,11 @@ export default function MarketplacePage() {
                   {categoryLabels[cat]}
                 </button>
               ))}
+            </div>
+
+            {/* Ad Banner */}
+            <div className="my-8">
+              <AdSenseBannerAd adSlot="3051399239" format="auto" />
             </div>
 
             {/* Job Cards Grid */}

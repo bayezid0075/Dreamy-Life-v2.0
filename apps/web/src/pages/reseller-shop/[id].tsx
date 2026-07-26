@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -17,14 +18,15 @@ export default function ShopProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [resellerPrice, setResellerPrice] = useState('');
-  const [showOrderForm, setShowOrderForm] = useState(false);
-  const [orderForm, setOrderForm] = useState({ customerName: '', customerPhone: '', customerAltPhone: '', customerAddress: '', paymentMethod: 'bkash' });
-  const [ordering, setOrdering] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
 
   const images: string[] = product?.imageUrls || [];
   const inCart = items.some(i => i.productId === product?.id);
+  const sizes: string[] = product?.sizes || [];
+  const colors: string[] = product?.colors || [];
+  const hasVariants = sizes.length > 0 || colors.length > 0;
 
   useEffect(() => { if (id) loadProduct(); }, [id]);
 
@@ -36,36 +38,34 @@ export default function ShopProductDetailPage() {
     finally { setLoading(false); }
   };
 
-  const profit = product && resellerPrice ? Math.max(0, parseFloat(resellerPrice) - product.price) : 0;
+  const costPrice = product ? (product.discountPrice || product.actualPrice) : 0;
+  const profit = product && resellerPrice ? Math.max(0, parseFloat(resellerPrice) - costPrice) : 0;
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (hasVariants && sizes.length > 0 && !selectedSize) { alert('Please select a size'); return; }
+    if (hasVariants && colors.length > 0 && !selectedColor) { alert('Please select a color'); return; }
+    if (!resellerPrice || parseFloat(resellerPrice) <= 0) { alert('Please enter your resale price'); return; }
+
+    const variantParts: string[] = [];
+    if (selectedSize) variantParts.push(selectedSize);
+    if (selectedColor) variantParts.push(selectedColor);
+    const variantLabel = variantParts.length > 0 ? ` (${variantParts.join(', ')})` : '';
+
     addItem({
       productId: product.id,
-      name: product.name,
-      price: product.price,
-      vendorPrice: product.price,
+      name: product.name + variantLabel,
+      actualPrice: product.actualPrice,
+      discountPrice: product.discountPrice || undefined,
+      vendorPrice: costPrice,
+      resellerPrice: parseFloat(resellerPrice) || 0,
       image: images[0],
       shopName: product.shopName || '',
+      deliveryChargeInside: product.deliveryChargeInside || 0,
+      deliveryChargeOutside: product.deliveryChargeOutside || 0,
     });
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 1500);
-  };
-
-  const handleOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!accessToken) { router.push('/login'); return; }
-    setOrdering(true);
-    try {
-      const res = await fetch(`${API_URL}/reselling/order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ productId: product.id, resellerPrice: parseFloat(resellerPrice), ...orderForm }),
-      });
-      if (!res.ok) { const data = await res.json(); alert(data.error?.message || 'Order failed'); return; }
-      setOrderSuccess(true);
-    } catch { alert('Connection failed'); }
-    finally { setOrdering(false); }
   };
 
   const prevImage = () => setActiveImage(i => i > 0 ? i - 1 : images.length - 1);
@@ -98,7 +98,6 @@ export default function ShopProductDetailPage() {
 
         <main className="pt-24 max-w-[1280px] mx-auto px-6 pb-32">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-            {/* Image Slider */}
             <div className="space-y-4">
               <div className="relative w-full aspect-square bg-white/40 backdrop-blur-[20px] rounded-2xl border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] overflow-hidden">
                 {images.length > 0 ? (
@@ -124,7 +123,6 @@ export default function ShopProductDetailPage() {
                   </div>
                 )}
               </div>
-              {/* Thumbnails */}
               {images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {images.map((img, i) => (
@@ -137,7 +135,6 @@ export default function ShopProductDetailPage() {
                   ))}
                 </div>
               )}
-              {/* Dots */}
               {images.length > 1 && (
                 <div className="flex justify-center gap-2">
                   {images.map((_, i) => (
@@ -148,35 +145,92 @@ export default function ShopProductDetailPage() {
               )}
             </div>
 
-            {/* Product Info */}
             <div className="flex flex-col justify-center space-y-6 md:space-y-8 py-4">
               <div className="space-y-2">
                 <h1 className="text-[32px] md:text-[48px] font-extrabold text-[#1c1b1b] leading-tight">{product.name}</h1>
                 <div className="flex items-center space-x-4">
-                  <span className="text-[28px] font-bold text-[#5d5e64]">${product.price}</span>
+                  {product.discountPrice ? (
+                    <>
+                      <span className="text-[20px] font-bold text-[#45474b] line-through">৳{product.actualPrice}</span>
+                      <span className="text-[28px] font-bold text-[#1c1b1b]">৳{product.discountPrice}</span>
+                    </>
+                  ) : (
+                    <span className="text-[28px] font-bold text-[#5d5e64]">৳{product.actualPrice}</span>
+                  )}
                   <span className="text-sm text-[#45474b] bg-[#eae7e7] px-3 py-1 rounded-full">{product.category?.replace('_', ' ')}</span>
                 </div>
                 <p className="text-sm text-[#45474b]">by {product.shopName}</p>
               </div>
               <p className="text-base text-[#45474b] leading-relaxed">{product.description || 'No description available.'}</p>
+              
+              {/* Ad Banner */}
+              <div className="py-2">
+                <AdSenseBannerAd adSlot="3051399239" format="horizontal" showLabel={false} />
+              </div>
+
               <div className="flex items-center gap-2 text-sm text-[#45474b]">
                 <span className="material-symbols-outlined text-[18px]">inventory_2</span>
                 <span>{product.stock} units in stock</span>
               </div>
 
+              {/* Size Selection */}
+              {accessToken && sizes.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-[#5d5e64] uppercase tracking-wider">Size</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button key={size} onClick={() => setSelectedSize(size)}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+                          selectedSize === size
+                            ? 'bg-[#1c1b1b] text-white border-[#1c1b1b]'
+                            : 'bg-white/50 text-[#45474b] border-white/30 hover:bg-white/70'
+                        }`}>
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Color Selection */}
+              {accessToken && colors.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-[#5d5e64] uppercase tracking-wider">Color</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map((color) => (
+                      <button key={color} onClick={() => setSelectedColor(color)}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+                          selectedColor === color
+                            ? 'bg-[#1c1b1b] text-white border-[#1c1b1b]'
+                            : 'bg-white/50 text-[#45474b] border-white/30 hover:bg-white/70'
+                        }`}>
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Reseller Pricing */}
               {accessToken && (
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-[#5d5e64] uppercase tracking-wider">Reseller Pricing</h3>
                   <div className="bg-white/40 backdrop-blur-[20px] rounded-2xl p-4 space-y-4 border border-white/30">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-[#45474b]">Your Cost</span>
+                      <span className="font-semibold text-[#1c1b1b]">৳{costPrice}</span>
+                    </div>
                     <div className="flex flex-col space-y-2">
-                      <label className="text-sm font-semibold text-[#45474b]">Your Resale Price ($)</label>
+                      <label className="text-sm font-semibold text-[#45474b]">Your Resale Price (৳)</label>
                       <input type="number" step="0.01" value={resellerPrice} onChange={e => setResellerPrice(e.target.value)} placeholder="Enter your selling price"
                         className="w-full bg-white/50 border border-white/30 rounded-full px-4 py-2 text-[#1c1b1b] focus:outline-none focus:ring-2 focus:ring-[#5d5e64]/50 transition-all" />
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-white/20">
-                      <span className="text-base text-[#45474b]">Potential Profit</span>
-                      <span className="text-lg font-bold text-[#2d666d]">${profit.toFixed(2)}</span>
-                    </div>
+                    {resellerPrice && parseFloat(resellerPrice) > 0 && (
+                      <div className="flex justify-between items-center pt-2 border-t border-white/20">
+                        <span className="text-base text-[#45474b]">Potential Profit</span>
+                        <span className={`text-lg font-bold ${profit > 0 ? 'text-[#2d666d]' : 'text-[#ba1a1a]'}`}>৳{profit.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -193,12 +247,6 @@ export default function ShopProductDetailPage() {
                   <span className="material-symbols-outlined text-[20px]">{addedToCart ? 'check' : inCart ? 'shopping_bag' : 'add_shopping_cart'}</span>
                   {addedToCart ? 'Added!' : inCart ? 'Add Another' : 'Add to Cart'}
                 </button>
-                {accessToken && resellerPrice && parseFloat(resellerPrice) > product.price && (
-                  <button onClick={() => setShowOrderForm(true)}
-                    className="w-full bg-[#2d666d] text-white py-4 px-8 rounded-full text-lg font-bold hover:opacity-90 hover:-translate-y-1 transition-all duration-300 shadow-[0_10px_20px_rgba(0,0,0,0.1)]">
-                    Place Direct Order
-                  </button>
-                )}
                 {!accessToken && (
                   <button onClick={() => router.push('/login')}
                     className="w-full bg-[#1A1A1A] text-white py-4 px-8 rounded-full text-lg font-bold hover:opacity-90 hover:-translate-y-1 transition-all duration-300 shadow-[0_10px_20px_rgba(0,0,0,0.1)]">
@@ -209,54 +257,6 @@ export default function ShopProductDetailPage() {
             </div>
           </div>
         </main>
-
-        {/* Order Form Modal */}
-        {showOrderForm && (
-          <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
-              {orderSuccess ? (
-                <div className="text-center py-8">
-                  <span className="material-symbols-outlined text-6xl text-[#2d666d] mb-4">check_circle</span>
-                  <h2 className="text-xl font-bold text-[#1c1b1b] mb-2">Order Placed!</h2>
-                  <p className="text-[#45474b] mb-6">Your reseller order has been placed successfully.</p>
-                  <button onClick={() => { setShowOrderForm(false); setOrderSuccess(false); router.push('/reseller-shop'); }} className="bg-[#2d666d] text-white py-3 px-8 rounded-full font-bold hover:opacity-90 transition-all">Back to Shop</button>
-                </div>
-              ) : (
-                <form onSubmit={handleOrder} className="space-y-4">
-                  <h2 className="text-xl font-bold text-[#1c1b1b]">Reseller Order</h2>
-                  <div className="flex flex-col space-y-2">
-                    <label className="text-sm font-semibold text-[#45474b]">Customer Name</label>
-                    <input type="text" required value={orderForm.customerName} onChange={e => setOrderForm({ ...orderForm, customerName: e.target.value })} className="w-full bg-white/50 border border-white/30 rounded-full px-4 py-2 text-[#1c1b1b] focus:outline-none focus:ring-2 focus:ring-[#5d5e64]/50 transition-all" />
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <label className="text-sm font-semibold text-[#45474b]">Customer Phone</label>
-                    <input type="text" required value={orderForm.customerPhone} onChange={e => setOrderForm({ ...orderForm, customerPhone: e.target.value })} className="w-full bg-white/50 border border-white/30 rounded-full px-4 py-2 text-[#1c1b1b] focus:outline-none focus:ring-2 focus:ring-[#5d5e64]/50 transition-all" />
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <label className="text-sm font-semibold text-[#45474b]">Alternative Phone</label>
-                    <input type="text" value={orderForm.customerAltPhone} onChange={e => setOrderForm({ ...orderForm, customerAltPhone: e.target.value })} className="w-full bg-white/50 border border-white/30 rounded-full px-4 py-2 text-[#1c1b1b] focus:outline-none focus:ring-2 focus:ring-[#5d5e64]/50 transition-all" />
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <label className="text-sm font-semibold text-[#45474b]">Delivery Address</label>
-                    <textarea required value={orderForm.customerAddress} onChange={e => setOrderForm({ ...orderForm, customerAddress: e.target.value })} rows={3} className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 py-2 text-[#1c1b1b] focus:outline-none focus:ring-2 focus:ring-[#5d5e64]/50 transition-all resize-none" />
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <label className="text-sm font-semibold text-[#45474b]">Payment Method</label>
-                    <select value={orderForm.paymentMethod} onChange={e => setOrderForm({ ...orderForm, paymentMethod: e.target.value })} className="w-full bg-white/50 border border-white/30 rounded-full px-4 py-2 text-[#1c1b1b] focus:outline-none focus:ring-2 focus:ring-[#5d5e64]/50 transition-all">
-                      <option value="bkash">bKash</option>
-                      <option value="nagad">Nagad</option>
-                      <option value="cash">Cash on Delivery</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={() => setShowOrderForm(false)} className="flex-1 bg-[#eae7e7] text-[#1c1b1b] py-3 px-6 rounded-full font-bold hover:opacity-90 transition-all">Cancel</button>
-                    <button type="submit" disabled={ordering} className="flex-1 bg-[#2d666d] text-white py-3 px-6 rounded-full font-bold hover:opacity-90 transition-all disabled:opacity-50">{ordering ? 'Placing...' : 'Confirm Order'}</button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </AuthGuard>
   );

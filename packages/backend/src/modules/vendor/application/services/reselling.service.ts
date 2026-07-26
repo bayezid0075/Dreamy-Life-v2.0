@@ -2,14 +2,16 @@ import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenEx
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, desc, and } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
+import { WalletService } from '../../../wallet/application/services/wallet.service';
 
 @Injectable()
 export class ResellingService {
   constructor(
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
+    private readonly walletService: WalletService,
   ) {}
 
-  async createOrder(resellerId: string, data: { productId: string; customerName: string; customerPhone: string; customerAltPhone?: string; resellerPrice: number; customerAddress: string; paymentMethod: string }) {
+  async createOrder(resellerId: string, data: { productId: string; customerName: string; customerPhone: string; customerAltPhone?: string; resellerPrice: number; customerAddress: string; paymentMethod: string; deliveryMethod?: string; deliveryCharge?: number }) {
     const product = await this.db.query.products.findFirst({
       where: eq(schema.products.id, data.productId),
     });
@@ -26,11 +28,17 @@ export class ResellingService {
       throw new BadRequestException('Product is out of stock');
     }
 
-    const vendorPrice = Number(product.price);
+    const vendorPrice = Number(product.discountPrice) || Number(product.actualPrice);
     const profit = data.resellerPrice - vendorPrice;
 
     if (profit < 0) {
       throw new BadRequestException('Reseller price cannot be lower than vendor price');
+    }
+
+    const deliveryCharge = data.deliveryCharge || 0;
+
+    if (data.paymentMethod === 'funds' && deliveryCharge > 0) {
+      await this.walletService.debitFunds(resellerId, deliveryCharge, `Delivery charge for order`);
     }
 
     const [order] = await this.db
@@ -47,6 +55,8 @@ export class ResellingService {
         profit: String(profit),
         customerAddress: data.customerAddress,
         paymentMethod: data.paymentMethod,
+        deliveryMethod: data.deliveryMethod || null,
+        deliveryCharge: String(deliveryCharge),
       })
       .returning();
 
@@ -60,6 +70,7 @@ export class ResellingService {
       resellerPrice: Number(order.resellerPrice),
       vendorPrice: Number(order.vendorPrice),
       profit: Number(order.profit),
+      deliveryCharge: Number(order.deliveryCharge),
     };
   }
 
@@ -78,6 +89,8 @@ export class ResellingService {
         profit: schema.resellerOrders.profit,
         customerAddress: schema.resellerOrders.customerAddress,
         paymentMethod: schema.resellerOrders.paymentMethod,
+        deliveryMethod: schema.resellerOrders.deliveryMethod,
+        deliveryCharge: schema.resellerOrders.deliveryCharge,
         status: schema.resellerOrders.status,
         createdAt: schema.resellerOrders.createdAt,
         updatedAt: schema.resellerOrders.updatedAt,
@@ -96,6 +109,7 @@ export class ResellingService {
       resellerPrice: Number(o.resellerPrice),
       vendorPrice: Number(o.vendorPrice),
       profit: Number(o.profit),
+      deliveryCharge: Number(o.deliveryCharge),
     }));
   }
 
@@ -114,6 +128,8 @@ export class ResellingService {
         profit: schema.resellerOrders.profit,
         customerAddress: schema.resellerOrders.customerAddress,
         paymentMethod: schema.resellerOrders.paymentMethod,
+        deliveryMethod: schema.resellerOrders.deliveryMethod,
+        deliveryCharge: schema.resellerOrders.deliveryCharge,
         status: schema.resellerOrders.status,
         createdAt: schema.resellerOrders.createdAt,
         updatedAt: schema.resellerOrders.updatedAt,
@@ -147,6 +163,7 @@ export class ResellingService {
       resellerPrice: Number(order.resellerPrice),
       vendorPrice: Number(order.vendorPrice),
       profit: Number(order.profit),
+      deliveryCharge: Number(order.deliveryCharge),
       shipments: shipments.map(s => ({
         ...s,
         estimatedDelivery: s.estimatedDelivery,
@@ -167,6 +184,8 @@ export class ResellingService {
         resellerPrice: schema.resellerOrders.resellerPrice,
         vendorPrice: schema.resellerOrders.vendorPrice,
         profit: schema.resellerOrders.profit,
+        deliveryMethod: schema.resellerOrders.deliveryMethod,
+        deliveryCharge: schema.resellerOrders.deliveryCharge,
         status: schema.resellerOrders.status,
         createdAt: schema.resellerOrders.createdAt,
         productName: schema.products.name,
@@ -183,6 +202,7 @@ export class ResellingService {
       resellerPrice: Number(o.resellerPrice),
       vendorPrice: Number(o.vendorPrice),
       profit: Number(o.profit),
+      deliveryCharge: Number(o.deliveryCharge),
     }));
   }
 
@@ -215,6 +235,7 @@ export class ResellingService {
       resellerPrice: Number(updated.resellerPrice),
       vendorPrice: Number(updated.vendorPrice),
       profit: Number(updated.profit),
+      deliveryCharge: Number(updated.deliveryCharge),
     };
   }
 }

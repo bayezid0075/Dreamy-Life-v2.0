@@ -28,7 +28,8 @@ export default function ProductDetailScreen() {
     finally { setLoading(false); }
   };
 
-  const profit = product && resellerPrice ? Math.max(0, parseFloat(resellerPrice) - product.price) : 0;
+  const effectivePrice = product ? (product.discountPrice || product.actualPrice) : 0;
+  const profit = product && resellerPrice ? Math.max(0, parseFloat(resellerPrice) - effectivePrice) : 0;
 
   const handleOrder = async () => {
     if (!form.customerName || !form.customerPhone || !form.customerAddress) { Alert.alert('Error', 'Fill all required fields'); return; }
@@ -61,22 +62,29 @@ export default function ProductDetailScreen() {
         </GlassPanel>
 
         <Text style={styles.productName}>{product.name}</Text>
-        <Text style={styles.productPrice}>${product.price}</Text>
+        {product.discountPrice ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Text style={[styles.productPrice, { textDecorationLine: 'line-through', opacity: 0.5 }]}>৳{product.actualPrice}</Text>
+            <Text style={styles.productPrice}>৳{product.discountPrice}</Text>
+          </View>
+        ) : (
+          <Text style={styles.productPrice}>৳{product.actualPrice}</Text>
+        )}
         <Text style={styles.productShop}>by {product.shopName}</Text>
         <Text style={styles.productDesc}>{product.description || 'No description available.'}</Text>
         <Text style={styles.productStock}>📦 {product.stock} units in stock</Text>
 
         <GlassPanel borderRadius={12} style={styles.resellerSection}>
           <Text style={styles.sectionTitle}>Reseller Pricing</Text>
-          <Text style={styles.label}>Your Resale Price ($)</Text>
+          <Text style={styles.label}>Your Resale Price (৳)</Text>
           <TextInput style={styles.input} value={resellerPrice} onChangeText={setResellerPrice} keyboardType="decimal-pad" placeholder="Enter your price" placeholderTextColor="rgba(69,71,75,0.5)" />
           <View style={styles.profitRow}>
             <Text style={styles.profitLabel}>Potential Profit</Text>
-            <Text style={styles.profitValue}>${profit.toFixed(2)}</Text>
+            <Text style={styles.profitValue}>৳{profit.toFixed(2)}</Text>
           </View>
         </GlassPanel>
 
-        {resellerPrice && parseFloat(resellerPrice) > product.price && (
+        {resellerPrice && parseFloat(resellerPrice) > effectivePrice && (
           <TouchableOpacity style={styles.orderBtn} onPress={() => setShowOrder(true)}>
             <Text style={styles.orderBtnText}>Place Reseller Order</Text>
           </TouchableOpacity>
@@ -92,8 +100,8 @@ export default function ProductDetailScreen() {
             <TextInput style={styles.input} value={form.customerAltPhone} onChangeText={v => setForm({ ...form, customerAltPhone: v })} placeholder="Alt Phone" keyboardType="phone-pad" placeholderTextColor="rgba(69,71,75,0.5)" />
             <TextInput style={[styles.input, { borderRadius: 12, height: 80 }]} value={form.customerAddress} onChangeText={v => setForm({ ...form, customerAddress: v })} placeholder="Address *" multiline placeholderTextColor="rgba(69,71,75,0.5)" />
             <View style={styles.profitBox}>
-              <Text style={{ fontSize: 13, color: '#45474b' }}>Vendor: ${product.price} | Your: ${resellerPrice}</Text>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#2d666d', marginTop: 4 }}>Profit: ${profit.toFixed(2)}</Text>
+              <Text style={{ fontSize: 13, color: '#45474b' }}>Vendor: ৳{effectivePrice} | Your: ৳{resellerPrice}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#2d666d', marginTop: 4 }}>Profit: ৳{profit.toFixed(2)}</Text>
             </View>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowOrder(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -21,10 +22,27 @@ export default function ShopPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [addedId, setAddedId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
 
   const totalCartItems = items.reduce((s, i) => s + i.quantity, 0);
 
   useEffect(() => { loadProducts(); }, [category]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/categories`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.data) {
+          setCategories([
+            { value: '', label: t('all') },
+            ...d.data.map((c: any) => ({ value: c.slug || c.value || c.id, label: c.name || c.label })),
+          ]);
+        }
+      })
+      .catch(() => {
+        setCategories([{ value: '', label: t('all') }]);
+      });
+  }, []);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -51,28 +69,22 @@ export default function ShopPage() {
   const handleAddToCart = (e: React.MouseEvent, product: any) => {
     e.preventDefault();
     e.stopPropagation();
+    const costPrice = product.discountPrice || product.actualPrice;
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
-      vendorPrice: product.price,
+      actualPrice: product.actualPrice,
+      discountPrice: product.discountPrice || undefined,
+      vendorPrice: costPrice,
+      resellerPrice: costPrice,
+      deliveryChargeInside: product.deliveryChargeInside || 0,
+      deliveryChargeOutside: product.deliveryChargeOutside || 0,
       image: product.imageUrls?.[0],
       shopName: product.shopName || '',
     });
     setAddedId(product.id);
     setTimeout(() => setAddedId(null), 1000);
   };
-
-  const categories = [
-    { key: '', label: t('all') },
-    { key: 'home_decor', label: t('homeDecor') },
-    { key: 'furniture', label: t('furniture') },
-    { key: 'lighting', label: t('lighting') },
-    { key: 'textiles', label: t('textiles') },
-    { key: 'seating', label: t('seating') },
-    { key: 'tables', label: t('tables') },
-    { key: 'decor', label: t('decor') },
-  ];
 
   return (
     <AuthGuard>
@@ -147,13 +159,13 @@ export default function ShopPage() {
             <section className="mb-8 -mx-6 px-6 overflow-x-auto no-scrollbar">
               <div className="flex gap-3 w-max pb-2">
                 {categories.map(c => (
-                  <button key={c.key} onClick={() => setCategory(c.key)}
+                  <button key={c.value} onClick={() => setCategory(c.value)}
                     className={`px-6 py-3 rounded-full text-sm font-semibold transition-all whitespace-nowrap ${
-                      category === c.key
+                      category === c.value
                         ? 'bg-[#1c1b1b] text-white shadow-sm'
                         : 'text-[#1c1b1b] hover:bg-white/40'
                     }`}
-                    style={category !== c.key ? { background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.3)' } : {}}>
+                    style={category !== c.value ? { background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.3)' } : {}}>
                     {c.label}
                   </button>
                 ))}
@@ -202,7 +214,16 @@ export default function ShopPage() {
                       <p className="text-xs text-[#45474b] opacity-70 mb-1">{product.shopName}</p>
                       <h3 className="text-sm font-bold text-[#1c1b1b] mb-1 line-clamp-2 leading-tight">{product.name}</h3>
                       <div className="flex justify-between items-end mt-auto">
-                        <p className="text-sm font-semibold text-[#5d5e64]">${product.price}</p>
+                        <div className="flex items-center gap-2">
+                          {product.discountPrice ? (
+                            <>
+                              <span className="text-xs font-bold text-[#45474b] line-through">৳{product.actualPrice}</span>
+                              <span className="text-sm font-semibold text-[#2d666d]">৳{product.discountPrice}</span>
+                            </>
+                          ) : (
+                            <span className="text-sm font-semibold text-[#5d5e64]">৳{product.actualPrice}</span>
+                          )}
+                        </div>
                         <button
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                             addedId === product.id
@@ -224,6 +245,11 @@ export default function ShopPage() {
               </section>
             )}
           </main>
+
+          {/* Ad Banner */}
+          <div className="px-6 pb-8">
+            <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
+          </div>
         </div>
 
         {/* BottomNavBar */}

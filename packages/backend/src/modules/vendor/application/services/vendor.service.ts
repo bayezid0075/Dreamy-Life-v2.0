@@ -19,6 +19,9 @@ export class VendorService {
     });
 
     if (existingVendor) {
+      if (existingVendor.status === 'banned') {
+        throw new ForbiddenException('Your vendor account has been banned');
+      }
       throw new ConflictException('You already have a vendor profile');
     }
 
@@ -208,6 +211,7 @@ export class VendorService {
       totalProducts: Number(productCount[0]?.value) || 0,
       totalOrders: Number(orderCount[0]?.value) || 0,
       totalRevenue: Number(revenue[0]?.value) || 0,
+      status: vendor.status,
     };
   }
 
@@ -239,7 +243,8 @@ export class VendorService {
       },
       products: products.map(p => ({
         ...p,
-        price: Number(p.price),
+        actualPrice: Number(p.actualPrice),
+        discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
       })),
     };
   }
@@ -277,7 +282,10 @@ export class VendorService {
         name: schema.products.name,
         description: schema.products.description,
         category: schema.products.category,
-        price: schema.products.price,
+        actualPrice: schema.products.actualPrice,
+        discountPrice: schema.products.discountPrice,
+        deliveryChargeInside: schema.products.deliveryChargeInside,
+        deliveryChargeOutside: schema.products.deliveryChargeOutside,
         stock: schema.products.stock,
         sku: schema.products.sku,
         imageUrls: schema.products.imageUrls,
@@ -302,7 +310,10 @@ export class VendorService {
           name: schema.products.name,
           description: schema.products.description,
           category: schema.products.category,
-          price: schema.products.price,
+          actualPrice: schema.products.actualPrice,
+          discountPrice: schema.products.discountPrice,
+          deliveryChargeInside: schema.products.deliveryChargeInside,
+          deliveryChargeOutside: schema.products.deliveryChargeOutside,
           stock: schema.products.stock,
           sku: schema.products.sku,
           imageUrls: schema.products.imageUrls,
@@ -324,7 +335,10 @@ export class VendorService {
 
     return products.map(p => ({
       ...p,
-      price: Number(p.price),
+      actualPrice: Number(p.actualPrice),
+      discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
+      deliveryChargeInside: Number(p.deliveryChargeInside),
+      deliveryChargeOutside: Number(p.deliveryChargeOutside),
     }));
   }
 

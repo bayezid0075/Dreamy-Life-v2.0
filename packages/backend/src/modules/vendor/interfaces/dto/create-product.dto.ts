@@ -33,11 +33,6 @@ export class CreateProductDto {
   @Min(0)
   discountPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Delivery area', example: 'inside_dhaka', enum: ['inside_dhaka', 'outside_dhaka'] })
-  @IsOptional()
-  @IsString()
-  deliveryArea?: string;
-
   @ApiPropertyOptional({ description: 'Delivery charge inside Dhaka', example: 60 })
   @IsOptional()
   @IsNumber()
@@ -64,11 +59,6 @@ export class CreateProductDto {
   @IsOptional()
   @IsObject()
   variantPrices?: Record<string, { price: number }>;
-
-  @ApiProperty({ description: 'Base/display price', example: 120.00 })
-  @IsNumber()
-  @Min(0)
-  price: number;
 
   @ApiProperty({ description: 'Stock quantity', example: 50 })
   @IsNumber()
@@ -119,11 +109,6 @@ export class UpdateProductDto {
   @Min(0)
   discountPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Delivery area', enum: ['inside_dhaka', 'outside_dhaka'] })
-  @IsOptional()
-  @IsString()
-  deliveryArea?: string;
-
   @ApiPropertyOptional({ description: 'Delivery charge inside Dhaka' })
   @IsOptional()
   @IsNumber()
@@ -150,12 +135,6 @@ export class UpdateProductDto {
   @IsOptional()
   @IsObject()
   variantPrices?: Record<string, { price: number }>;
-
-  @ApiPropertyOptional({ description: 'Base/display price' })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  price?: number;
 
   @ApiPropertyOptional({ description: 'Stock quantity' })
   @IsOptional()

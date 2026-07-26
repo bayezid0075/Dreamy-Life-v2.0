@@ -8,6 +8,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -123,21 +124,21 @@ export default function ResellerOrdersPage() {
                   <div className="w-10 h-10 rounded-full bg-[#e0f7fa] flex items-center justify-center mb-3">
                     <span className="material-symbols-outlined text-[#00838f]">payments</span>
                   </div>
-                  <p className="text-2xl font-bold text-[#1c1b1b]">${totalRevenue.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-[#1c1b1b]">৳{totalRevenue.toFixed(2)}</p>
                   <p className="text-xs text-[#45474b] font-semibold">Total Revenue</p>
                 </div>
                 <div className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-5 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
                   <div className="w-10 h-10 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-3">
                     <span className="material-symbols-outlined text-[#2e7d32]">trending_up</span>
                   </div>
-                  <p className="text-2xl font-bold text-[#2d666d]">${totalProfit.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-[#2d666d]">৳{totalProfit.toFixed(2)}</p>
                   <p className="text-xs text-[#45474b] font-semibold">Total Profit</p>
                 </div>
                 <div className="bg-white/50 backdrop-blur-[20px] rounded-2xl p-5 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
                   <div className="w-10 h-10 rounded-full bg-[#ffd1dc] flex items-center justify-center mb-3">
                     <span className="material-symbols-outlined text-[#78555e]">receipt_long</span>
                   </div>
-                  <p className="text-2xl font-bold text-[#1c1b1b]">${avgOrderValue.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-[#1c1b1b]">৳{avgOrderValue.toFixed(2)}</p>
                   <p className="text-xs text-[#45474b] font-semibold">Avg. Order Value</p>
                 </div>
               </section>
@@ -196,8 +197,8 @@ export default function ResellerOrdersPage() {
                         <p className="text-xs text-[#45474b]/60 mt-0.5">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-[#1c1b1b]">${order.resellerPrice?.toFixed(2)}</p>
-                        <p className="text-xs text-[#2d666d] font-semibold">+${order.profit?.toFixed(2)}</p>
+                        <p className="text-sm font-bold text-[#1c1b1b]">৳{order.resellerPrice?.toFixed(2)}</p>
+                        <p className="text-xs text-[#2d666d] font-semibold">+৳{order.profit?.toFixed(2)}</p>
                         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${sc.bg} ${sc.text}`}>
                           <span className="material-symbols-outlined text-[10px]">{sc.icon}</span>
                           {order.status}
@@ -206,6 +207,11 @@ export default function ResellerOrdersPage() {
                     </Link>
                   );
                 })}
+              </div>
+
+              {/* Ad Banner */}
+              <div className="my-2">
+                <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
               </div>
             </>
           )}

@@ -11,19 +11,31 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 export default function ShopScreen() {
   const { t } = useI18n();
   const router = useRouter();
-  const CATEGORIES = [
+  const [categories, setCategories] = useState<{ key: string; label: string }[]>([
     { key: '', label: t('all') },
-    { key: 'home_decor', label: t('homeDecor') },
-    { key: 'furniture', label: t('furniture') },
-    { key: 'lighting', label: t('lighting') },
-    { key: 'textiles', label: t('textiles') },
-  ];
+  ]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => { loadCategories(); }, []);
+
+  const loadCategories = async () => {
+    try {
+      const res = await fetch(`${API_URL}/categories`);
+      if (res.ok) {
+        const data = await res.json();
+        const cats = (data.data || []).map((c: any) => ({
+          key: c.slug || c.value || c.id,
+          label: c.name || c.label,
+        }));
+        setCategories([{ key: '', label: t('all') }, ...cats]);
+      }
+    } catch { /* fallback to default */ }
+  };
 
   useEffect(() => { loadProducts(); }, [category]);
 
@@ -64,7 +76,14 @@ export default function ShopScreen() {
         <Text style={styles.shopName} numberOfLines={1}>{item.shopName}</Text>
         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         <View style={styles.priceRow}>
-          <Text style={styles.productPrice}>${item.price}</Text>
+          {item.discountPrice ? (
+            <>
+              <Text style={[styles.productPrice, { textDecorationLine: 'line-through', opacity: 0.5 }]}>৳{item.actualPrice}</Text>
+              <Text style={styles.productPrice}>৳{item.discountPrice}</Text>
+            </>
+          ) : (
+            <Text style={styles.productPrice}>৳{item.actualPrice}</Text>
+          )}
           <Text style={styles.categoryBadge}>{item.category?.replace('_', ' ')}</Text>
         </View>
       </View>
@@ -129,7 +148,7 @@ export default function ShopScreen() {
 
             {/* Categories */}
             <FlatList
-              data={CATEGORIES}
+              data={categories}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoryList}

@@ -74,6 +74,21 @@ export default function VendorApplyPage() {
   const [vvipStatus, setVvipStatus] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (accessToken) {
+      fetch(`${API_URL}/vendor/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.data || data.ok) {
+            router.replace('/vendor/dashboard');
+          }
+        })
+        .catch(() => {});
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
     if (step === 'form' && accessToken) {
       checkVvipStatus();
     }

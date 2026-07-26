@@ -82,7 +82,14 @@ export default function VendorProductsScreen() {
                   </View>
                 </View>
                 <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
-                <Text style={styles.productPrice}>${product.price}</Text>
+                {product.discountPrice ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.productPrice, { textDecorationLine: 'line-through', opacity: 0.5 }]}>৳{product.actualPrice}</Text>
+                    <Text style={styles.productPrice}>৳{product.discountPrice}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.productPrice}>৳{product.actualPrice}</Text>
+                )}
                 <Text style={styles.productSku}>#{product.sku}</Text>
                 <Text style={styles.productStock}>{product.stock} units</Text>
                 <View style={styles.actions}>

@@ -647,6 +647,7 @@ const en = {
   contactUs: 'Contact Us',
   emailUs: 'Email Us',
   followUs: 'Follow Us',
+  groupsAvailable: 'Telegram Groups',
 } as const;
 
 export default en;

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 import { JwtService } from '@nestjs/jwt';
 import { ResellingService } from '../../application/services/reselling.service';
 import { VendorService } from '../../application/services/vendor.service';
+import { FundPaymentService } from '../../../wallet/application/services/fund-payment.service';
 import { CreateResellerOrderDto, UpdateOrderStatusDto } from '../dto/create-reseller-order.dto';
 
 @ApiTags('Reselling')
@@ -12,6 +13,7 @@ export class ResellingController {
   constructor(
     private readonly resellingService: ResellingService,
     private readonly vendorService: VendorService,
+    private readonly fundPaymentService: FundPaymentService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -21,6 +23,14 @@ export class ResellingController {
     const userId = this.extractUserId(req);
     const order = await this.resellingService.createOrder(userId, body);
     return { success: true, data: order };
+  }
+
+  @Post('delivery-payment')
+  @ApiOperation({ summary: 'Create online payment for delivery charge' })
+  async createDeliveryPayment(@Req() req: any, @Body() body: { amount: number; orderId: string }) {
+    const userId = this.extractUserId(req);
+    const result = await this.fundPaymentService.createFundPayment(userId, body.amount);
+    return { success: true, data: { checkoutUrl: result.paymentUrl, invoiceId: result.invoiceId } };
   }
 
   @Get('orders')

@@ -36,6 +36,10 @@ export default function VendorProductsPage() {
 
       if (vendorRes?.data) {
         setVendor(vendorRes.data);
+        if (vendorRes.data.status === 'banned') {
+          router.replace('/vendor/banned');
+          return;
+        }
       }
 
       setProducts(productsRes?.data || []);
@@ -192,7 +196,16 @@ export default function VendorProductsPage() {
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-1">
                     <h3 className="text-base font-bold text-[#1c1b1b] leading-tight truncate pr-2">{product.name}</h3>
-                    <span className="text-sm font-bold text-[#2d666d] whitespace-nowrap">${product.price}</span>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      {product.discountPrice ? (
+                        <>
+                          <span className="text-xs font-bold text-[#45474b] line-through">৳{product.actualPrice}</span>
+                          <span className="text-sm font-bold text-[#2d666d]">৳{product.discountPrice}</span>
+                        </>
+                      ) : (
+                        <span className="text-sm font-bold text-[#2d666d]">৳{product.actualPrice}</span>
+                      )}
+                    </div>
                   </div>
                   <p className="text-xs text-[#45474b] opacity-60 mb-2">SKU: #{product.sku || 'N/A'}</p>
                   <p className="text-xs text-[#45474b] opacity-60 mb-3 capitalize">{product.category?.replace('_', ' ') || 'Uncategorized'}</p>

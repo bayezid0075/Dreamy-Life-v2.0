@@ -9,6 +9,7 @@ import SideDrawer from '@/shared/components/SideDrawer';
 import { VendorProfile } from '@/features/vendor/api';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -212,6 +213,11 @@ export default function DashboardPage() {
               <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('pickAndDrop')}</span>
             </button>
           </section>
+
+          {/* Ad Banner */}
+          <div className="my-2">
+            <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
+          </div>
 
           {/* Features Grid */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">

@@ -192,4 +192,89 @@ export class AdminController {
     const stats = await this.adminService.getMembershipStats();
     return { success: true, data: stats };
   }
+
+  // ─── Vendor Management ──────────────────────────────────────────────────
+
+  @Get('vendors')
+  @ApiOperation({ summary: 'List vendors with pagination, search, and status filter' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: ['active', 'banned'] })
+  async getVendors(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    const result = await this.adminService.getVendors(
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 20,
+      search,
+      status,
+    );
+    return { success: true, data: result };
+  }
+
+  @Get('vendors/:id')
+  @ApiOperation({ summary: 'Get vendor detail with product count and order count' })
+  @ApiResponse({ status: 200, description: 'Vendor detail retrieved' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async getVendorById(@Param('id') id: string) {
+    const vendor = await this.adminService.getVendorById(id);
+    return { success: true, data: vendor };
+  }
+
+  @Patch('vendors/:id/status')
+  @ApiOperation({ summary: 'Ban or unban a vendor' })
+  @ApiResponse({ status: 200, description: 'Vendor status updated' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async updateVendorStatus(
+    @Param('id') id: string,
+    @Body() body: { status: 'active' | 'banned' },
+  ) {
+    const result = await this.adminService.updateVendorStatus(id, body.status);
+    return { success: true, data: result };
+  }
+
+  // ─── Product Management ─────────────────────────────────────────────────
+
+  @Get('products')
+  @ApiOperation({ summary: 'List all products with vendor info, pagination, search, category filter' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'category', required: false, type: String })
+  async getProducts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+  ) {
+    const result = await this.adminService.getProducts(
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 20,
+      search,
+      category,
+    );
+    return { success: true, data: result };
+  }
+
+  @Get('products/:id')
+  @ApiOperation({ summary: 'Get product detail' })
+  @ApiResponse({ status: 200, description: 'Product detail retrieved' })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  async getProductById(@Param('id') id: string) {
+    const product = await this.adminService.getProductById(id);
+    return { success: true, data: product };
+  }
+
+  @Delete('products/:id')
+  @ApiOperation({ summary: 'Admin soft-delete a product' })
+  @ApiResponse({ status: 200, description: 'Product deleted' })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  async deleteProduct(@Param('id') id: string) {
+    const result = await this.adminService.deleteProduct(id);
+    return { success: true, data: result };
+  }
 }

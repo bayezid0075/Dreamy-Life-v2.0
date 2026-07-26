@@ -32,11 +32,23 @@ export class CreateResellerOrderDto {
   @IsNotEmpty()
   customerAddress: string;
 
-  @ApiProperty({ description: 'Payment method', enum: ['bkash', 'nagad', 'rocket', 'cash_on_delivery'], example: 'bkash' })
+  @ApiProperty({ description: 'Payment method', enum: ['bkash', 'nagad', 'rocket', 'cash_on_delivery', 'funds'], example: 'bkash' })
   @IsString()
   @IsNotEmpty()
-  @IsIn(['bkash', 'nagad', 'rocket', 'cash_on_delivery'])
+  @IsIn(['bkash', 'nagad', 'rocket', 'cash_on_delivery', 'funds'])
   paymentMethod: string;
+
+  @ApiPropertyOptional({ description: 'Delivery method', enum: ['inside', 'outside'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['inside', 'outside'])
+  deliveryMethod?: string;
+
+  @ApiPropertyOptional({ description: 'Delivery charge amount', example: 60 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  deliveryCharge?: number;
 }
 
 export class UpdateOrderStatusDto {

@@ -115,9 +115,9 @@ export default function ResellerOrderDetailPage() {
           <div className="bg-white/40 backdrop-blur-[20px] rounded-2xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <h3 className="text-sm font-semibold text-[#5d5e64] mb-4">Pricing</h3>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-[#45474b]">Vendor Price</span><span className="font-semibold text-[#1c1b1b]">${order.vendorPrice?.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-[#45474b]">Your Price</span><span className="font-semibold text-[#1c1b1b]">${order.resellerPrice?.toFixed(2)}</span></div>
-              <div className="flex justify-between pt-2 border-t border-white/20"><span className="text-[#2d666d] font-bold">Your Profit</span><span className="font-bold text-[#2d666d]">${order.profit?.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-[#45474b]">Vendor Price</span><span className="font-semibold text-[#1c1b1b]">৳{order.vendorPrice?.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-[#45474b]">Your Price</span><span className="font-semibold text-[#1c1b1b]">৳{order.resellerPrice?.toFixed(2)}</span></div>
+              <div className="flex justify-between pt-2 border-t border-white/20"><span className="text-[#2d666d] font-bold">Your Profit</span><span className="font-bold text-[#2d666d]">৳{order.profit?.toFixed(2)}</span></div>
             </div>
           </div>
 

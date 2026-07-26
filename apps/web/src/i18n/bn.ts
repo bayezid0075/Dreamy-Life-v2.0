@@ -647,6 +647,7 @@ const bn = {
   contactUs: 'যোগাযোগ করুন',
   emailUs: 'ইমেইল করুন',
   followUs: 'আমাদের অনুসরণ করুন',
+  groupsAvailable: 'টেলিগ্রাম গ্রুপ',
 } as const;
 
 export default bn;

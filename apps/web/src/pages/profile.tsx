@@ -9,6 +9,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -170,6 +171,11 @@ export default function ProfilePage() {
             <p className="text-xs font-semibold text-[#45474b] mt-1 tracking-wider">{t('coupons')}</p>
           </div>
         </section>
+
+        {/* Ad Banner */}
+        <div className="my-2">
+          <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
+        </div>
 
         {/* Settings List */}
         <section className="glass-panel rounded-[30px] p-2 flex flex-col">

@@ -6,6 +6,7 @@ import { AdminAuthController } from './admin-auth.controller';
 import { AdminService } from './admin.service';
 import { AdminGuard } from './guards/admin.guard';
 import { WalletModule } from '../wallet/wallet.module';
+import { VendorModule } from '../vendor/vendor.module';
 import { PasswordService } from '../auth/domain/services/password.service';
 
 @Module({
@@ -20,6 +21,7 @@ import { PasswordService } from '../auth/domain/services/password.service';
       }),
     }),
     WalletModule,
+    VendorModule,
   ],
   controllers: [AdminController, AdminAuthController],
   providers: [AdminService, AdminGuard, PasswordService],

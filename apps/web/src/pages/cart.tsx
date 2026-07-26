@@ -10,6 +10,7 @@ import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -17,7 +18,11 @@ export default function CartPage() {
   const router = useRouter();
   const { t } = useI18n();
   const { accessToken, logout } = useAuthStore();
-  const { items, updateQuantity, updateResellerPrice, removeItem, clearCart, getTotalCost, getTotalProfit } = useCartStore();
+  const {
+    items, updateQuantity, updateResellerPrice, removeItem, clearCart,
+    getTotalCost, getTotalProfit, getTotalDeliveryCharge,
+    updateDeliveryMethod, updateDeliveryPaymentMethod,
+  } = useCartStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
@@ -43,24 +48,57 @@ export default function CartPage() {
       alert(t('pleaseFillCustomerDetails'));
       return;
     }
+    const missingDelivery = items.some(item => !item.deliveryMethod);
+    if (missingDelivery) {
+      alert('Please select delivery method for all items');
+      return;
+    }
     setOrdering(true);
     try {
       const results = await Promise.allSettled(
-        items.map(item =>
-          fetch(`${API_URL}/reselling/order`, {
+        items.map(async (item) => {
+          const orderBody: any = {
+            productId: item.productId,
+            resellerPrice: item.resellerPrice,
+            customerName: item.customerName || customerInfo.name,
+            customerPhone: item.customerPhone || customerInfo.phone,
+            customerAltPhone: item.customerAltPhone || customerInfo.altPhone || undefined,
+            customerAddress: item.customerAddress || customerInfo.address,
+            paymentMethod: (item.paymentMethod || customerInfo.paymentMethod) === 'funds' ? 'funds' : (item.paymentMethod || customerInfo.paymentMethod),
+            deliveryMethod: item.deliveryMethod,
+            deliveryCharge: item.deliveryCharge || 0,
+          };
+
+          if (item.deliveryCharge > 0 && item.deliveryPaymentMethod === 'funds') {
+            orderBody.paymentMethod = 'funds';
+          }
+
+          const res = await fetch(`${API_URL}/reselling/order`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-            body: JSON.stringify({
-              productId: item.productId,
-              resellerPrice: item.resellerPrice,
-              customerName: item.customerName || customerInfo.name,
-              customerPhone: item.customerPhone || customerInfo.phone,
-              customerAltPhone: item.customerAltPhone || customerInfo.altPhone || undefined,
-              customerAddress: item.customerAddress || customerInfo.address,
-              paymentMethod: item.paymentMethod || customerInfo.paymentMethod,
-            }),
-          }).then(r => r.json())
-        )
+            body: JSON.stringify(orderBody),
+          });
+          const data = await res.json();
+
+          if (!res.ok) return data;
+
+          if (item.deliveryCharge > 0 && item.deliveryPaymentMethod === 'gateway' && data.data?.id) {
+            const payRes = await fetch(`${API_URL}/reselling/delivery-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+              body: JSON.stringify({ amount: item.deliveryCharge, orderId: data.data.id }),
+            });
+            if (payRes.ok) {
+              const payData = await payRes.json();
+              if (payData.data?.checkoutUrl) {
+                window.location.href = payData.data.checkoutUrl;
+                return data;
+              }
+            }
+          }
+
+          return data;
+        })
       );
       const succeeded = results.filter(r => r.status === 'fulfilled' && (r as any).value?.data).length;
       const failed = results.length - succeeded;
@@ -77,6 +115,9 @@ export default function CartPage() {
 
   const handleLogout = async () => { await logout(); };
   const copyReferCode = () => { if (user?.ownRefercode) navigator.clipboard.writeText(user.ownRefercode); };
+
+  const totalDeliveryCharge = getTotalDeliveryCharge();
+  const totalProductCost = getTotalCost();
 
   return (
     <AuthGuard>
@@ -154,14 +195,69 @@ export default function CartPage() {
                             </button>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs text-[#45474b]">{t('cost')} ${item.vendorPrice}</p>
+                            <p className="text-xs text-[#45474b]">{t('cost')} ৳{item.vendorPrice}</p>
                             <div className="flex items-center gap-1">
-                              <span className="text-xs text-[#45474b]">{t('sell')} $</span>
+                              <span className="text-xs text-[#45474b]">{t('sell')} ৳</span>
                               <input type="number" step="0.01" value={item.resellerPrice}
                                 onChange={(e) => updateResellerPrice(item.productId, parseFloat(e.target.value) || 0)}
                                 className="w-16 text-xs font-bold text-[#2d666d] bg-[#e9fdff]/50 border border-[#2d666d]/20 rounded-full px-2 py-1 text-right outline-none focus:ring-2 focus:ring-[#2d666d]/30" />
                             </div>
                           </div>
+                        </div>
+
+                        {/* Delivery Method per item */}
+                        <div className="mt-3 pt-3 border-t border-white/20 space-y-2">
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateDeliveryMethod(item.productId, 'inside')}
+                              className={`flex-1 py-1.5 px-2 rounded-lg text-[10px] font-semibold transition-all border ${
+                                item.deliveryMethod === 'inside'
+                                  ? 'bg-[#1c1b1b] text-white border-[#1c1b1b]'
+                                  : 'bg-white/50 text-[#45474b] border-white/30 hover:bg-white/70'
+                              }`}>
+                              Inside Dhaka{item.deliveryChargeInside ? ` ৳${item.deliveryChargeInside}` : ' Free'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateDeliveryMethod(item.productId, 'outside')}
+                              className={`flex-1 py-1.5 px-2 rounded-lg text-[10px] font-semibold transition-all border ${
+                                item.deliveryMethod === 'outside'
+                                  ? 'bg-[#1c1b1b] text-white border-[#1c1b1b]'
+                                  : 'bg-white/50 text-[#45474b] border-white/30 hover:bg-white/70'
+                              }`}>
+                              Outside Dhaka{item.deliveryChargeOutside ? ` ৳${item.deliveryChargeOutside}` : ' Free'}
+                            </button>
+                          </div>
+                          {item.deliveryMethod && item.deliveryCharge > 0 && (
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => updateDeliveryPaymentMethod(item.productId, 'funds')}
+                                className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-semibold border transition-all ${
+                                  item.deliveryPaymentMethod === 'funds'
+                                    ? 'bg-[#2d666d] text-white border-[#2d666d]'
+                                    : 'bg-white/50 text-[#45474b] border-white/30'
+                                }`}>
+                                Pay from Funds
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateDeliveryPaymentMethod(item.productId, 'gateway')}
+                                className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-semibold border transition-all ${
+                                  item.deliveryPaymentMethod === 'gateway'
+                                    ? 'bg-[#2d666d] text-white border-[#2d666d]'
+                                    : 'bg-white/50 text-[#45474b] border-white/30'
+                                }`}>
+                                Pay Online
+                              </button>
+                            </div>
+                          )}
+                          {item.deliveryMethod && (
+                            <p className="text-[10px] text-[#45474b] text-right">
+                              Delivery: ৳{item.deliveryCharge || 0}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -203,17 +299,33 @@ export default function CartPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-[#45474b]">{t('items')} ({items.reduce((s, i) => s + i.quantity, 0)})</span>
-                    <span className="font-semibold">${getTotalCost().toFixed(2)}</span>
+                    <span className="font-semibold">৳{totalProductCost.toFixed(2)}</span>
                   </div>
+                  {totalDeliveryCharge > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#45474b]">Delivery Charges</span>
+                      <span className="font-semibold">৳{totalDeliveryCharge.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-[#45474b]">{t('expectedRevenue')}</span>
-                    <span className="font-semibold">${items.reduce((s, i) => s + i.resellerPrice * i.quantity, 0).toFixed(2)}</span>
+                    <span className="font-semibold">৳{items.reduce((s, i) => s + i.resellerPrice * i.quantity, 0).toFixed(2)}</span>
                   </div>
                   <div className="border-t border-white/30 pt-3 flex justify-between">
                     <span className="font-bold text-[#1c1b1b]">{t('expectedProfit')}</span>
-                    <span className="font-bold text-[#2d666d] text-lg">${getTotalProfit().toFixed(2)}</span>
+                    <span className="font-bold text-[#2d666d] text-lg">৳{getTotalProfit().toFixed(2)}</span>
                   </div>
+                  {totalDeliveryCharge > 0 && (
+                    <div className="flex justify-between text-sm text-[#45474b]">
+                      <span>Delivery to pay separately per item</span>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              {/* Ad Banner */}
+              <div className="my-2">
+                <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
               </div>
 
               {/* Place Orders */}

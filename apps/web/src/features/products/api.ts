@@ -9,13 +9,11 @@ export interface Product {
   subcategory?: string;
   actualPrice: number;
   discountPrice?: number;
-  deliveryArea: string;
   deliveryChargeInside: number;
   deliveryChargeOutside: number;
   colors: string[];
   sizes: string[];
   variantPrices: Record<string, { price: number }>;
-  price: number;
   stock: number;
   sku: string;
   imageUrls: string[];
@@ -40,13 +38,11 @@ export const createProduct = async (data: {
   subcategory?: string;
   actualPrice: number;
   discountPrice?: number;
-  deliveryArea?: string;
   deliveryChargeInside?: number;
   deliveryChargeOutside?: number;
   colors?: string[];
   sizes?: string[];
   variantPrices?: Record<string, { price: number }>;
-  price: number;
   stock: number;
   sku?: string;
   imageUrls?: string[];
@@ -62,14 +58,13 @@ export const updateProduct = async (id: string, data: {
   subcategory?: string;
   actualPrice?: number;
   discountPrice?: number;
-  deliveryArea?: string;
   deliveryChargeInside?: number;
   deliveryChargeOutside?: number;
   colors?: string[];
   sizes?: string[];
   variantPrices?: Record<string, { price: number }>;
-  price?: number;
   stock?: number;
+  sku?: string;
   imageUrls?: string[];
 }) => {
   const response = await api.patch(`/vendor/products/${id}`, data);

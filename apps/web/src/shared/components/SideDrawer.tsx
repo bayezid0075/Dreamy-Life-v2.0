@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { VendorProfile } from '@/features/vendor/api';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useI18n } from '../../i18n';
+import AdSenseBannerAd from './ads/AdSenseBannerAd';
 
 interface SideDrawerProps {
   isOpen: boolean;
@@ -233,9 +234,14 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                 )}
               </div>
             </div>
-          </div>
+            </div>
 
-          {/* Logout */}
+            {/* Ad Banner */}
+            <div className="px-4 my-2">
+              <AdSenseBannerAd adSlot="3051399239" format="vertical" showLabel={false} />
+            </div>
+
+            {/* Logout */}
           <button
             onClick={handleLogout}
             className="mt-auto flex items-center justify-center gap-3 w-full py-4 bg-[#ffdad6]/50 text-[#ba1a1a] rounded-2xl font-bold border border-[#ba1a1a]/10 hover:bg-[#ba1a1a] hover:text-white transition-all"

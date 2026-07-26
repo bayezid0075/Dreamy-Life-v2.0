@@ -6,6 +6,29 @@ export interface Vendor {
   bannerUrl?: string;
   paymentStatus: boolean;
   isActive: boolean;
+  status: 'active' | 'banned';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SubCategory {
+  id: string;
+  categoryId: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,7 +39,8 @@ export interface Product {
   name: string;
   description?: string;
   category: string;
-  price: number;
+  actualPrice: number;
+  discountPrice?: number;
   stock: number;
   sku: string;
   imageUrls: string[];

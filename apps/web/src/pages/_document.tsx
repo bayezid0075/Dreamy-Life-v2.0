@@ -15,6 +15,11 @@ export default function Document() {
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9617633768223840"
+          crossOrigin="anonymous"
+        />
       </Head>
       <body>
         <Main />

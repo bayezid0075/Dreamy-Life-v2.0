@@ -6,16 +6,20 @@ import { ProductService } from './application/services/product.service';
 import { ResellingService } from './application/services/reselling.service';
 import { ShipmentService } from './application/services/shipment.service';
 import { PaymentService } from './application/services/payment.service';
+import { CategoryService } from './application/services/category.service';
 import { VendorController } from './interfaces/controllers/vendor.controller';
 import { ProductController } from './interfaces/controllers/product.controller';
 import { ResellingController } from './interfaces/controllers/reselling.controller';
 import { ShipmentController } from './interfaces/controllers/shipment.controller';
+import { CategoryController } from './interfaces/controllers/category.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
     ConfigModule,
     NotificationsModule,
+    WalletModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -30,6 +34,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     VendorController,
     ResellingController,
     ShipmentController,
+    CategoryController,
   ],
   providers: [
     VendorService,
@@ -37,7 +42,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     ResellingService,
     ShipmentService,
     PaymentService,
+    CategoryService,
   ],
-  exports: [VendorService, ProductService, ResellingService, ShipmentService],
+  exports: [VendorService, ProductService, ResellingService, ShipmentService, CategoryService],
 })
 export class VendorModule {}

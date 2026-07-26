@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, Inject, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, ConflictException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, sql, like, or, desc, count, sum, asc } from 'drizzle-orm';
+import { eq, sql, like, or, desc, count, sum, asc, and } from 'drizzle-orm';
 import * as schema from '../../infrastructure/database/schema';
 import { PasswordService } from '../auth/domain/services/password.service';
 import { JwtService } from '@nestjs/jwt';
@@ -493,6 +493,247 @@ export class AdminService {
         count: Number(u.count),
       })),
     };
+  }
+
+  // ─── Vendor Management ──────────────────────────────────────────────────
+
+  async getVendors(page = 1, limit = 20, search?: string, status?: string) {
+    const offset = (page - 1) * limit;
+    const conditions: any[] = [];
+
+    if (search) {
+      conditions.push(or(
+        like(schema.vendors.shopName, `%${search}%`),
+        like(schema.vendors.address, `%${search}%`),
+      ));
+    }
+
+    if (status) {
+      conditions.push(eq(schema.vendors.status, status));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    let vendorsQuery = this.db
+      .select({
+        id: schema.vendors.id,
+        userId: schema.vendors.userId,
+        shopName: schema.vendors.shopName,
+        address: schema.vendors.address,
+        bannerUrl: schema.vendors.bannerUrl,
+        paymentStatus: schema.vendors.paymentStatus,
+        isActive: schema.vendors.isActive,
+        status: schema.vendors.status,
+        createdAt: schema.vendors.createdAt,
+        updatedAt: schema.vendors.updatedAt,
+        username: schema.users.username,
+        phoneNumber: schema.users.phoneNumber,
+      })
+      .from(schema.vendors)
+      .innerJoin(schema.users, eq(schema.vendors.userId, schema.users.id))
+      .orderBy(desc(schema.vendors.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    if (whereClause) {
+      vendorsQuery = vendorsQuery.where(whereClause) as any;
+    }
+
+    const vendors = await vendorsQuery;
+
+    let totalQuery = this.db.select({ count: count() }).from(schema.vendors);
+    if (whereClause) {
+      totalQuery = totalQuery.where(whereClause) as any;
+    }
+    const totalResult = await totalQuery;
+    const total = Number(totalResult[0]?.count ?? 0);
+
+    return {
+      vendors,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getVendorById(vendorId: string) {
+    const vendor = await this.db
+      .select({
+        id: schema.vendors.id,
+        userId: schema.vendors.userId,
+        shopName: schema.vendors.shopName,
+        address: schema.vendors.address,
+        bannerUrl: schema.vendors.bannerUrl,
+        paymentStatus: schema.vendors.paymentStatus,
+        isActive: schema.vendors.isActive,
+        status: schema.vendors.status,
+        createdAt: schema.vendors.createdAt,
+        updatedAt: schema.vendors.updatedAt,
+        username: schema.users.username,
+        phoneNumber: schema.users.phoneNumber,
+      })
+      .from(schema.vendors)
+      .innerJoin(schema.users, eq(schema.vendors.userId, schema.users.id))
+      .where(eq(schema.vendors.id, vendorId))
+      .limit(1);
+
+    if (!vendor.length) {
+      throw new NotFoundException('Vendor not found');
+    }
+
+    const productCount = await this.db
+      .select({ value: count() })
+      .from(schema.products)
+      .where(eq(schema.products.vendorId, vendorId));
+
+    const orderCount = await this.db
+      .select({ value: count() })
+      .from(schema.resellerOrders)
+      .where(eq(schema.resellerOrders.vendorId, vendorId));
+
+    return {
+      ...vendor[0],
+      totalProducts: Number(productCount[0]?.value) || 0,
+      totalOrders: Number(orderCount[0]?.value) || 0,
+    };
+  }
+
+  async updateVendorStatus(vendorId: string, status: 'active' | 'banned') {
+    const vendor = await this.db.query.vendors.findFirst({
+      where: eq(schema.vendors.id, vendorId),
+    });
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+
+    await this.db
+      .update(schema.vendors)
+      .set({ status, isActive: status === 'active', updatedAt: new Date() })
+      .where(eq(schema.vendors.id, vendorId));
+
+    return { message: `Vendor status updated to ${status}` };
+  }
+
+  // ─── Product Management ─────────────────────────────────────────────────
+
+  async getProducts(page = 1, limit = 20, search?: string, category?: string) {
+    const offset = (page - 1) * limit;
+    const conditions: any[] = [eq(schema.products.isActive, true)];
+
+    if (search) {
+      conditions.push(like(schema.products.name, `%${search}%`));
+    }
+
+    if (category) {
+      conditions.push(eq(schema.products.category, category));
+    }
+
+    const whereClause = and(...conditions);
+
+    const products = await this.db
+      .select({
+        id: schema.products.id,
+        vendorId: schema.products.vendorId,
+        name: schema.products.name,
+        description: schema.products.description,
+        category: schema.products.category,
+        subcategory: schema.products.subcategory,
+        actualPrice: schema.products.actualPrice,
+        discountPrice: schema.products.discountPrice,
+        stock: schema.products.stock,
+        sku: schema.products.sku,
+        imageUrls: schema.products.imageUrls,
+        isActive: schema.products.isActive,
+        createdAt: schema.products.createdAt,
+        updatedAt: schema.products.updatedAt,
+        shopName: schema.vendors.shopName,
+        vendorUserId: schema.vendors.userId,
+      })
+      .from(schema.products)
+      .innerJoin(schema.vendors, eq(schema.products.vendorId, schema.vendors.id))
+      .where(whereClause)
+      .orderBy(desc(schema.products.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    let totalQuery = this.db.select({ count: count() }).from(schema.products);
+    if (whereClause) {
+      totalQuery = totalQuery.where(whereClause) as any;
+    }
+    const totalResult = await totalQuery;
+    const total = Number(totalResult[0]?.count ?? 0);
+
+    return {
+      products: products.map(p => ({
+        ...p,
+        actualPrice: Number(p.actualPrice),
+        discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getProductById(productId: string) {
+    const product = await this.db
+      .select({
+        id: schema.products.id,
+        vendorId: schema.products.vendorId,
+        name: schema.products.name,
+        description: schema.products.description,
+        category: schema.products.category,
+        subcategory: schema.products.subcategory,
+        actualPrice: schema.products.actualPrice,
+        discountPrice: schema.products.discountPrice,
+        deliveryChargeInside: schema.products.deliveryChargeInside,
+        deliveryChargeOutside: schema.products.deliveryChargeOutside,
+        colors: schema.products.colors,
+        sizes: schema.products.sizes,
+        stock: schema.products.stock,
+        sku: schema.products.sku,
+        imageUrls: schema.products.imageUrls,
+        isActive: schema.products.isActive,
+        createdAt: schema.products.createdAt,
+        updatedAt: schema.products.updatedAt,
+        shopName: schema.vendors.shopName,
+      })
+      .from(schema.products)
+      .innerJoin(schema.vendors, eq(schema.products.vendorId, schema.vendors.id))
+      .where(eq(schema.products.id, productId))
+      .limit(1);
+
+    if (!product.length) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return {
+      ...product[0],
+      actualPrice: Number(product[0].actualPrice),
+      discountPrice: product[0].discountPrice ? Number(product[0].discountPrice) : null,
+      deliveryChargeInside: Number(product[0].deliveryChargeInside),
+      deliveryChargeOutside: Number(product[0].deliveryChargeOutside),
+    };
+  }
+
+  async deleteProduct(productId: string) {
+    const product = await this.db.query.products.findFirst({
+      where: eq(schema.products.id, productId),
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    await this.db
+      .update(schema.products)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(schema.products.id, productId));
+
+    return { message: 'Product deleted successfully' };
   }
 
   // ─── Admin Login ───────────────────────────────────────────────────────

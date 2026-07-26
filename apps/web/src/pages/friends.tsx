@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
+import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -596,6 +597,12 @@ export default function FriendsPage() {
             </div>
           )}
         </main>
+
+        {/* Ad Banner */}
+        <div className="px-4 md:px-6 max-w-[900px] mx-auto pb-8">
+          <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
+        </div>
+
       </div>
 
       {/* Bottom Nav (Mobile) */}

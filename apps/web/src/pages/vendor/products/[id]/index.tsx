@@ -259,7 +259,14 @@ export default function ProductDetailPage() {
                   <p className="text-sm text-[#45474b] capitalize mb-4">{product.category.replace('_', ' ')}</p>
                 )}
                 <div className="flex items-end gap-3">
-                  <span className="text-[40px] font-extrabold text-[#1c1b1b] leading-none">${product.price}</span>
+                  {product.discountPrice ? (
+                    <>
+                      <span className="text-[20px] font-bold text-[#45474b] line-through leading-none">৳{product.actualPrice}</span>
+                      <span className="text-[40px] font-extrabold text-[#1c1b1b] leading-none">৳{product.discountPrice}</span>
+                    </>
+                  ) : (
+                    <span className="text-[40px] font-extrabold text-[#1c1b1b] leading-none">৳{product.actualPrice}</span>
+                  )}
                 </div>
               </div>
 

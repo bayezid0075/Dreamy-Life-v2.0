@@ -330,11 +330,36 @@ export const vendors = pgTable('vendors', {
   bannerUrl: text('banner_url'),
   paymentStatus: boolean('payment_status').notNull().default(false),
   isActive: boolean('is_active').notNull().default(false),
+  status: varchar('status', { length: 20 }).notNull().default('active'), // active, banned
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   vendorUserIdIdx: uniqueIndex('vendor_user_id_idx').on(table.userId),
 }));
+
+// ─── Categories Table ───────────────────────────────────────────────────
+export const categories = pgTable('categories', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
+  icon: varchar('icon', { length: 50 }),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Subcategories Table ────────────────────────────────────────────────
+export const subcategories = pgTable('subcategories', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  categoryId: uuid('category_id').references(() => categories.id).notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
 // ─── Products Table ─────────────────────────────────────────────────────
 export const products = pgTable('products', {
@@ -346,13 +371,11 @@ export const products = pgTable('products', {
   subcategory: varchar('subcategory', { length: 100 }),
   actualPrice: decimal('actual_price', { precision: 12, scale: 2 }).notNull(),
   discountPrice: decimal('discount_price', { precision: 12, scale: 2 }),
-  deliveryArea: varchar('delivery_area', { length: 20 }).notNull().default('inside_dhaka'),
   deliveryChargeInside: decimal('delivery_charge_inside', { precision: 12, scale: 2 }).notNull().default('0'),
   deliveryChargeOutside: decimal('delivery_charge_outside', { precision: 12, scale: 2 }).notNull().default('0'),
   colors: text('colors').array().default([]),
   sizes: text('sizes').array().default([]),
   variantPrices: jsonb('variant_prices').default({}),
-  price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   stock: integer('stock').notNull().default(0),
   sku: varchar('sku', { length: 50 }).notNull().unique(),
   imageUrls: text('image_urls').array().default([]),
@@ -377,6 +400,8 @@ export const resellerOrders = pgTable('reseller_orders', {
   profit: decimal('profit', { precision: 12, scale: 2 }).notNull(),
   customerAddress: text('customer_address').notNull(),
   paymentMethod: varchar('payment_method', { length: 30 }).notNull(),
+  deliveryMethod: varchar('delivery_method', { length: 20 }),
+  deliveryCharge: decimal('delivery_charge', { precision: 12, scale: 2 }).notNull().default('0'),
   status: varchar('status', { length: 20 }).notNull().default('pending'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

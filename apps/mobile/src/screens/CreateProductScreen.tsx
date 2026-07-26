@@ -40,9 +40,15 @@ export default function CreateProductScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [price, setPrice] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+  const [actualPrice, setActualPrice] = useState('');
+  const [discountPrice, setDiscountPrice] = useState('');
   const [stock, setStock] = useState('');
   const [sku, setSku] = useState('');
+  const [deliveryChargeInside, setDeliveryChargeInside] = useState('');
+  const [deliveryChargeOutside, setDeliveryChargeOutside] = useState('');
+  const [colors, setColors] = useState('');
+  const [sizes, setSizes] = useState('');
   const [images, setImages] = useState<LocalImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -121,7 +127,7 @@ export default function CreateProductScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!name.trim() || !category || !price || !stock) {
+    if (!name.trim() || !category || !actualPrice || !stock) {
       setError('Please fill all required fields');
       return;
     }
@@ -137,11 +143,17 @@ export default function CreateProductScreen() {
       const body: any = {
         name: name.trim(),
         category,
-        price: parseFloat(price),
+        actualPrice: parseFloat(actualPrice),
         stock: parseInt(stock),
       };
+      if (discountPrice.trim()) body.discountPrice = parseFloat(discountPrice);
+      if (subcategory.trim()) body.subcategory = subcategory.trim();
       if (description.trim()) body.description = description.trim();
       if (sku.trim()) body.sku = sku.trim();
+      if (deliveryChargeInside.trim()) body.deliveryChargeInside = parseFloat(deliveryChargeInside);
+      if (deliveryChargeOutside.trim()) body.deliveryChargeOutside = parseFloat(deliveryChargeOutside);
+      if (colors.trim()) body.colors = colors.split(',').map((c: string) => c.trim()).filter(Boolean);
+      if (sizes.trim()) body.sizes = sizes.split(',').map((s: string) => s.trim()).filter(Boolean);
       if (uploadedUrls.length > 0) body.imageUrls = uploadedUrls;
       const res = await authFetch(`${API_URL}/vendor/products`, {
         method: 'POST',
@@ -234,22 +246,40 @@ export default function CreateProductScreen() {
             </View>
           </View>
 
-          {/* Price & Stock */}
+          {/* Actual Price & Discount Price */}
           <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Price *</Text>
+              <Text style={styles.label}>Actual Price *</Text>
               <View style={styles.inputRow}>
                 <Text style={styles.inputPrefix}>৳</Text>
                 <TextInput
                   style={[styles.input, { paddingLeft: 28 }]}
-                  value={price}
-                  onChangeText={setPrice}
+                  value={actualPrice}
+                  onChangeText={setActualPrice}
                   placeholder="0.00"
                   placeholderTextColor="rgba(69,71,75,0.4)"
                   keyboardType="decimal-pad"
                 />
               </View>
             </View>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={styles.label}>Discount Price</Text>
+              <View style={styles.inputRow}>
+                <Text style={styles.inputPrefix}>৳</Text>
+                <TextInput
+                  style={[styles.input, { paddingLeft: 28 }]}
+                  value={discountPrice}
+                  onChangeText={setDiscountPrice}
+                  placeholder="0.00"
+                  placeholderTextColor="rgba(69,71,75,0.4)"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Stock & Subcategory */}
+          <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
               <Text style={styles.label}>Stock *</Text>
               <TextInput
@@ -259,6 +289,72 @@ export default function CreateProductScreen() {
                 placeholder="Available units"
                 placeholderTextColor="rgba(69,71,75,0.4)"
                 keyboardType="number-pad"
+              />
+            </View>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={styles.label}>Subcategory</Text>
+              <TextInput
+                style={styles.input}
+                value={subcategory}
+                onChangeText={setSubcategory}
+                placeholder="e.g. ceramic, wooden"
+                placeholderTextColor="rgba(69,71,75,0.4)"
+              />
+            </View>
+          </View>
+
+          {/* Delivery Charges */}
+          <View style={styles.row}>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={styles.label}>Delivery (Inside)</Text>
+              <View style={styles.inputRow}>
+                <Text style={styles.inputPrefix}>৳</Text>
+                <TextInput
+                  style={[styles.input, { paddingLeft: 28 }]}
+                  value={deliveryChargeInside}
+                  onChangeText={setDeliveryChargeInside}
+                  placeholder="0"
+                  placeholderTextColor="rgba(69,71,75,0.4)"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={styles.label}>Delivery (Outside)</Text>
+              <View style={styles.inputRow}>
+                <Text style={styles.inputPrefix}>৳</Text>
+                <TextInput
+                  style={[styles.input, { paddingLeft: 28 }]}
+                  value={deliveryChargeOutside}
+                  onChangeText={setDeliveryChargeOutside}
+                  placeholder="0"
+                  placeholderTextColor="rgba(69,71,75,0.4)"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Colors & Sizes */}
+          <View style={styles.row}>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={styles.label}>Colors (comma sep.)</Text>
+              <TextInput
+                style={styles.input}
+                value={colors}
+                onChangeText={setColors}
+                placeholder="red, blue, green"
+                placeholderTextColor="rgba(69,71,75,0.4)"
+              />
+            </View>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={styles.label}>Sizes (comma sep.)</Text>
+              <TextInput
+                style={styles.input}
+                value={sizes}
+                onChangeText={setSizes}
+                placeholder="S, M, L, XL"
+                placeholderTextColor="rgba(69,71,75,0.4)"
               />
             </View>
           </View>

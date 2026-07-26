@@ -12,7 +12,8 @@ export interface CreateProductDto {
   name: string;
   description?: string;
   category: string;
-  price: number;
+  actualPrice: number;
+  discountPrice?: number;
   stock: number;
   sku?: string;
   imageUrls?: string[];
@@ -22,9 +23,38 @@ export interface UpdateProductDto {
   name?: string;
   description?: string;
   category?: string;
-  price?: number;
+  actualPrice?: number;
+  discountPrice?: number;
   stock?: number;
   imageUrls?: string[];
+}
+
+export interface CreateCategoryDto {
+  name: string;
+  slug?: string;
+  icon?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateCategoryDto {
+  name?: string;
+  slug?: string;
+  icon?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface CreateSubcategoryDto {
+  name: string;
+  slug?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateSubcategoryDto {
+  name?: string;
+  slug?: string;
+  sortOrder?: number;
+  isActive?: boolean;
 }
 
 export interface CreateResellerOrderDto {

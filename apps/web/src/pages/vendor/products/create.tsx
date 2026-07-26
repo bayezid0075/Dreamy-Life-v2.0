@@ -39,10 +39,8 @@ export default function CreateProductPage() {
     subcategory: '',
     actualPrice: '',
     discountPrice: '',
-    deliveryArea: 'inside_dhaka',
     deliveryChargeInside: '',
     deliveryChargeOutside: '',
-    price: '',
     stock: '',
     sku: '',
   });
@@ -106,7 +104,13 @@ export default function CreateProductPage() {
 
   useEffect(() => {
     Promise.all([
-      getMyVendorProfile().then(d => { setVendorProfile(d.data || null); }).catch(() => setVendorProfile(null)),
+      getMyVendorProfile().then(d => {
+        const profile = d.data || null;
+        setVendorProfile(profile);
+        if (profile?.status === 'banned') {
+          router.replace('/vendor/banned');
+        }
+      }).catch(() => setVendorProfile(null)),
       api.get('/auth/profile').then(d => setUser(d.data?.data?.user)).catch(() => {}),
       api.get('/notifications/unread-count').then(d => { if (d.data?.count !== undefined) setUnreadNotifCount(d.data.count); }).catch(() => {}),
     ]);
@@ -277,13 +281,11 @@ export default function CreateProductPage() {
         subcategory: form.subcategory || undefined,
         actualPrice: parseFloat(form.actualPrice),
         discountPrice: form.discountPrice ? parseFloat(form.discountPrice) : undefined,
-        deliveryArea: form.deliveryArea,
         deliveryChargeInside: form.deliveryChargeInside ? parseFloat(form.deliveryChargeInside) : 0,
         deliveryChargeOutside: form.deliveryChargeOutside ? parseFloat(form.deliveryChargeOutside) : 0,
         colors: colors.length > 0 ? colors : undefined,
         sizes: sizes.length > 0 ? sizes : undefined,
         variantPrices: Object.keys(cleanedVariantPrices).length > 0 ? cleanedVariantPrices : undefined,
-        price: parseFloat(form.price),
         stock: parseInt(form.stock),
         sku: form.sku || undefined,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
@@ -468,33 +470,14 @@ export default function CreateProductPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Display Price (৳) *</label>
-                    <div className="relative">
-                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">৳</span>
-                      <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="0.00" required
-                        className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-[#5d5e64] px-1">Stock Quantity *</label>
                     <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="Available units" required
                       className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-[#5d5e64] px-1">SKU (optional)</label>
                     <input type="text" value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="Auto-generated if empty"
                       className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-[#5d5e64] px-1">Delivery Area *</label>
-                    <select value={form.deliveryArea} onChange={e => setForm({ ...form, deliveryArea: e.target.value })}
-                      className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] appearance-none focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all">
-                      <option value="inside_dhaka">Inside Dhaka</option>
-                      <option value="outside_dhaka">Outside Dhaka</option>
-                    </select>
                   </div>
                 </div>
 
