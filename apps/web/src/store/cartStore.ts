@@ -21,6 +21,8 @@ export interface CartItem {
   customerAltPhone?: string;
   customerAddress?: string;
   paymentMethod?: string;
+  selectedSize?: string;
+  selectedColor?: string;
 }
 
 interface CartState {

@@ -8,7 +8,7 @@ export interface RegisterInput {
 }
 
 export interface LoginInput {
-  username: string;
+  emailOrPhone: string;
   password: string;
 }
 

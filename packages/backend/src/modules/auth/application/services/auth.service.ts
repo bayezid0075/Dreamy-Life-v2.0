@@ -124,11 +124,12 @@ export class AuthService {
   }
 
   async login(emailOrPhone: string, password: string) {
-    // Find user by email or phone number
+    // Find user by email, phone number, or username
     const user = await this.db.query.users.findFirst({
       where: or(
         eq(schema.users.email, emailOrPhone),
         eq(schema.users.phoneNumber, emailOrPhone),
+        eq(schema.users.username, emailOrPhone),
       ),
     });
 
