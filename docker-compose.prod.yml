@@ -96,6 +96,9 @@ services:
   # ── Backend (NestJS) ─────────────────────────────────────────────────────
   backend:
     image: ghcr.io/bayezid0075/dreamy-life-backend:latest
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
     restart: unless-stopped
     init: true
     ports:
