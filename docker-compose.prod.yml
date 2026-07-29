@@ -139,6 +139,32 @@ services:
       seed().catch(e => { console.error(e); process.exit(1); });
     "]
 
+  # ── Migrate Users (one-shot) ────────────────────────────────────────────
+  migrate-users:
+    image: ghcr.io/bayezid0075/dreamy-life-backend:latest
+    restart: "no"
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - packages/backend/.env
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=Dreamy_life
+      - DB_PASSWORD=@0075Dreamy_Life_DB6915$
+      - DB_NAME=dl_data
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - USERS_DUMP_PATH=/app/users_data.sql
+    volumes:
+      - ./users_data.sql:/app/users_data.sql:ro
+    command: ["node", "dist/scripts/migrate-users.js"]
+
   # ── Backend (NestJS) ─────────────────────────────────────────────────────
   backend:
     image: ghcr.io/bayezid0075/dreamy-life-backend:latest

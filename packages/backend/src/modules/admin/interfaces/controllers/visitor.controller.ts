@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { VisitorService } from './services/visitor.service';
-import { AdminGuard } from './guards/admin.guard';
+import { VisitorService } from '../../services/visitor.service';
+import { AdminGuard } from '../../guards/admin.guard';
 import { Request } from 'express';
 
 @ApiTags('Visitors')

@@ -1,0 +1,188 @@
+{
+  "totalUsers": 3289,
+  "emptyPhones": [
+    {
+      "id": 4,
+      "username": "Jisan"
+    },
+    {
+      "id": 34,
+      "username": "773147"
+    },
+    {
+      "id": 49,
+      "username": "Fatima Akter"
+    },
+    {
+      "id": 66,
+      "username": "ইসলাম"
+    },
+    {
+      "id": 94,
+      "username": "Md Ahsan Habib"
+    },
+    {
+      "id": 1593,
+      "username": "সবুজ বানচোত মাদারচোদ বাটপার চিটার তোমাকে মাকে চুদি"
+    },
+    {
+      "id": 4403,
+      "username": "Mawya"
+    }
+  ],
+  "corruptedRefs": [],
+  "emptyPasswords": [
+    {
+      "id": 72,
+      "username": "MD Maruf Hasan"
+    },
+    {
+      "id": 166,
+      "username": "Md Jubayer"
+    },
+    {
+      "id": 181,
+      "username": "jimjunayid"
+    },
+    {
+      "id": 184,
+      "username": "হাফেজ মো হাবিবুর"
+    },
+    {
+      "id": 204,
+      "username": "mrjihad246"
+    },
+    {
+      "id": 240,
+      "username": "MD Nazrul Islam Tanvir"
+    },
+    {
+      "id": 267,
+      "username": "Adittya Das"
+    },
+    {
+      "id": 300,
+      "username": "Jehad salman"
+    },
+    {
+      "id": 363,
+      "username": "shahadat hasan"
+    },
+    {
+      "id": 424,
+      "username": "Tamas mandol"
+    },
+    {
+      "id": 462,
+      "username": "Md Mahmudul Hasan"
+    },
+    {
+      "id": 504,
+      "username": "Joly nag"
+    },
+    {
+      "id": 1289,
+      "username": "MD YEASIN"
+    },
+    {
+      "id": 1355,
+      "username": "Ismail Arkan Fahim"
+    },
+    {
+      "id": 1500,
+      "username": "Nusrat jahan Neha"
+    },
+    {
+      "id": 1647,
+      "username": "Md Shahidur Reza"
+    },
+    {
+      "id": 1740,
+      "username": "Nurul Mobin"
+    },
+    {
+      "id": 1771,
+      "username": "সবুজ চুর বাটপার"
+    },
+    {
+      "id": 1780,
+      "username": "Lieder"
+    },
+    {
+      "id": 1782,
+      "username": "Jesminislam"
+    },
+    {
+      "id": 1790,
+      "username": "Balaram Paul"
+    },
+    {
+      "id": 1884,
+      "username": "Fahim"
+    },
+    {
+      "id": 1891,
+      "username": "01928963825"
+    },
+    {
+      "id": 1910,
+      "username": "Sksagor"
+    },
+    {
+      "id": 1997,
+      "username": "D"
+    },
+    {
+      "id": 2028,
+      "username": "Akash"
+    },
+    {
+      "id": 2036,
+      "username": "Md jishan"
+    },
+    {
+      "id": 2042,
+      "username": "Sarojit Shikder"
+    },
+    {
+      "id": 2044,
+      "username": "Raju"
+    },
+    {
+      "id": 2047,
+      "username": "MD Santo"
+    },
+    {
+      "id": 2098,
+      "username": "Salman farshi"
+    },
+    {
+      "id": 2156,
+      "username": "Prince"
+    },
+    {
+      "id": 2178,
+      "username": "Md Shihab"
+    },
+    {
+      "id": 2241,
+      "username": "Junayaf"
+    },
+    {
+      "id": 2298,
+      "username": "MD laden ali"
+    },
+    {
+      "id": 2365,
+      "username": "Foysal"
+    }
+  ],
+  "memberCounts": {
+    "Admin": 2,
+    "Created": 2899,
+    "Active": 385,
+    "Ban": 3
+  },
+  "uniqueOldCodes": 3289,
+  "longCodes": []
+}
