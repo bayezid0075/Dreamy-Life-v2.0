@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -135,7 +136,7 @@ export default function PostDetailPage() {
           </div>
           <p className="text-[#1c1b1b] text-[15px] leading-relaxed whitespace-pre-wrap mb-4">{post.content}</p>
           {post.mediaUrls?.length > 0 && (
-            <img src={post.mediaUrls[0].startsWith('/') ? `${API_URL}${post.mediaUrls[0]}` : post.mediaUrls[0]} alt="Post" className="w-full rounded-xl max-h-[500px] object-cover mb-4" />
+            <img src={resolveMediaUrl(post.mediaUrls[0]) || ''} alt="Post" className="w-full rounded-xl max-h-[500px] object-cover mb-4" />
           )}
           <div className="flex items-center gap-4 text-[#45474b] text-sm border-t border-[#e5e2e1]/30 pt-3">
             <button onClick={handleLike} className={`flex items-center gap-1 transition-colors ${post.liked ? 'text-[#78555e]' : 'hover:text-[#78555e]'}`}>

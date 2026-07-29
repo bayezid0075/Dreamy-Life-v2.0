@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -218,7 +219,7 @@ export default function ProfilePage() {
                 </div>
                 {post.mediaUrls?.length > 0 && (
                   <div className="rounded-xl overflow-hidden mb-4 aspect-[4/3]">
-                    <img src={post.mediaUrls[0].startsWith('/') ? `${API_URL}${post.mediaUrls[0]}` : post.mediaUrls[0]} alt="Post" className="w-full h-full object-cover" />
+                    <img src={resolveMediaUrl(post.mediaUrls[0]) || ''} alt="Post" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <p className="text-[16px] text-[#1c1b1b] mb-4">{post.content}</p>

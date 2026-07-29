@@ -11,6 +11,7 @@ import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -357,7 +358,7 @@ export default function FeedPage() {
               {post.mediaUrls && post.mediaUrls.length > 0 && (
                 <div className="w-full relative group">
                   <img
-                    src={post.mediaUrls[0].startsWith('/') ? `${API_URL}${post.mediaUrls[0]}` : post.mediaUrls[0]}
+                    src={resolveMediaUrl(post.mediaUrls[0]) || ''}
                     alt="Post"
                     className="w-full h-auto object-cover max-h-[600px] border-y sm:border border-white/20"
                   />

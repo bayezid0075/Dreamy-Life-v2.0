@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -291,7 +292,7 @@ export default function SocialProfilePage() {
                       <img
                         alt="Post"
                         className="w-full h-full object-cover"
-                        src={post.mediaUrls[0].startsWith('/') ? `${API_URL}${post.mediaUrls[0]}` : post.mediaUrls[0]}
+                        src={resolveMediaUrl(post.mediaUrls[0]) || ''}
                       />
                     </div>
                   )}

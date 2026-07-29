@@ -161,6 +161,7 @@ services:
       - REDIS_PORT=6379
       - FRONTEND_URL=https://dreamy-life.com,https://www.dreamy-life.com,https://admin.dreamy-life.com
       - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:5001
+      - UPLOAD_BASE_URL=https://api.dreamy-life.com
       - ERROR_LOG_DIR=/app/logs
     depends_on:
       postgres:
