@@ -11,9 +11,10 @@ async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const configService = app.get(ConfigService);
 
-  const pool = new Pool({
-    connectionString: configService.get('DATABASE_URL'),
-  });
+  const connectionString = configService.get('DATABASE_URL') ||
+    `postgres://${configService.get('DB_USER')}:${configService.get('DB_PASSWORD')}@${configService.get('DB_HOST')}:${configService.get('DB_PORT')}/${configService.get('DB_NAME')}`;
+
+  const pool = new Pool({ connectionString });
 
   const db = drizzle(pool, { schema });
 

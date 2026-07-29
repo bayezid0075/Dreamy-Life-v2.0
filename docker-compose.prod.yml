@@ -93,6 +93,52 @@ services:
         fi
         echo ">>> Migration step complete."
 
+  # ── Seed Admin (one-shot) ──────────────────────────────────────────────
+  seed-admin:
+    image: ghcr.io/bayezid0075/dreamy-life-backend:latest
+    restart: "no"
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - packages/backend/.env
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=Dreamy_life
+      - DB_PASSWORD=@0075Dreamy_Life_DB6915$
+      - DB_NAME=dl_data
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: ["node", "-e", "
+      const { Pool } = require('pg');
+      const bcrypt = require('bcrypt');
+      async function seed() {
+        const pool = new Pool({
+          connectionString: process.env.DATABASE_URL || 
+            'postgres://' + process.env.DB_USER + ':' + process.env.DB_PASSWORD + '@' + process.env.DB_HOST + ':' + process.env.DB_PORT + '/' + process.env.DB_NAME
+        });
+        const email = 'admin@dreamylife.com';
+        const accessCode = 'ADMIN001';
+        const password = 'admin123';
+        const res = await pool.query('SELECT id FROM admins WHERE email = $1', [email]);
+        if (res.rows.length > 0) {
+          console.log('Admin already exists: ' + email);
+        } else {
+          const hash = await bcrypt.hash(password, 10);
+          await pool.query('INSERT INTO admins (email, access_code, password) VALUES ($1, $2, $3)', [email, accessCode, hash]);
+          console.log('Admin created:');
+          console.log('  Email: ' + email);
+          console.log('  Access Code: ' + accessCode);
+          console.log('  Password: ' + password);
+        }
+        await pool.end();
+      }
+      seed().catch(e => { console.error(e); process.exit(1); });
+    "]
+
   # ── Backend (NestJS) ─────────────────────────────────────────────────────
   backend:
     image: ghcr.io/bayezid0075/dreamy-life-backend:latest

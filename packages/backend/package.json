@@ -8,6 +8,7 @@
     "dev": "nest start --watch",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
+    "seed:admin": "ts-node src/seed-admin.ts",
     "lint": "eslint \"{src,apps,test}/**/*.ts\""
   },
   "dependencies": {
