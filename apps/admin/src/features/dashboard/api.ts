@@ -22,7 +22,21 @@ export interface DashboardStats {
   }>;
 }
 
+export interface VisitorStats {
+  total: number;
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+  byPlatform: Array<{ platform: string; count: number }>;
+  daily: Array<{ date: string; count: number }>;
+}
+
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   const response = await api.get('/admin/stats');
+  return response.data.data;
+};
+
+export const getVisitorStats = async (): Promise<VisitorStats> => {
+  const response = await api.get('/admin/visitors');
   return response.data.data;
 };

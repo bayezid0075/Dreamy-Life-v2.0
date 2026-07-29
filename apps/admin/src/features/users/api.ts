@@ -70,3 +70,7 @@ export const updateUserStatus = async (id: string, memberStatus: string): Promis
 export const deleteUser = async (id: string): Promise<void> => {
   await api.delete(`/admin/users/${id}`);
 };
+
+export const resetUserPassword = async (id: string, newPassword: string): Promise<void> => {
+  await api.post(`/admin/users/${id}/reset-password`, { newPassword });
+};

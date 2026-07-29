@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { getUsers, updateUserStatus, deleteUser, type AdminUser, type UsersResponse } from './api';
+import { getUsers, updateUserStatus, deleteUser, resetUserPassword, type AdminUser, type UsersResponse } from './api';
+import { useAdminSocket } from '@/hooks/useAdminSocket';
 
 const STATUS_OPTIONS = ['user', 'basic', 'standard', 'smart', 'vvip', 'super_admin'] as const;
 
@@ -25,6 +26,10 @@ export default function UsersList() {
   const [showStatusModal, setShowStatusModal] = useState<AdminUser | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<AdminUser | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<AdminUser | null>(null);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState<AdminUser | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState('');
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -43,6 +48,12 @@ export default function UsersList() {
     fetchUsers();
   }, [fetchUsers]);
 
+  useAdminSocket(useCallback((event: string) => {
+    if (event === 'user:update') {
+      fetchUsers();
+    }
+  }, [fetchUsers]));
+
   const handleStatusChange = async (userId: string, newStatus: string) => {
     try {
       await updateUserStatus(userId, newStatus);
@@ -60,6 +71,29 @@ export default function UsersList() {
       fetchUsers();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to delete user');
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!showResetPasswordModal || !newPassword.trim()) return;
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+    setResetLoading(true);
+    setResetSuccess('');
+    try {
+      await resetUserPassword(showResetPasswordModal.id, newPassword);
+      setResetSuccess(`Password reset for ${showResetPasswordModal.username}`);
+      setNewPassword('');
+      setTimeout(() => {
+        setShowResetPasswordModal(null);
+        setResetSuccess('');
+      }, 2000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -174,6 +208,13 @@ export default function UsersList() {
                           title="Delete User"
                         >
                           <span className="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                        <button
+                          onClick={() => { setShowResetPasswordModal(user); setNewPassword(''); setResetSuccess(''); }}
+                          className="p-2 rounded-lg hover:bg-surface-variant/50 text-on-surface-variant hover:text-primary transition-colors"
+                          title="Reset Password"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">lock_reset</span>
                         </button>
                       </div>
                     </td>
@@ -340,6 +381,45 @@ export default function UsersList() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {showResetPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-margin-mobile">
+          <div className="glass-panel rounded-xl p-lg w-full max-w-md">
+            <h3 className="font-title-md text-title-md text-on-surface font-bold mb-md">Reset Password</h3>
+            <p className="text-on-surface-variant mb-md">
+              Set new password for <strong>{showResetPasswordModal.username}</strong>
+            </p>
+            {resetSuccess ? (
+              <div className="p-sm rounded-lg bg-primary/10 text-primary text-center font-bold mb-md">{resetSuccess}</div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 chars)"
+                  className="w-full bg-surface-container-high/50 border border-outline-variant rounded-lg p-sm text-on-surface focus:outline-none focus:border-primary transition-colors font-body-sm mb-md"
+                />
+                <div className="flex gap-sm">
+                  <button
+                    onClick={() => { setShowResetPasswordModal(null); setNewPassword(''); setResetSuccess(''); }}
+                    className="flex-1 p-sm rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-variant/50 transition-colors font-label-md"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleResetPassword}
+                    disabled={resetLoading || !newPassword.trim()}
+                    className="flex-1 p-sm rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 transition-colors font-label-md disabled:opacity-50"
+                  >
+                    {resetLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

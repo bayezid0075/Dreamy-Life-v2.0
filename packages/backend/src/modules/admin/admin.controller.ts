@@ -88,6 +88,18 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Post('users/:id/reset-password')
+  @ApiOperation({ summary: 'Reset a user password (admin)' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async resetUserPassword(
+    @Param('id') id: string,
+    @Body() body: { newPassword: string },
+  ) {
+    const result = await this.adminService.resetUserPassword(id, body.newPassword);
+    return { success: true, data: result };
+  }
+
   @Get('referrals/stats')
   @ApiOperation({ summary: 'Get referral system statistics' })
   @ApiResponse({ status: 200, description: 'Referral stats retrieved', type: AdminReferralStatsResponse })

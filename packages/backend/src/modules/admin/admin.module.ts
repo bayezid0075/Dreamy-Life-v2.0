@@ -3,8 +3,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdminController } from './admin.controller';
 import { AdminAuthController } from './admin-auth.controller';
+import { VisitorController } from './interfaces/controllers/visitor.controller';
 import { AdminService } from './admin.service';
+import { VisitorService } from './services/visitor.service';
 import { AdminGuard } from './guards/admin.guard';
+import { AdminGateway } from './gateway/admin.gateway';
 import { WalletModule } from '../wallet/wallet.module';
 import { VendorModule } from '../vendor/vendor.module';
 import { PasswordService } from '../auth/domain/services/password.service';
@@ -23,8 +26,8 @@ import { PasswordService } from '../auth/domain/services/password.service';
     WalletModule,
     VendorModule,
   ],
-  controllers: [AdminController, AdminAuthController],
-  providers: [AdminService, AdminGuard, PasswordService],
-  exports: [AdminService, AdminGuard],
+  controllers: [AdminController, AdminAuthController, VisitorController],
+  providers: [AdminService, VisitorService, AdminGuard, PasswordService, AdminGateway],
+  exports: [AdminService, VisitorService, AdminGateway],
 })
 export class AdminModule {}

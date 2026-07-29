@@ -5,6 +5,7 @@ import * as schema from '../../infrastructure/database/schema';
 import { PasswordService } from '../auth/domain/services/password.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { AdminGateway } from './gateway/admin.gateway';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -16,6 +17,7 @@ export class AdminService {
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly adminGateway: AdminGateway,
   ) {}
 
   async getDashboardStats() {
@@ -221,6 +223,14 @@ export class AdminService {
       .set({ memberStatus, updatedAt: new Date() })
       .where(eq(schema.users.id, userId));
 
+    this.adminGateway.emitUserUpdate({
+      type: 'status_change',
+      userId,
+      username: user.username,
+      newStatus: memberStatus,
+      timestamp: new Date().toISOString(),
+    });
+
     return { message: `User status updated to ${memberStatus}` };
   }
 
@@ -298,7 +308,40 @@ export class AdminService {
     await this.db.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
     await this.db.delete(schema.users).where(eq(schema.users.id, userId));
 
+    this.adminGateway.emitUserUpdate({
+      type: 'user_deleted',
+      userId,
+      username: user.username,
+      timestamp: new Date().toISOString(),
+    });
+
     return { message: 'User deleted successfully' };
+  }
+
+  async resetUserPassword(userId: string, newPassword: string) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const passwordHash = await this.passwordService.hash(newPassword);
+
+    await this.db
+      .update(schema.users)
+      .set({ password: passwordHash, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
+
+    this.adminGateway.emitUserUpdate({
+      type: 'password_reset',
+      userId,
+      username: user.username,
+      timestamp: new Date().toISOString(),
+    });
+
+    return { message: `Password reset for ${user.username}` };
   }
 
   async getReferralStats() {

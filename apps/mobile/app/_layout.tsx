@@ -6,6 +6,19 @@ import { I18nProvider } from '@/shared/i18n';
 import { useNotificationSocket } from '@/shared/hooks/useNotificationSocket';
 import { useAuthStore } from '@/shared/stores/authStore';
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+
+function useVisitorTracking() {
+  const { user } = useAuthStore();
+  useEffect(() => {
+    fetch(`${API_URL}/visitors/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platform: 'mobile', userId: user?.id }),
+    }).catch(() => {});
+  }, [user?.id]);
+}
+
 function NotificationSocketProvider({ children }: { children: React.ReactNode }) {
   useNotificationSocket();
   return <>{children}</>;
@@ -42,6 +55,7 @@ export default function RootLayout() {
   }, []);
 
   useGlobal401Interceptor();
+  useVisitorTracking();
 
   return (
     <SafeAreaProvider>

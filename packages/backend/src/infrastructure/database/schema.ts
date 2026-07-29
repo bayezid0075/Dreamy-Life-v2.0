@@ -4,6 +4,19 @@ import { sql } from 'drizzle-orm';
 // ─── Membership Status Enum ──────────────────────────────────────────────
 export type MemberStatus = 'super_admin' | 'user' | 'basic' | 'standard' | 'smart' | 'vvip';
 
+// ─── Visitors Table ─────────────────────────────────────────────────────
+export const visitors = pgTable('visitors', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: varchar('user_id', { length: 50 }),
+  platform: varchar('platform', { length: 20 }).notNull(),
+  ip: varchar('ip', { length: 45 }),
+  userAgent: varchar('user_agent', { length: 500 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  visitorPlatformIdx: index('visitor_platform_idx').on(table.platform),
+  visitorCreatedIdx: index('visitor_created_idx').on(table.createdAt),
+}));
+
 // ─── Users Table ─────────────────────────────────────────────────────────
 export const users = pgTable('users', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),

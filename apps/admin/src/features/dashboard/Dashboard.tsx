@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getDashboardStats, type DashboardStats } from './api';
+import { useEffect, useState, useCallback } from 'react';
+import { getDashboardStats, getVisitorStats, type DashboardStats, type VisitorStats } from './api';
+import { useAdminSocket } from '@/hooks/useAdminSocket';
 
 function MetricCard({
   title,
@@ -135,22 +136,34 @@ function RevenueDoughnut({ revenue }: { revenue: number }) {
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [visitors, setVisitors] = useState<VisitorStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [lastUpdate, setLastUpdate] = useState('');
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const [statsData, visitorData] = await Promise.all([
+        getDashboardStats(),
+        getVisitorStats(),
+      ]);
+      setStats(statsData);
+      setVisitors(visitorData);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data = await getDashboardStats();
-        setStats(data);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || 'Failed to load dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
-  }, []);
+  }, [fetchStats]);
+
+  useAdminSocket(useCallback((event: string, data: any) => {
+    setLastUpdate(`${event} at ${new Date().toLocaleTimeString()}`);
+    fetchStats();
+  }, [fetchStats]));
 
   if (loading) {
     return (
@@ -173,7 +186,13 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-container-max mx-auto space-y-lg">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-md">
+      {lastUpdate && (
+        <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          Live — last update: {lastUpdate}
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-md">
         <MetricCard
           title="Total Users"
           value={d.totalUsers.toLocaleString()}
@@ -205,6 +224,14 @@ export default function Dashboard() {
           trendValue="+8.1%"
           color="tertiary"
           chartPath="M0 20 L20 25 L40 10 L60 15 L80 5 L100 0"
+        />
+        <MetricCard
+          title="Total Visitors"
+          value={visitors?.total.toLocaleString() || '0'}
+          trend="up"
+          trendValue={`${visitors?.today || 0} today`}
+          color="primary"
+          chartPath="M0 28 L20 22 L40 18 L60 12 L80 8 L100 3"
         />
       </div>
 

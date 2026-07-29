@@ -41,12 +41,26 @@ function useGlobal401Interceptor() {
   }, [router]);
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+function useVisitorTracking() {
+  const { user } = useAuthStore();
+  useEffect(() => {
+    fetch(`${API_URL}/visitors/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platform: 'web', userId: user?.id }),
+    }).catch(() => {});
+  }, [user?.id]);
+}
+
 export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     useAuthStore.getState().hydrate();
   }, []);
 
   useGlobal401Interceptor();
+  useVisitorTracking();
 
   return (
     <ErrorBoundary source="frontend-web">
