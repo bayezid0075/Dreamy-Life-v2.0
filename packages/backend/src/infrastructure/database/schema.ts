@@ -688,3 +688,35 @@ export const otpVerifications = pgTable('otp_verifications', {
   otpPhoneIdx: index('otp_phone_idx').on(table.phoneNumber),
   otpTypeIdx: index('otp_type_idx').on(table.type),
 }));
+
+// ─── Social Earnings Table ────────────────────────────────────────────
+export const socialEarnings = pgTable('social_earnings', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull().unique(),
+  balance: decimal('balance', { precision: 12, scale: 5 }).notNull().default('0.00000'),
+  totalEarned: decimal('total_earned', { precision: 12, scale: 5 }).notNull().default('0.00000'),
+  totalWithdrawn: decimal('total_withdrawn', { precision: 12, scale: 5 }).notNull().default('0.00000'),
+  reactionCount: integer('reaction_count').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  socialEarningUserIdx: index('social_earning_user_idx').on(table.userId),
+}));
+
+// ─── Social Withdrawals Table ─────────────────────────────────────────
+export const socialWithdrawals = pgTable('social_withdrawals', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  method: varchar('method', { length: 20 }).notNull(),
+  phoneNumber: varchar('phone_number', { length: 15 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  adminNote: text('admin_note'),
+  processedAt: timestamp('processed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  socialWithdrawUserIdx: index('social_withdraw_user_idx').on(table.userId),
+  socialWithdrawStatusIdx: index('social_withdraw_status_idx').on(table.status),
+}));

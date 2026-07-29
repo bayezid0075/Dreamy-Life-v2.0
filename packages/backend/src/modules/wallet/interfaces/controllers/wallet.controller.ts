@@ -22,7 +22,6 @@ export class WalletController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getWallet(@Req() req: any) {
     const userId = this.extractUserId(req);
-    await this.walletService.seedIfEmpty(userId);
     const wallet = await this.walletService.getAllBalances(userId);
     return { success: true, data: { wallet } };
   }

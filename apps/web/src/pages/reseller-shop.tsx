@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../i18n';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
@@ -88,6 +89,7 @@ export default function ShopPage() {
 
   return (
     <AuthGuard>
+      <VerificationGuard>
       <Head><title>{t('shopTitle')}</title></Head>
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -274,6 +276,7 @@ export default function ShopPage() {
           </Link>
         </nav>
       </div>
+      </VerificationGuard>
     </AuthGuard>
   );
 }

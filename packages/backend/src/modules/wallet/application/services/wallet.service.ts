@@ -329,61 +329,6 @@ export class WalletService {
     );
   }
 
-  // ─── Seed Data ────────────────────────────────────────────────────────
-
-  async seedIfEmpty(userId: string) {
-    const existing = await this.db.query.walletTransactions.findFirst({
-      where: eq(schema.walletTransactions.userId, userId),
-    });
-    if (existing) return false;
-
-    const now = new Date();
-    const daysAgo = (d: number) => new Date(now.getTime() - d * 24 * 60 * 60 * 1000);
-
-    await this.db.insert(schema.userWallets).values({ userId, balance: '45.00' });
-    await this.db.insert(schema.userFunds).values({ userId, balance: '462.50' });
-    await this.db.insert(schema.userPoints).values({ userId, balance: '600.00' });
-
-    const seedWalletTxns = [
-      { amount: '50.00', description: 'Commission earned', days: 3 },
-      { amount: '-30.00', description: 'Transfer to funds', days: 3 },
-      { amount: '25.00', description: 'Referral bonus', days: 4 },
-    ];
-
-    const seedFundTxns = [
-      { amount: '500.00', description: 'Added via bKash', days: 2 },
-      { amount: '-20.00', description: 'Mobile recharge 017...', days: 2 },
-      { amount: '20.00', description: 'Refund: mobile recharge', days: 2 },
-      { amount: '-20.00', description: 'Mobile recharge 017...', days: 2 },
-      { amount: '12.50', description: 'Cashback reward', days: 4 },
-    ];
-
-    const seedPointTxns = [
-      { amount: '50.00', description: 'Daily login reward', days: 1 },
-      { amount: '500.00', description: 'Referral bonus points', days: 3 },
-      { amount: '-150.00', description: 'Product purchase', days: 5 },
-      { amount: '200.00', description: 'Product review reward', days: 7 },
-    ];
-
-    for (const txn of seedWalletTxns) {
-      await this.db.insert(schema.walletTransactions).values({
-        userId, amount: txn.amount, description: txn.description, createdAt: daysAgo(txn.days),
-      });
-    }
-    for (const txn of seedFundTxns) {
-      await this.db.insert(schema.fundTransactions).values({
-        userId, amount: txn.amount, description: txn.description, createdAt: daysAgo(txn.days),
-      });
-    }
-    for (const txn of seedPointTxns) {
-      await this.db.insert(schema.pointTransactions).values({
-        userId, amount: txn.amount, description: txn.description, createdAt: daysAgo(txn.days),
-      });
-    }
-
-    return true;
-  }
-
   // ─── Helpers ──────────────────────────────────────────────────────────
 
   private getFilterDate(filter: string): Date | null {

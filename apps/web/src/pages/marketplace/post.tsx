@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import VerificationGuard from '@/shared/components/VerificationGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -121,6 +122,7 @@ export default function PostJobPage() {
 
   return (
     <AuthGuard>
+      <VerificationGuard>
       <Head>
         <title>Create Job Post - Dreamy Life</title>
       </Head>
@@ -349,6 +351,7 @@ export default function PostJobPage() {
           </div>
         </form>
       </main>
+      </VerificationGuard>
     </AuthGuard>
   );
 }

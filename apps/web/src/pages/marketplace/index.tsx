@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../../i18n';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
@@ -111,6 +112,7 @@ export default function MarketplacePage() {
 
   return (
     <AuthGuard>
+      <VerificationGuard>
       <Head>
         <title>{t('jobMarketplace')}</title>
       </Head>
@@ -377,6 +379,7 @@ export default function MarketplacePage() {
           </div>
         )}
       </main>
+      </VerificationGuard>
     </AuthGuard>
   );
 }

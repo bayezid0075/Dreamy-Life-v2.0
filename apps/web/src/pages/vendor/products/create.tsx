@@ -11,6 +11,16 @@ import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+interface CategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string;
+  subcategories: { id: string; name: string; slug: string }[];
+}
+
 interface ImagePreview {
   file?: File;
   url: string;
@@ -56,51 +66,17 @@ export default function CreateProductPage() {
   const [user, setUser] = useState<any>(null);
   const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
 
-  const categories = [
-    { value: 'home_decor', label: 'Home Decor' },
-    { value: 'furniture', label: 'Furniture' },
-    { value: 'lighting', label: 'Lighting' },
-    { value: 'textiles', label: 'Textiles' },
-  ];
-
-  const subcategories: Record<string, { value: string; label: string }[]> = {
-    home_decor: [
-      { value: 'vases', label: 'Vases' },
-      { value: 'wall_art', label: 'Wall Art' },
-      { value: 'candles', label: 'Candles' },
-      { value: 'clocks', label: 'Clocks' },
-      { value: 'mirrors', label: 'Mirrors' },
-      { value: 'planters', label: 'Planters' },
-      { value: 'figurines', label: 'Figurines' },
-      { value: 'other', label: 'Other' },
-    ],
-    furniture: [
-      { value: 'tables', label: 'Tables' },
-      { value: 'chairs', label: 'Chairs' },
-      { value: 'shelves', label: 'Shelves' },
-      { value: 'beds', label: 'Beds' },
-      { value: 'sofas', label: 'Sofas' },
-      { value: 'cabinets', label: 'Cabinets' },
-      { value: 'other', label: 'Other' },
-    ],
-    lighting: [
-      { value: 'table_lamp', label: 'Table Lamp' },
-      { value: 'floor_lamp', label: 'Floor Lamp' },
-      { value: 'pendant', label: 'Pendant' },
-      { value: 'chandelier', label: 'Chandelier' },
-      { value: 'wall_light', label: 'Wall Light' },
-      { value: 'other', label: 'Other' },
-    ],
-    textiles: [
-      { value: 'curtains', label: 'Curtains' },
-      { value: 'pillows', label: 'Pillows' },
-      { value: 'rugs', label: 'Rugs' },
-      { value: 'blankets', label: 'Blankets' },
-      { value: 'tablecloths', label: 'Tablecloths' },
-      { value: 'other', label: 'Other' },
-    ],
-  };
+  useEffect(() => {
+    fetch(`${API_URL}/categories`)
+      .then(r => r.json())
+      .then(d => {
+        const items = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : [];
+        setCategories(items);
+      })
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -432,7 +408,7 @@ export default function CreateProductPage() {
                       className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] appearance-none focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all">
                       <option value="">Select Category</option>
                       {categories.map(c => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
+                        <option key={c.id} value={c.slug}>{c.name}</option>
                       ))}
                     </select>
                   </div>
@@ -442,8 +418,8 @@ export default function CreateProductPage() {
                       disabled={!form.category}
                       className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full px-6 py-4 text-[#1c1b1b] appearance-none focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all disabled:opacity-40 disabled:cursor-not-allowed">
                       <option value="">Select Sub Category</option>
-                      {form.category && subcategories[form.category]?.map(sc => (
-                        <option key={sc.value} value={sc.value}>{sc.label}</option>
+                      {form.category && categories.find(c => c.slug === form.category)?.subcategories?.map(sc => (
+                        <option key={sc.id} value={sc.slug}>{sc.name}</option>
                       ))}
                     </select>
                   </div>

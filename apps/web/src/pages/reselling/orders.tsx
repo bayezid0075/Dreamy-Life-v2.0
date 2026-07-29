@@ -8,6 +8,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import VerificationGuard from '@/shared/components/VerificationGuard';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -76,6 +77,7 @@ export default function ResellerOrdersPage() {
 
   return (
     <AuthGuard>
+      <VerificationGuard>
       <Head><title>My Orders - Dreamy Life</title></Head>
       <div
         className="min-h-screen overflow-x-hidden pb-32 selection:bg-[#ffd1dc] selection:text-[#1c1b1b]"
@@ -217,6 +219,7 @@ export default function ResellerOrdersPage() {
           )}
         </main>
       </div>
+      </VerificationGuard>
     </AuthGuard>
   );
 }

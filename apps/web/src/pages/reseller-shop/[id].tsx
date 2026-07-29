@@ -38,7 +38,13 @@ export default function ShopProductDetailPage() {
     finally { setLoading(false); }
   };
 
-  const costPrice = product ? (product.discountPrice || product.actualPrice) : 0;
+  const costPrice = product ? (() => {
+    if (selectedColor && selectedSize && product.variantPrices) {
+      const key = `${selectedColor}-${selectedSize}`;
+      if (product.variantPrices[key]?.price) return product.variantPrices[key].price;
+    }
+    return product.discountPrice || product.actualPrice;
+  })() : 0;
   const profit = product && resellerPrice ? Math.max(0, parseFloat(resellerPrice) - costPrice) : 0;
 
   const handleAddToCart = () => {
@@ -63,6 +69,8 @@ export default function ShopProductDetailPage() {
       shopName: product.shopName || '',
       deliveryChargeInside: product.deliveryChargeInside || 0,
       deliveryChargeOutside: product.deliveryChargeOutside || 0,
+      selectedSize: selectedSize || undefined,
+      selectedColor: selectedColor || undefined,
     });
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 1500);
@@ -149,7 +157,9 @@ export default function ShopProductDetailPage() {
               <div className="space-y-2">
                 <h1 className="text-[32px] md:text-[48px] font-extrabold text-[#1c1b1b] leading-tight">{product.name}</h1>
                 <div className="flex items-center space-x-4">
-                  {product.discountPrice ? (
+                  {product.variantPrices && selectedColor && selectedSize && product.variantPrices[`${selectedColor}-${selectedSize}`]?.price ? (
+                    <span className="text-[28px] font-bold text-[#1c1b1b]">৳{product.variantPrices[`${selectedColor}-${selectedSize}`].price}</span>
+                  ) : product.discountPrice ? (
                     <>
                       <span className="text-[20px] font-bold text-[#45474b] line-through">৳{product.actualPrice}</span>
                       <span className="text-[28px] font-bold text-[#1c1b1b]">৳{product.discountPrice}</span>

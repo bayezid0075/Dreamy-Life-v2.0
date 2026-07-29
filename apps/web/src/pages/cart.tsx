@@ -9,6 +9,7 @@ import { VendorProfile } from '@/features/vendor/api';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
+import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../i18n';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
@@ -121,6 +122,7 @@ export default function CartPage() {
 
   return (
     <AuthGuard>
+      <VerificationGuard>
       <Head><title>{t('cartTitle')}</title></Head>
       <div
         className="min-h-screen overflow-x-hidden pb-32 selection:bg-[#ffd1dc] selection:text-[#1c1b1b]"
@@ -338,6 +340,7 @@ export default function CartPage() {
           )}
         </main>
       </div>
+      </VerificationGuard>
     </AuthGuard>
   );
 }

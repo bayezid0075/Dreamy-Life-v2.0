@@ -4,6 +4,7 @@ import * as schema from '../../../../infrastructure/database/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { NotificationService } from '../../../notifications/application/notification.service';
 import { NotificationGateway } from '../../../notifications/application/notification.gateway';
+import { SocialEarningsService } from '../../../social-earnings/application/social-earnings.service';
 
 @Injectable()
 export class PostService {
@@ -12,6 +13,7 @@ export class PostService {
     private db: NodePgDatabase<typeof schema>,
     private notificationService: NotificationService,
     private notificationGateway: NotificationGateway,
+    private socialEarningsService: SocialEarningsService,
   ) {}
 
   private async sendSocialNotification(
@@ -151,6 +153,14 @@ export class PostService {
         .update(schema.posts)
         .set({ likesCount: sql`${schema.posts.likesCount} - 1` })
         .where(eq(schema.posts.id, postId));
+
+      const post = await this.db.query.posts.findFirst({
+        where: eq(schema.posts.id, postId),
+      });
+      if (post) {
+        await this.socialEarningsService.debitReaction(post.authorId);
+      }
+
       return { liked: false };
     } else {
       await this.db.insert(schema.postLikes).values({ postId, userId });
@@ -164,6 +174,7 @@ export class PostService {
       });
       if (post) {
         this.sendSocialNotification(post.authorId, userId, 'New Like', 'liked your post', 'favorite');
+        await this.socialEarningsService.creditReaction(post.authorId, userId);
       }
 
       return { liked: true };

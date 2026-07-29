@@ -287,6 +287,20 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
+              {product.variantPrices && Object.keys(product.variantPrices).length > 0 && (
+                <div className="bg-white/40 p-6 rounded-xl border border-white/30">
+                  <h3 className="text-sm font-semibold text-[#45474b] uppercase tracking-wider mb-3">Variant Prices</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Object.entries(product.variantPrices).map(([key, val]: [string, any]) => (
+                      <div key={key} className="flex justify-between items-center bg-white/50 rounded-lg px-3 py-2 border border-white/20">
+                        <span className="text-xs font-semibold text-[#45474b]">{key}</span>
+                        <span className="text-sm font-bold text-[#1c1b1b]">৳{val.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <Link href={`/vendor/products/${id}/edit`}
                   className="flex-1 px-6 py-4 rounded-full bg-[#1A1A1A] text-white text-sm font-semibold hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-black/10">

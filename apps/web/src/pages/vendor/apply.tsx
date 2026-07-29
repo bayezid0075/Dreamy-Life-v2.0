@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { uploadMedia } from '@/features/media/upload';
 import AuthGuard from '@/shared/components/AuthGuard';
+import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../../i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -203,6 +204,7 @@ export default function VendorApplyPage() {
 
   return (
     <AuthGuard>
+      <VerificationGuard>
       <Head>
         <title>{t('titleVendorApply')}</title>
       </Head>
@@ -428,6 +430,7 @@ export default function VendorApplyPage() {
           )}
         </main>
       </div>
+      </VerificationGuard>
     </AuthGuard>
   );
 }

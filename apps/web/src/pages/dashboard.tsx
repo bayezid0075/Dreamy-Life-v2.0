@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
+import VerificationModal from '@/shared/components/VerificationModal';
 import { VendorProfile } from '@/features/vendor/api';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
   const [vendorExpanded, setVendorExpanded] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   useEffect(() => {
     if (accessToken) {
@@ -76,6 +78,16 @@ export default function DashboardPage() {
   const copyReferCode = () => {
     if (user?.ownRefercode) {
       navigator.clipboard.writeText(user.ownRefercode);
+    }
+  };
+
+  const handleFeatureClick = (href?: string) => {
+    if (user && !user.isVerified) {
+      setShowVerifyModal(true);
+      return;
+    }
+    if (href) {
+      router.push(href);
     }
   };
 
@@ -156,32 +168,16 @@ export default function DashboardPage() {
         {/* Main Content */}
         <main className="max-w-[1280px] mx-auto px-6 md:px-6 pt-8 md:pt-32 pb-24 space-y-8 relative z-10">
           {/* Hero Section / Banner */}
-          <section className="bg-white/50 backdrop-blur-[20px] rounded-xl overflow-hidden relative border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-            <div className="aspect-[21/9] md:aspect-[21/6] bg-[#e5e2e1] relative">
-              <img
-                alt="Delivery Schedule Banner"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQmhK93LSiFaLEzbKlfCfafO-AnM9smzxf0Sh9t7Gm7JNoNzMULNz9sADTnK9HK4E1bGdh8EPmlMBCR8-KGZcn9VwyMgWtmXK5kcAnEloS3YybPUDI8qzzF4MqmBJJoPIngksccT0f0RnH1M_NZMA8M9uuFlCPpgWpC8_5tJrnGIB2QimMZyBrOGTUgZzn0VkFHDlueYWYobuQNloFPvZROB8akvYvyBUyTAb08ijiCm6pWggt0MAaDKRWLLv_nYiSBjQsYR6sSefI"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#e9fdff]/80 to-transparent flex items-center p-8">
-                <div className="max-w-sm space-y-2">
-                  <h2 className="text-[32px] font-bold text-[#1c1b1b] drop-shadow-md leading-tight">
-                    {t('seamlessDelivery')}
-                  </h2>
-                  <p className="text-[16px] text-[#45474b]">
-                    {t('manageYourShipments')}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#5d5e64]/30"></div>
-              <div className="w-2 h-2 rounded-full bg-[#5d5e64]"></div>
-            </div>
+          <section className="rounded-xl overflow-hidden border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
+            <img
+              alt="Dreamy Life Banner"
+              className="w-full h-auto object-cover"
+              src="/dashboard_banner.jpeg"
+            />
           </section>
 
           {/* Primary Actions Grid */}
-          <section className="grid grid-cols-5 gap-4">
+          <section className="grid grid-cols-4 gap-4">
             <button className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
               <div className="w-12 h-12 rounded-full bg-[#e9fdff] text-[#437b81] flex items-center justify-center group-hover:bg-[#2d666d] group-hover:text-white transition-colors">
                 <span className="material-symbols-outlined text-2xl">add_box</span>
@@ -206,12 +202,6 @@ export default function DashboardPage() {
               </div>
               <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('socialFeed')}</span>
             </Link>
-            <button className="bg-white/50 backdrop-blur-[20px] flex flex-col items-center justify-center gap-4 hover:scale-95 transition-transform duration-200 group rounded-2xl aspect-[3/4] p-4 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-              <div className="w-12 h-12 rounded-full bg-[#ffdad6] text-[#93000a] flex items-center justify-center group-hover:bg-[#ba1a1a] group-hover:text-white transition-colors">
-                <span className="material-symbols-outlined text-2xl">sync_alt</span>
-              </div>
-              <span className="text-[14px] font-semibold tracking-[0.05em] text-center leading-none">{t('pickAndDrop')}</span>
-            </button>
           </section>
 
           {/* Ad Banner */}
@@ -220,12 +210,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Features Grid */}
-          <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
+          <section className="relative bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-4 gap-y-8 gap-x-4">
               {(() => {
                 const features = [
                   { icon: 'phone_iphone', label: t('mobileRecharge'), bg: 'bg-[#e9fdff]', text: 'text-[#2d666d]', href: '/recharge' },
-                  { icon: 'directions_car', label: t('easyDrive'), bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' },
+                  { icon: 'directions_car', label: t('easyDrive'), bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]', href: '/drive-pack' },
                   { icon: 'storefront', label: t('reselling'), bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]', href: '/reseller-shop' },
                   { icon: 'business', label: t('vendorship'), bg: 'bg-[#e8eaf6]', text: 'text-[#3949ab]', href: '/vendor/apply' },
                   { icon: 'shopping_cart', label: t('cart'), bg: 'bg-[#ffd1dc]', text: 'text-[#78555e]', href: '/cart' },
@@ -266,15 +256,12 @@ export default function DashboardPage() {
                       <span className="text-xs font-semibold text-center text-[#45474b] leading-tight">{item.label}</span>
                     </>
                   );
-                  if ('href' in item && item.href) {
-                    return (
-                      <Link key={item.label} href={item.href} className="flex flex-col items-center justify-start gap-3 hover:scale-105 transition-transform duration-200">
-                        {content}
-                      </Link>
-                    );
-                  }
                   return (
-                    <button key={item.label} className="flex flex-col items-center justify-start gap-3 hover:scale-105 transition-transform duration-200">
+                    <button
+                      key={item.label}
+                      onClick={() => handleFeatureClick(item.href)}
+                      className="flex flex-col items-center justify-start gap-3 hover:scale-105 transition-transform duration-200"
+                    >
                       {content}
                     </button>
                   );
@@ -304,12 +291,12 @@ export default function DashboardPage() {
           {/* Bottom Grid (Support) */}
           <section className="bg-white/50 backdrop-blur-[20px] rounded-xl p-6 border border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
             <div className="grid grid-cols-4 gap-4">
-              <button className="flex flex-col items-center justify-start gap-3 hover:opacity-80 transition-opacity">
+              <a href="https://wa.me/8801818431054" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-start gap-3 hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center text-[#2d666d]">
                   <span className="material-symbols-outlined">support_agent</span>
                 </div>
                 <span className="text-sm text-center text-[#45474b]">{t('support')}</span>
-              </button>
+              </a>
               <button className="flex flex-col items-center justify-start gap-3 hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center text-[#78555e]">
                   <span className="material-symbols-outlined">pin_drop</span>
@@ -473,6 +460,9 @@ export default function DashboardPage() {
           handleLogout={handleLogout}
           copyReferCode={copyReferCode}
         />
+
+        {/* Verification Modal */}
+        <VerificationModal isOpen={showVerifyModal} />
       </div>
     </AuthGuard>
   );

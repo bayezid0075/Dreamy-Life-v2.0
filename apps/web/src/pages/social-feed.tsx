@@ -243,12 +243,6 @@ export default function FeedPage() {
             Dreamy Life
           </h1>
           <div className="flex gap-3">
-            <Link href="/friends" className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
-              <span className="material-symbols-outlined">person_add</span>
-            </Link>
-            <button className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
-              <span className="material-symbols-outlined">search</span>
-            </button>
             <Link href="/chat" className="p-2 text-[#45474b] hover:bg-[#e5e2e1]/30 rounded-full transition-colors">
               <span className="material-symbols-outlined">chat</span>
             </Link>

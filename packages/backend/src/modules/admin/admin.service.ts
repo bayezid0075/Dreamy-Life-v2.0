@@ -237,21 +237,63 @@ export class AdminService {
       throw new NotFoundException('Cannot delete super admin users');
     }
 
+    // Delete all records referencing this user across all tables
+    await this.db.delete(schema.notifications).where(eq(schema.notifications.createdBy, userId));
+    await this.db.delete(schema.notificationRecipients).where(eq(schema.notificationRecipients.userId, userId));
+    await this.db.delete(schema.notificationTemplates).where(eq(schema.notificationTemplates.createdBy, userId));
+    await this.db.delete(schema.pushTokens).where(eq(schema.pushTokens.userId, userId));
+    await this.db.delete(schema.comments).where(eq(schema.comments.authorId, userId));
+    await this.db.delete(schema.commentLikes).where(eq(schema.commentLikes.userId, userId));
+    await this.db.delete(schema.postLikes).where(eq(schema.postLikes.userId, userId));
+    await this.db.delete(schema.posts).where(eq(schema.posts.authorId, userId));
+    await this.db.delete(schema.friendRequests).where(
+      or(eq(schema.friendRequests.senderId, userId), eq(schema.friendRequests.receiverId, userId)),
+    );
+    await this.db.delete(schema.friends).where(
+      or(eq(schema.friends.userId, userId), eq(schema.friends.friendId, userId)),
+    );
+    await this.db.delete(schema.follows).where(
+      or(eq(schema.follows.followerId, userId), eq(schema.follows.followingId, userId)),
+    );
+    await this.db.delete(schema.conversationMembers).where(eq(schema.conversationMembers.userId, userId));
+    await this.db.delete(schema.messageReads).where(eq(schema.messageReads.userId, userId));
+    await this.db.delete(schema.messages).where(eq(schema.messages.senderId, userId));
+    await this.db.delete(schema.conversations).where(eq(schema.conversations.createdBy, userId));
     await this.db.delete(schema.commissions).where(
-      or(
-        eq(schema.commissions.fromUserId, userId),
-        eq(schema.commissions.toUserId, userId),
-      ),
+      or(eq(schema.commissions.fromUserId, userId), eq(schema.commissions.toUserId, userId)),
     );
-    await this.db.delete(schema.membershipPurchases).where(
-      eq(schema.membershipPurchases.userId, userId),
-    );
+    await this.db.delete(schema.membershipPurchases).where(eq(schema.membershipPurchases.userId, userId));
+    await this.db.delete(schema.membershipPayments).where(eq(schema.membershipPayments.userId, userId));
     await this.db.delete(schema.referrals).where(
-      or(
-        eq(schema.referrals.referrerId, userId),
-        eq(schema.referrals.referredId, userId),
-      ),
+      or(eq(schema.referrals.referrerId, userId), eq(schema.referrals.referredId, userId)),
     );
+    await this.db.delete(schema.userWallets).where(eq(schema.userWallets.userId, userId));
+    await this.db.delete(schema.userFunds).where(eq(schema.userFunds.userId, userId));
+    await this.db.delete(schema.userPoints).where(eq(schema.userPoints.userId, userId));
+    await this.db.delete(schema.walletTransactions).where(eq(schema.walletTransactions.userId, userId));
+    await this.db.delete(schema.fundTransactions).where(eq(schema.fundTransactions.userId, userId));
+    await this.db.delete(schema.pointTransactions).where(eq(schema.pointTransactions.userId, userId));
+    await this.db.delete(schema.fundPayments).where(eq(schema.fundPayments.userId, userId));
+    await this.db.delete(schema.withdrawals).where(eq(schema.withdrawals.userId, userId));
+    await this.db.delete(schema.vendorPayments).where(eq(schema.vendorPayments.userId, userId));
+    await this.db.delete(schema.resellerOrders).where(eq(schema.resellerOrders.resellerId, userId));
+    // Delete shipments for this user's vendors
+    const userVendors = await this.db.select({ id: schema.vendors.id }).from(schema.vendors).where(eq(schema.vendors.userId, userId));
+    for (const v of userVendors) {
+      await this.db.delete(schema.shipments).where(eq(schema.shipments.vendorId, v.id));
+    }
+    await this.db.delete(schema.vendors).where(eq(schema.vendors.userId, userId));
+    await this.db.delete(schema.rechargeOrders).where(eq(schema.rechargeOrders.userId, userId));
+    await this.db.delete(schema.rechargeCommissions).where(
+      or(eq(schema.rechargeCommissions.fromUserId, userId), eq(schema.rechargeCommissions.toUserId, userId)),
+    );
+    await this.db.delete(schema.jobSubmissions).where(eq(schema.jobSubmissions.workerId, userId));
+    await this.db.delete(schema.jobAssignments).where(eq(schema.jobAssignments.workerId, userId));
+    await this.db.delete(schema.jobBids).where(eq(schema.jobBids.bidderId, userId));
+    await this.db.delete(schema.jobEscrow).where(
+      or(eq(schema.jobEscrow.posterId, userId), eq(schema.jobEscrow.releasedTo, userId)),
+    );
+    await this.db.delete(schema.jobPosts).where(eq(schema.jobPosts.posterId, userId));
     await this.db.delete(schema.userInfo).where(eq(schema.userInfo.userId, userId));
     await this.db.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
     await this.db.delete(schema.users).where(eq(schema.users.id, userId));
@@ -693,6 +735,7 @@ export class AdminService {
         deliveryChargeOutside: schema.products.deliveryChargeOutside,
         colors: schema.products.colors,
         sizes: schema.products.sizes,
+        variantPrices: schema.products.variantPrices,
         stock: schema.products.stock,
         sku: schema.products.sku,
         imageUrls: schema.products.imageUrls,

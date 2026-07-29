@@ -15,6 +15,7 @@ import { VendorModule } from './modules/vendor/vendor.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { RechargeModule } from './modules/recharge/recharge.module';
 import { WithdrawModule } from './modules/withdraw/withdraw.module';
+import { SocialEarningsModule } from './modules/social-earnings/social-earnings.module';
 import { ErrorsModule } from './modules/errors/errors.module';
 import { HealthController } from './common/controllers/health.controller';
 
@@ -39,6 +40,7 @@ import { HealthController } from './common/controllers/health.controller';
     MarketplaceModule,
     RechargeModule,
     WithdrawModule,
+    SocialEarningsModule,
   ],
   controllers: [HealthController],
   providers: [],

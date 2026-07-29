@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../i18n';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
@@ -156,16 +157,18 @@ export default function DrivePackPage() {
   }, [packs, t]);
 
   const filteredPacks = useMemo(() => {
-    return packs.filter((pack) => {
-      if (selectedOperator !== 'ALL') {
-        const packOpKey = getOperatorKey(pack._operator);
-        if (packOpKey !== selectedOperator) return false;
-      }
-      if (selectedCategory !== 'ALL') {
-        if (pack._offer_type !== selectedCategory) return false;
-      }
-      return true;
-    });
+    return packs
+      .filter((pack) => {
+        if (selectedOperator !== 'ALL') {
+          const packOpKey = getOperatorKey(pack._operator);
+          if (packOpKey !== selectedOperator) return false;
+        }
+        if (selectedCategory !== 'ALL') {
+          if (pack._offer_type !== selectedCategory) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => Number(a._amount) - Number(b._amount));
   }, [packs, selectedOperator, selectedCategory]);
 
   const handleBuyPack = (pack: OfferPack) => {
@@ -178,6 +181,7 @@ export default function DrivePackPage() {
 
   return (
     <AuthGuard>
+      <VerificationGuard>
       <Head>
         <title>{t('drivePackTitle')}</title>
       </Head>
@@ -376,6 +380,7 @@ export default function DrivePackPage() {
           </div>
         </main>
       </div>
+      </VerificationGuard>
     </AuthGuard>
   );
 }

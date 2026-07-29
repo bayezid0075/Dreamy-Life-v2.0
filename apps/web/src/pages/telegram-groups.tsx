@@ -17,34 +17,34 @@ const telegramGroups = [
     url: 'https://t.me/Dreamylifeofficais1',
     icon: 'campaign',
     color: 'from-[#0088cc] to-[#005f8f]',
-    members: '50K+',
+    members: '',
   },
   {
     id: 2,
-    nameKey: 'supportGroup' as const,
+    nameKey: 'reviewGroup' as const,
     descKey: 'supportGroupDesc' as const,
-    url: 'https://t.me/dreamylife_support',
-    icon: 'support_agent',
+    url: 'https://t.me/DREAMYLiFEOFFiCIAlStm',
+    icon: 'reviews',
     color: 'from-[#2d666d] to-[#1a3d42]',
-    members: '25K+',
+    members: '',
   },
   {
     id: 3,
-    nameKey: 'dealsGroup' as const,
-    descKey: 'dealsGroupDesc' as const,
-    url: 'https://t.me/dreamylife_deals',
-    icon: 'local_offer',
-    color: 'from-[#e8590c] to-[#c2410c]',
-    members: '35K+',
+    nameKey: 'fbGroup' as const,
+    descKey: 'communityGroupDesc' as const,
+    url: 'https://www.facebook.com/share/g/19Nt5H6EHH/',
+    icon: 'group',
+    color: 'from-[#1877f2] to-[#0d5bbf]',
+    members: '',
   },
   {
     id: 4,
-    nameKey: 'communityGroup' as const,
-    descKey: 'communityGroupDesc' as const,
-    url: 'https://t.me/dreamylife_community',
-    icon: 'forum',
-    color: 'from-[#7c3aed] to-[#5b21b6]',
-    members: '40K+',
+    nameKey: 'ytChannel' as const,
+    descKey: 'dealsGroupDesc' as const,
+    url: 'https://www.youtube.com/@Dreamy-life-Official',
+    icon: 'smart_display',
+    color: 'from-[#ff0000] to-[#cc0000]',
+    members: '',
   },
 ];
 
@@ -189,7 +189,7 @@ export default function TelegramGroupsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-lg font-black text-[#1c1b1b] tracking-tight">{t(group.nameKey)}</h3>
-                        <span className="px-2 py-0.5 bg-[#f8f8ff] text-[#5d5e64] rounded-full text-[10px] font-bold">{group.members}</span>
+                        {group.members && <span className="px-2 py-0.5 bg-[#f8f8ff] text-[#5d5e64] rounded-full text-[10px] font-bold">{group.members}</span>}
                       </div>
                       <p className="text-sm text-[#45474b] leading-relaxed mb-4">{t(group.descKey)}</p>
                       <div className="flex items-center gap-2">

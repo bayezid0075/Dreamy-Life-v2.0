@@ -19,6 +19,9 @@ interface Product {
   vendorShopName: string;
   vendorId: string;
   createdAt: string;
+  colors?: string[];
+  sizes?: string[];
+  variantPrices?: Record<string, { price: number }>;
 }
 
 export default function ProductDetailPage() {
@@ -199,6 +202,20 @@ export default function ProductDetailPage() {
               <div className="mb-4">
                 <p className="text-body-sm text-on-surface-variant mb-1">Description</p>
                 <p className="text-sm text-primary">{product.description}</p>
+              </div>
+            )}
+
+            {product.variantPrices && Object.keys(product.variantPrices).length > 0 && (
+              <div className="mb-4">
+                <p className="text-body-sm text-on-surface-variant mb-2">Variant Prices</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(product.variantPrices).map(([key, val]) => (
+                    <div key={key} className="flex justify-between items-center glass-panel rounded-lg px-3 py-2 border border-outline-variant">
+                      <span className="text-xs font-semibold text-on-surface-variant">{key}</span>
+                      <span className="text-sm font-bold text-primary">৳{val.price}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

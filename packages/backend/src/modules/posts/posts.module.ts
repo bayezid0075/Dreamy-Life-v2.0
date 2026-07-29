@@ -5,10 +5,12 @@ import { PostService } from './application/services/post.service';
 import { PostController } from './interfaces/post.controller';
 import { AdminSocialController } from './interfaces/admin-social.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SocialEarningsModule } from '../social-earnings/social-earnings.module';
 
 @Module({
   imports: [
     NotificationsModule,
+    SocialEarningsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
