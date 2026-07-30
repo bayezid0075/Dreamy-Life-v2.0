@@ -201,7 +201,7 @@ export default function AnalyticsPage() {
                 <div className="flex items-baseline gap-1 mb-6">
                   <span className="text-[#e2e8f0] text-lg font-bold">$</span>
                   <span className="text-white text-[48px] sm:text-[56px] font-extrabold leading-none tracking-tight">
-                    {earnings?.balance?.toFixed(5) || '1.00000'}
+                    {earnings?.balance?.toFixed(5) || '0.00000'}
                   </span>
                 </div>
 
@@ -209,7 +209,7 @@ export default function AnalyticsPage() {
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="bg-white/5 rounded-xl p-3 border border-white/10">
                     <span className="text-[#94a3b8] text-xs font-medium block mb-1">Total Earned</span>
-                    <span className="text-white text-sm font-bold">${earnings?.totalEarned?.toFixed(5) || '1.00000'}</span>
+                    <span className="text-white text-sm font-bold">${earnings?.totalEarned?.toFixed(5) || '0.00000'}</span>
                   </div>
                   <div className="bg-white/5 rounded-xl p-3 border border-white/10">
                     <span className="text-[#94a3b8] text-xs font-medium block mb-1">Withdrawn</span>

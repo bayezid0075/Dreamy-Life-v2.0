@@ -3,8 +3,18 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, desc, and, sql, count } from 'drizzle-orm';
 import * as schema from '../../../infrastructure/database/schema';
 
-const REACTION_CREDIT = '0.00002';
+const REACTION_CREDIT = 0.00002;
 const MINIMUM_WITHDRAW = 3.0;
+
+function addDecimal(current: string, amount: number): string {
+  const cents = Math.round(Number(current) * 100000 + amount * 100000);
+  return (cents / 100000).toFixed(5);
+}
+
+function subDecimal(current: string, amount: number): string {
+  const cents = Math.round(Number(current) * 100000 - amount * 100000);
+  return (Math.max(0, cents) / 100000).toFixed(5);
+}
 
 @Injectable()
 export class SocialEarningsService {
@@ -43,12 +53,16 @@ export class SocialEarningsService {
 
     if (!earnings.isActive) return;
 
+    const newBalance = addDecimal(String(earnings.balance), REACTION_CREDIT);
+    const newTotal = addDecimal(String(earnings.totalEarned), REACTION_CREDIT);
+    const newCount = (earnings.reactionCount || 0) + 1;
+
     await this.db
       .update(schema.socialEarnings)
       .set({
-        balance: sql`${schema.socialEarnings.balance} + ${REACTION_CREDIT}`,
-        totalEarned: sql`${schema.socialEarnings.totalEarned} + ${REACTION_CREDIT}`,
-        reactionCount: sql`${schema.socialEarnings.reactionCount} + 1`,
+        balance: newBalance,
+        totalEarned: newTotal,
+        reactionCount: newCount,
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
@@ -60,12 +74,16 @@ export class SocialEarningsService {
     });
     if (!earnings) return;
 
+    const newBalance = subDecimal(String(earnings.balance), REACTION_CREDIT);
+    const newTotal = subDecimal(String(earnings.totalEarned), REACTION_CREDIT);
+    const newCount = Math.max(0, (earnings.reactionCount || 0) - 1);
+
     await this.db
       .update(schema.socialEarnings)
       .set({
-        balance: sql`GREATEST(${schema.socialEarnings.balance} - ${REACTION_CREDIT}, 0)`,
-        totalEarned: sql`GREATEST(${schema.socialEarnings.totalEarned} - ${REACTION_CREDIT}, 0)`,
-        reactionCount: sql`GREATEST(${schema.socialEarnings.reactionCount} - 1, 0)`,
+        balance: newBalance,
+        totalEarned: newTotal,
+        reactionCount: newCount,
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
@@ -87,11 +105,14 @@ export class SocialEarningsService {
       throw new BadRequestException('Insufficient balance');
     }
 
+    const newBalance = subDecimal(String(earnings.balance), amount);
+    const newWithdrawn = addDecimal(String(earnings.totalWithdrawn), amount);
+
     await this.db
       .update(schema.socialEarnings)
       .set({
-        balance: sql`${schema.socialEarnings.balance} - ${String(amount)}`,
-        totalWithdrawn: sql`${schema.socialEarnings.totalWithdrawn} + ${String(amount)}`,
+        balance: newBalance,
+        totalWithdrawn: newWithdrawn,
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
@@ -185,11 +206,14 @@ export class SocialEarningsService {
         where: eq(schema.socialEarnings.userId, withdrawal.userId),
       });
       if (earnings) {
+        const restoredBalance = addDecimal(String(earnings.balance), Number(withdrawal.amount));
+        const restoredWithdrawn = subDecimal(String(earnings.totalWithdrawn), Number(withdrawal.amount));
+
         await this.db
           .update(schema.socialEarnings)
           .set({
-            balance: sql`${schema.socialEarnings.balance} + ${withdrawal.amount}`,
-            totalWithdrawn: sql`GREATEST(${schema.socialEarnings.totalWithdrawn} - ${withdrawal.amount}, 0)`,
+            balance: restoredBalance,
+            totalWithdrawn: restoredWithdrawn,
             updatedAt: new Date(),
           })
           .where(eq(schema.socialEarnings.userId, withdrawal.userId));
