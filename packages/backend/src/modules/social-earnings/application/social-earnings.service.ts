@@ -41,16 +41,14 @@ export class SocialEarningsService {
       earnings = created;
     }
 
-    const newBalance = Number(earnings.balance) + Number(REACTION_CREDIT);
-    const newTotal = Number(earnings.totalEarned) + Number(REACTION_CREDIT);
-    const newCount = earnings.reactionCount + 1;
+    if (!earnings.isActive) return;
 
     await this.db
       .update(schema.socialEarnings)
       .set({
-        balance: String(newBalance),
-        totalEarned: String(newTotal),
-        reactionCount: newCount,
+        balance: sql`${schema.socialEarnings.balance} + ${REACTION_CREDIT}`,
+        totalEarned: sql`${schema.socialEarnings.totalEarned} + ${REACTION_CREDIT}`,
+        reactionCount: sql`${schema.socialEarnings.reactionCount} + 1`,
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
@@ -62,14 +60,12 @@ export class SocialEarningsService {
     });
     if (!earnings) return;
 
-    const newBalance = Math.max(0, Number(earnings.balance) - Number(REACTION_CREDIT));
-    const newCount = Math.max(0, earnings.reactionCount - 1);
-
     await this.db
       .update(schema.socialEarnings)
       .set({
-        balance: String(newBalance),
-        reactionCount: newCount,
+        balance: sql`GREATEST(${schema.socialEarnings.balance} - ${REACTION_CREDIT}, 0)`,
+        totalEarned: sql`GREATEST(${schema.socialEarnings.totalEarned} - ${REACTION_CREDIT}, 0)`,
+        reactionCount: sql`GREATEST(${schema.socialEarnings.reactionCount} - 1, 0)`,
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
@@ -91,12 +87,11 @@ export class SocialEarningsService {
       throw new BadRequestException('Insufficient balance');
     }
 
-    const newBalance = Number(earnings.balance) - amount;
     await this.db
       .update(schema.socialEarnings)
       .set({
-        balance: String(newBalance),
-        totalWithdrawn: String(Number(earnings.totalWithdrawn) + amount),
+        balance: sql`${schema.socialEarnings.balance} - ${String(amount)}`,
+        totalWithdrawn: sql`${schema.socialEarnings.totalWithdrawn} + ${String(amount)}`,
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
@@ -193,8 +188,8 @@ export class SocialEarningsService {
         await this.db
           .update(schema.socialEarnings)
           .set({
-            balance: String(Number(earnings.balance) + Number(withdrawal.amount)),
-            totalWithdrawn: String(Number(earnings.totalWithdrawn) - Number(withdrawal.amount)),
+            balance: sql`${schema.socialEarnings.balance} + ${withdrawal.amount}`,
+            totalWithdrawn: sql`GREATEST(${schema.socialEarnings.totalWithdrawn} - ${withdrawal.amount}, 0)`,
             updatedAt: new Date(),
           })
           .where(eq(schema.socialEarnings.userId, withdrawal.userId));
