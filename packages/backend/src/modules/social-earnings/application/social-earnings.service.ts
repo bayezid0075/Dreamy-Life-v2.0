@@ -2,6 +2,7 @@ import { Injectable, Inject, NotFoundException, BadRequestException } from '@nes
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, desc, and, sql, count } from 'drizzle-orm';
 import * as schema from '../../../infrastructure/database/schema';
+import { NotificationGateway } from '../../notifications/application/notification.gateway';
 
 const REACTION_CREDIT = 0.00002;
 const MINIMUM_WITHDRAW = 3.0;
@@ -20,6 +21,7 @@ function subDecimal(current: string, amount: number): string {
 export class SocialEarningsService {
   constructor(
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
+    private readonly gateway: NotificationGateway,
   ) {}
 
   async getOrCreate(userId: string) {
@@ -66,6 +68,12 @@ export class SocialEarningsService {
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
+
+    this.gateway.notifyEarningsUpdate(userId, {
+      balance: Number(newBalance),
+      totalEarned: Number(newTotal),
+      reactionCount: newCount,
+    });
   }
 
   async debitReaction(userId: string) {
@@ -87,6 +95,12 @@ export class SocialEarningsService {
         updatedAt: new Date(),
       })
       .where(eq(schema.socialEarnings.userId, userId));
+
+    this.gateway.notifyEarningsUpdate(userId, {
+      balance: Number(newBalance),
+      totalEarned: Number(newTotal),
+      reactionCount: newCount,
+    });
   }
 
   async createWithdrawal(userId: string, amount: number, method: string, phoneNumber: string) {

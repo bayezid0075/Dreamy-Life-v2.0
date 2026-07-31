@@ -78,6 +78,14 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     this.server.to(`user:${userId}`).emit('friend_request:received', payload);
   }
 
+  notifyEarningsUpdate(userId: string, data: {
+    balance: number;
+    totalEarned: number;
+    reactionCount: number;
+  }) {
+    this.server.to(`user:${userId}`).emit('social:earnings:updated', data);
+  }
+
   isUserConnected(userId: string): boolean {
     return this.userSockets.has(userId);
   }

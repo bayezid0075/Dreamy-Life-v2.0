@@ -1,10 +1,11 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import AuthGuard from '@/shared/components/AuthGuard';
+import { useSocialEarningsSocket } from '@/hooks/useSocialEarningsSocket';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -47,6 +48,12 @@ export default function AnalyticsPage() {
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+
+  const handleEarningsUpdate = useCallback((data: { balance: number; totalEarned: number; reactionCount: number }) => {
+    setEarnings((prev) => prev ? { ...prev, ...data } : prev);
+  }, []);
+
+  useSocialEarningsSocket(handleEarningsUpdate);
 
   useEffect(() => {
     if (!accessToken || !authUser?.id) return;
@@ -242,7 +249,7 @@ export default function AnalyticsPage() {
                 ) : (
                   <div className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-center">
                     <span className="text-[#94a3b8] text-sm">
-                      Reach ${earnings?.minimumWithdraw || 3} to withdraw (${((earnings?.minimumWithdraw || 3) - (earnings?.balance || 1)).toFixed(2)} remaining)
+                      Reach ${earnings?.minimumWithdraw || 3} to withdraw (${((earnings?.minimumWithdraw || 3) - (earnings?.balance || 0)).toFixed(2)} remaining)
                     </span>
                   </div>
                 )}
