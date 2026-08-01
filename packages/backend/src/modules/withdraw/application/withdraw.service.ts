@@ -80,8 +80,8 @@ export class WithdrawService {
       throw new BadRequestException(`Minimum withdrawal amount is ৳${minBalance}`);
     }
 
-    const fundsBalance = await this.walletService.getFundsBalance(userId);
-    if (fundsBalance < amount) {
+    const walletBalance = await this.walletService.getWalletBalance(userId);
+    if (walletBalance < amount) {
       throw new BadRequestException('Insufficient wallet balance');
     }
 
@@ -89,7 +89,7 @@ export class WithdrawService {
     const chargeAmount = (amount * chargePercent) / 100;
     const totalAmount = amount + chargeAmount;
 
-    await this.walletService.debitFunds(userId, totalAmount, `Withdrawal via ${data.method} to ${data.phoneNumber}`);
+    await this.walletService.debitWallet(userId, totalAmount, `Withdrawal via ${data.method} to ${data.phoneNumber}`);
 
     const [withdrawal] = await this.db
       .insert(schema.withdrawals)
@@ -173,7 +173,7 @@ export class WithdrawService {
     }
 
     if (status === 'rejected') {
-      await this.walletService.creditFunds(existing.userId, Number(existing.totalAmount), `Withdrawal rejected - refund for ${existing.method} to ${existing.phoneNumber}`);
+      await this.walletService.creditWallet(existing.userId, Number(existing.totalAmount), `Withdrawal rejected - refund for ${existing.method} to ${existing.phoneNumber}`);
     }
 
     const updateData: any = { status, updatedAt: new Date() };

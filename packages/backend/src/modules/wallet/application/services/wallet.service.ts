@@ -62,6 +62,11 @@ export class WalletService {
     return fundsBalance;
   }
 
+  async getWalletBalance(userId: string): Promise<number> {
+    const { walletBalance } = await this.getWallet(userId);
+    return walletBalance;
+  }
+
   // ─── Wallet Operations (earnings - WITHDRAWABLE) ──────────────────────
 
   async creditWallet(userId: string, amount: number, description: string) {

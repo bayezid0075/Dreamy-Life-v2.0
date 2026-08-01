@@ -61,7 +61,7 @@ export default function WithdrawPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setBalance(data.data?.wallet?.fundsBalance || 0);
+        setBalance(data.data?.wallet?.walletBalance || 0);
       } else if (res.status === 401) { logout(); router.push('/auth/login'); }
     } catch { }
     setBalanceLoading(false);
