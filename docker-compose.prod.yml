@@ -191,6 +191,15 @@ services:
       - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:5001
       - UPLOAD_BASE_URL=https://api.dreamy-life.com
       - ERROR_LOG_DIR=/app/logs
+      - UDDOKTAPAY_SUCCESS_URL=https://dreamy-life.com/vendor/payment-success
+      - UDDOKTAPAY_CANCEL_URL=https://dreamy-life.com/vendor/apply
+      - UDDOKTAPAY_WEBHOOK_URL=https://api.dreamy-life.com/vendor/payment-webhook
+      - UDDOKTAPAY_FUND_SUCCESS_URL=https://dreamy-life.com/wallet/payment-success
+      - UDDOKTAPAY_FUND_CANCEL_URL=https://dreamy-life.com/wallet
+      - UDDOKTAPAY_FUND_WEBHOOK_URL=https://api.dreamy-life.com/wallet/payment-webhook
+      - UDDOKTAPAY_MEMBERSHIP_SUCCESS_URL=https://dreamy-life.com/membership/payment-success
+      - UDDOKTAPAY_MEMBERSHIP_CANCEL_URL=https://dreamy-life.com/membership
+      - UDDOKTAPAY_MEMBERSHIP_WEBHOOK_URL=https://api.dreamy-life.com/membership/payment-webhook
     depends_on:
       postgres:
         condition: service_healthy
