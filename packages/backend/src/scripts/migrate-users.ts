@@ -268,10 +268,9 @@ async function main() {
 
   // ── Step 5: Clear existing data ────────────────────────────────────
   console.log('\n[5b/7] Clearing existing data...');
-  await db.delete(schema.referrals);
-  await db.delete(schema.userWallets);
-  await db.delete(schema.users);
-  console.log('  Cleared referrals, user_wallets, users');
+  // Use TRUNCATE CASCADE to handle all 43+ dependent tables automatically
+  await pool.query('TRUNCATE TABLE users CASCADE');
+  console.log('  Truncated users + all dependent tables (CASCADE)');
 
   // ── Step 6: Insert users ───────────────────────────────────────────
   console.log('\n[6/7] Inserting users...');
