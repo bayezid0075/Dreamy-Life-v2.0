@@ -55,5 +55,8 @@ COPY --from=builder /app/packages/backend/firebase-private-key.pem ./firebase-pr
 # Create logs directory for error file logging
 RUN mkdir -p /app/logs
 
+# Create uploads directory for persistent media storage
+RUN mkdir -p /app/uploads
+
 EXPOSE 4000
 CMD ["./docker-entrypoint.sh"]

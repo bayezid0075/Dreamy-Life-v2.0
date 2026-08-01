@@ -105,9 +105,17 @@ export class RechargeService {
     this.logger.log(`Creating recharge: user=${userId} phone=${data.phoneNumber} operator=${data.operator} amount=${data.amount} type=${data.connectionType} source=${data.source || 'recharge'}`);
 
     const dbConfig = await this.getConfig();
-    if (!dbConfig.isActive) {
-      this.logger.warn('Recharge service is currently disabled');
-      throw new BadRequestException('Mobile recharge service is currently disabled');
+    const isDrivePack = data.source === 'drive_pack';
+    if (isDrivePack) {
+      if (!dbConfig.drivePackIsActive) {
+        this.logger.warn('Drive Pack service is currently disabled');
+        throw new BadRequestException('Drive Pack service is currently disabled');
+      }
+    } else {
+      if (!dbConfig.isActive) {
+        this.logger.warn('Recharge service is currently disabled');
+        throw new BadRequestException('Mobile recharge service is currently disabled');
+      }
     }
 
     const config = this.getResolvedConfig(dbConfig);
@@ -355,6 +363,16 @@ export class RechargeService {
 
     await this.walletService.creditWallet(buyerId, userCommission, `${isDrivePack ? 'Drive Pack' : 'Recharge'} commission (${userCommissionRate}%)`);
 
+    // Apply drive pack cashback rate (separate from buyer commission)
+    if (isDrivePack) {
+      const cashbackRate = Number(config.drivePackCashbackRate) || 0;
+      if (cashbackRate > 0) {
+        const cashbackAmount = (rechargeAmount * cashbackRate) / 100;
+        await this.walletService.creditWallet(buyerId, cashbackAmount, `Drive Pack cashback (${cashbackRate}%)`);
+        this.logger.debug(`Drive pack cashback: ${cashbackAmount} (${cashbackRate}%) credited to ${buyerId}`);
+      }
+    }
+
     await this.db
       .update(schema.rechargeOrders)
       .set({ userCommission: String(userCommission) })
@@ -580,7 +598,10 @@ export class RechargeService {
     this.logger.debug(`Balance check URL: ${maskedUrl}`);
 
     try {
-      const response = await fetch(fullUrl);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      const response = await fetch(fullUrl, { signal: controller.signal });
+      clearTimeout(timeout);
       this.logger.debug(`Balance check HTTP status: ${response.status}`);
 
       const rawText = await response.text();
@@ -600,6 +621,9 @@ export class RechargeService {
       }
     } catch (error) {
       this.logger.error(`Balance check failed: ${error.message}`, error.stack);
+      if (error.name === 'AbortError') {
+        return { error: 'Balance check timed out (30s)' };
+      }
       return { error: error.message };
     }
   }

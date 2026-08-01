@@ -93,11 +93,12 @@ services:
         fi
         echo ">>> Migration step complete."
 
-  # ── Seed Admin (one-shot) ──────────────────────────────────────────────
+  # ── Seed Admin (one-shot, only on first deploy) ─────────────────────────
   seed-admin:
     image: ghcr.io/bayezid0075/dreamy-life-backend:latest
     restart: "no"
     init: true
+    profiles: ["setup"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,11 +140,12 @@ services:
       seed().catch(e => { console.error(e); process.exit(1); });
     "]
 
-  # ── Migrate Users (one-shot) ────────────────────────────────────────────
+  # ── Migrate Users (one-shot, only when explicitly needed) ───────────────
   migrate-users:
     image: ghcr.io/bayezid0075/dreamy-life-backend:latest
     restart: "no"
     init: true
+    profiles: ["setup"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -202,6 +204,7 @@ services:
       - packages/backend/.env
     volumes:
       - backend-logs:/app/logs
+      - uploads_data:/app/uploads
     logging:
       driver: json-file
       options:
@@ -331,3 +334,4 @@ volumes:
   backend-logs:
   pgadmin_data:
   whatsapp_sessions:
+  uploads_data:

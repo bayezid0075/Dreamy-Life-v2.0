@@ -71,12 +71,17 @@ if !   docker run --rm --network "prod_default" -e PGPASSWORD='@0075Dreamy_Life_
   psql -h postgres -U Dreamy_life -d dl_data -c "SELECT 1;" >/dev/null 2>&1; then
   echo ">>> Postgres rejected password. Volume has stale credentials."
   echo ">>> Recreating database volume (no real data yet)..."
-  $COMPOSE down -v
+  $COMPOSE down
   $COMPOSE up -d postgres redis
   sleep 15
 fi
 
 $COMPOSE run --rm migrate
+
+# ── Optional: Run user data migration (only on first deploy) ──────────────
+# Uncomment the line below ONLY when you need to import/restore user data
+# from users_data.sql. This is DESTRUCTIVE — it clears and re-creates all users.
+# $COMPOSE --profile setup run --rm migrate-users
 
 # ── Step 5: Restart all services ────────────────────────────────────────
 echo ">>> [5/6] Restarting all services..."

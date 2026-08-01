@@ -68,6 +68,7 @@ export default function DrivePackScreen() {
 
   const [packs, setPacks] = useState<OfferPack[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedOperator, setSelectedOperator] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
@@ -81,15 +82,22 @@ export default function DrivePackScreen() {
 
   const fetchPacks = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await authFetch(`${API_URL}/recharge/offer-packs`);
       if (res.status === 401) { await logout(); router.replace('/login'); return; }
       const data = await res.json();
       if (data.success && data.data?.packs) {
         setPacks(data.data.packs);
+        if (data.data.status === 'error') {
+          setError(data.data.message || 'Failed to load offer packs');
+        }
+      } else {
+        setError(data.message || 'Failed to load offer packs');
       }
     } catch (err) {
       Alert.alert(t('error'), t('error'));
+      setError('Failed to connect to server');
     } finally {
       setLoading(false);
     }
@@ -228,6 +236,11 @@ export default function DrivePackScreen() {
         </ScrollView>
 
         {/* Pack Count */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
         <Text style={styles.packCount}>{t('packsFound', { count: filteredPacks.length })}</Text>
 
         {/* Pack Cards */}
@@ -365,6 +378,21 @@ const styles = StyleSheet.create({
     color: 'rgba(69,71,75,0.6)',
     paddingHorizontal: 20,
     marginBottom: 12,
+  },
+
+  errorContainer: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#ffdad6',
+    borderWidth: 1,
+    borderColor: 'rgba(147,0,10,0.2)',
+  },
+  errorText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#93000a',
   },
 
   packCard: { marginBottom: 12, marginHorizontal: 20 },

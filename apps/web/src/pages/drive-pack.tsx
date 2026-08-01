@@ -103,6 +103,7 @@ export default function DrivePackPage() {
   const { accessToken, logout } = useAuthStore();
   const [packs, setPacks] = useState<OfferPack[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedOperator, setSelectedOperator] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const { t } = useI18n();
@@ -113,6 +114,7 @@ export default function DrivePackPage() {
 
   const fetchPacks = async () => {
     setLoading(true);
+    setError(null);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       const res = await fetch(`${apiUrl}/recharge/offer-packs`, {
@@ -122,9 +124,15 @@ export default function DrivePackPage() {
       const data = await res.json();
       if (data.success && data.data?.packs) {
         setPacks(data.data.packs);
+        if (data.data.status === 'error') {
+          setError(data.data.message || 'Failed to load offer packs');
+        }
+      } else {
+        setError(data.message || 'Failed to load offer packs');
       }
     } catch (err) {
       console.error('Failed to load packs', err);
+      setError('Failed to connect to server');
     } finally {
       setLoading(false);
     }
@@ -282,6 +290,11 @@ export default function DrivePackPage() {
           )}
 
           {/* Pack Count */}
+          {!loading && error && (
+            <div className="rounded-2xl px-5 py-3 text-sm font-semibold bg-[#ffdad6] text-[#93000a] border border-[#93000a]/20">
+              {error}
+            </div>
+          )}
           <p className="text-xs font-semibold text-[#45474b]/60">{t('packsFound').replace('{count}', String(filteredPacks.length))}</p>
 
           {/* Pack Cards */}
