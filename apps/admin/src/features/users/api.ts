@@ -74,3 +74,8 @@ export const deleteUser = async (id: string): Promise<void> => {
 export const resetUserPassword = async (id: string, newPassword: string): Promise<void> => {
   await api.post(`/admin/users/${id}/reset-password`, { newPassword });
 };
+
+export const updateUserRefercode = async (id: string, refercode: string): Promise<{ oldRefercode: string; newRefercode: string; downlineUpdated: number }> => {
+  const response = await api.patch(`/admin/users/${id}/refercode`, { refercode });
+  return response.data.data;
+};

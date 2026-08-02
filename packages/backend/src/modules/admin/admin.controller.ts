@@ -14,6 +14,7 @@ import { AdminService } from './admin.service';
 import { FundPaymentService } from '../wallet/application/services/fund-payment.service';
 import { AdminGuard } from './guards/admin.guard';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { UpdateUserRefercodeDto } from './dto/update-user-refercode.dto';
 import { PaginationDto } from './dto/pagination.dto';
 import { CreateMembershipPlanDto, UpdateMembershipPlanDto } from './dto/membership-plan.dto';
 import {
@@ -76,6 +77,19 @@ export class AdminController {
     @Body() body: UpdateUserStatusDto,
   ) {
     const result = await this.adminService.updateUserStatus(id, body.memberStatus);
+    return { success: true, data: result };
+  }
+
+  @Patch('users/:id/refercode')
+  @ApiOperation({ summary: 'Update user referral code and preserve downline chain' })
+  @ApiResponse({ status: 200, description: 'Referral code updated' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 409, description: 'Referral code already in use' })
+  async updateUserRefercode(
+    @Param('id') id: string,
+    @Body() body: UpdateUserRefercodeDto,
+  ) {
+    const result = await this.adminService.updateUserRefercode(id, body.refercode);
     return { success: true, data: result };
   }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { getUsers, updateUserStatus, deleteUser, resetUserPassword, type AdminUser, type UsersResponse } from './api';
+import { getUsers, updateUserStatus, deleteUser, resetUserPassword, updateUserRefercode, type AdminUser, type UsersResponse } from './api';
 import { useAdminSocket } from '@/hooks/useAdminSocket';
 
 const STATUS_OPTIONS = ['user', 'basic', 'standard', 'smart', 'vvip', 'super_admin'] as const;
@@ -30,6 +30,10 @@ export default function UsersList() {
   const [newPassword, setNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState('');
+  const [showRefercodeModal, setShowRefercodeModal] = useState<AdminUser | null>(null);
+  const [newRefercode, setNewRefercode] = useState('');
+  const [refercodeLoading, setRefercodeLoading] = useState(false);
+  const [refercodeSuccess, setRefercodeSuccess] = useState('');
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -94,6 +98,32 @@ export default function UsersList() {
       alert(err?.response?.data?.message || 'Failed to reset password');
     } finally {
       setResetLoading(false);
+    }
+  };
+
+  const handleRefercodeChange = async () => {
+    if (!showRefercodeModal || !newRefercode.trim()) return;
+    if (!/^\d{8}$/.test(newRefercode)) {
+      alert('Referral code must be exactly 8 digits');
+      return;
+    }
+    setRefercodeLoading(true);
+    setRefercodeSuccess('');
+    try {
+      const result = await updateUserRefercode(showRefercodeModal.id, newRefercode);
+      setRefercodeSuccess(
+        `Code updated! ${result.downlineUpdated} downline user(s) updated.`
+      );
+      setNewRefercode('');
+      fetchUsers();
+      setTimeout(() => {
+        setShowRefercodeModal(null);
+        setRefercodeSuccess('');
+      }, 2500);
+    } catch (err: any) {
+      alert(err?.response?.data?.error?.message || err?.response?.data?.message || 'Failed to update referral code');
+    } finally {
+      setRefercodeLoading(false);
     }
   };
 
@@ -215,6 +245,13 @@ export default function UsersList() {
                           title="Reset Password"
                         >
                           <span className="material-symbols-outlined text-[20px]">lock_reset</span>
+                        </button>
+                        <button
+                          onClick={() => { setShowRefercodeModal(user); setNewRefercode(''); setRefercodeSuccess(''); }}
+                          className="p-2 rounded-lg hover:bg-surface-variant/50 text-on-surface-variant hover:text-primary transition-colors"
+                          title="Edit Referral Code"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">badge</span>
                         </button>
                       </div>
                     </td>
@@ -416,6 +453,59 @@ export default function UsersList() {
                     className="flex-1 p-sm rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 transition-colors font-label-md disabled:opacity-50"
                   >
                     {resetLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showRefercodeModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-margin-mobile">
+          <div className="glass-panel rounded-xl p-lg w-full max-w-md">
+            <h3 className="font-title-md text-title-md text-on-surface font-bold mb-md">Edit Referral Code</h3>
+            <p className="text-on-surface-variant mb-md">
+              Change referral code for <strong>{showRefercodeModal.username}</strong>
+            </p>
+            <div className="p-sm rounded-lg bg-surface-container-high/30 mb-md">
+              <p className="font-label-caps text-label-caps text-on-surface-variant uppercase text-xs">Current Code</p>
+              <p className="text-on-surface font-bold font-code-sm">{showRefercodeModal.ownRefercode}</p>
+            </div>
+            {refercodeSuccess ? (
+              <div className="p-sm rounded-lg bg-primary/10 text-primary text-center font-bold mb-md">{refercodeSuccess}</div>
+            ) : (
+              <>
+                <div className="mb-md">
+                  <label className="block text-sm font-medium text-on-surface-variant mb-1">New Referral Code (8 digits)</label>
+                  <input
+                    type="text"
+                    value={newRefercode}
+                    onChange={(e) => setNewRefercode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                    placeholder="Enter 8-digit code"
+                    maxLength={8}
+                    className="w-full bg-surface-container-high/50 border border-outline-variant rounded-lg p-sm text-on-surface focus:outline-none focus:border-primary transition-colors font-code-sm"
+                  />
+                </div>
+                <div className="p-sm rounded-lg bg-tertiary-container/20 mb-md">
+                  <p className="text-xs text-on-tertiary-container flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px]">info</span>
+                    All direct referrals will have their &quot;referred_by&quot; updated to preserve the chain.
+                  </p>
+                </div>
+                <div className="flex gap-sm">
+                  <button
+                    onClick={() => { setShowRefercodeModal(null); setNewRefercode(''); setRefercodeSuccess(''); }}
+                    className="flex-1 p-sm rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-variant/50 transition-colors font-label-md"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRefercodeChange}
+                    disabled={refercodeLoading || !newRefercode.trim() || newRefercode.length !== 8}
+                    className="flex-1 p-sm rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 transition-colors font-label-md disabled:opacity-50"
+                  >
+                    {refercodeLoading ? 'Updating...' : 'Update Code'}
                   </button>
                 </div>
               </>

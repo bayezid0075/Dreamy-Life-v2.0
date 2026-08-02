@@ -234,6 +234,63 @@ export class AdminService {
     return { message: `User status updated to ${memberStatus}` };
   }
 
+  async updateUserRefercode(userId: string, newRefercode: string) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if new code is already taken by another user
+    const existing = await this.db.query.users.findFirst({
+      where: eq(schema.users.ownRefercode, newRefercode),
+    });
+
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('Referral code already in use');
+    }
+
+    const oldRefercode = user.ownRefercode;
+
+    // If the code hasn't changed, skip
+    if (oldRefercode === newRefercode) {
+      return { message: 'Referral code unchanged', downlineUpdated: 0 };
+    }
+
+    // Update the user's own_refercode
+    await this.db
+      .update(schema.users)
+      .set({ ownRefercode: newRefercode, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
+
+    // Update all direct referrals: set referred_by = newRefercode where referred_by = oldRefercode
+    const downlineResult = await this.db
+      .update(schema.users)
+      .set({ referredBy: newRefercode, updatedAt: new Date() })
+      .where(eq(schema.users.referredBy, oldRefercode));
+
+    const downlineUpdated = (downlineResult as any).rowCount || 0;
+
+    this.adminGateway.emitUserUpdate({
+      type: 'refercode_change',
+      userId,
+      username: user.username,
+      oldRefercode,
+      newRefercode,
+      downlineUpdated,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      message: `Referral code updated to ${newRefercode}`,
+      oldRefercode,
+      newRefercode,
+      downlineUpdated,
+    };
+  }
+
   async deleteUser(userId: string) {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.id, userId),
