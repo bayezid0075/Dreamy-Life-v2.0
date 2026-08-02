@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import VerificationGuard from '@/shared/components/VerificationGuard';
+import { uploadMedia } from '@/features/media/upload';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -73,18 +74,17 @@ export default function PostJobPage() {
     setLoading(true);
     try {
       const mediaUrls: string[] = [];
+      const uploadErrors: string[] = [];
       for (const file of images) {
-        const formData = new FormData();
-        formData.append('file', file);
-        const uploadRes = await fetch(`${API_URL}/media/upload`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-          body: formData,
-        });
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          mediaUrls.push(uploadData.url);
+        try {
+          const result = await uploadMedia(file);
+          mediaUrls.push(result.url);
+        } catch (err) {
+          uploadErrors.push(file.name);
         }
+      }
+      if (uploadErrors.length > 0) {
+        alert(`Failed to upload: ${uploadErrors.join(', ')}. Other images were uploaded successfully.`);
       }
 
       const payload = {

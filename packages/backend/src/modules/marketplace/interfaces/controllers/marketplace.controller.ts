@@ -21,7 +21,7 @@ export class MarketplaceController {
 
   @Post('marketplace/jobs')
   async createJob(
-    @Body() body: { title: string; description: string; type: 'single' | 'multiple'; amount: number; unitPay: number; totalUnits?: number },
+    @Body() body: { title: string; description: string; type: 'single' | 'multiple'; amount: number; unitPay: number; totalUnits?: number; mediaUrls?: string[] },
     @Req() req: any,
   ) {
     return this.marketplaceService.createJob(req.user.userId, body);
