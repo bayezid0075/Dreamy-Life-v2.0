@@ -6,6 +6,7 @@ export interface CreateJobDto {
   unitPay: number;
   totalUnits?: number;
   mediaUrls?: string[];
+  link?: string;
 }
 
 export interface PlaceBidDto {

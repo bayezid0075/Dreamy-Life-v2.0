@@ -12,7 +12,7 @@ import { SocialEarningsController } from './interfaces/social-earnings.controlle
     JwtModule.registerAsync({
       useFactory: () => ({
         secret: process.env.JWT_SECRET || 'super_secret_jwt_key',
-        signOptions: { expiresIn: '15m' },
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '100y' },
       }),
     }),
   ],

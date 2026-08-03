@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ emailOrPhone: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { t } = useI18n();
 
   const returnUrl = (router.query.returnUrl as string) || '/dashboard';
@@ -139,13 +140,23 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full h-[56px] px-5 rounded-full text-[16px] text-[#1c1b1b] bg-white/50 border border-[rgba(118,119,123,0.2)] focus:bg-white focus:border-[#5d5e64] focus:shadow-[0_0_0_2px_rgba(93,94,100,0.1)] outline-none transition-all placeholder:text-[#45474b]/50"
+                  className="w-full h-[56px] px-5 pr-14 rounded-full text-[16px] text-[#1c1b1b] bg-white/50 border border-[rgba(118,119,123,0.2)] focus:bg-white focus:border-[#5d5e64] focus:shadow-[0_0_0_2px_rgba(93,94,100,0.1)] outline-none transition-all placeholder:text-[#45474b]/50"
                   placeholder={t('enterPassword')}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f0f0f0] transition-colors"
+                  tabIndex={-1}
+                >
+                  <span className="material-symbols-outlined text-[#45474b] text-[22px]">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
               </div>
               <div className="flex justify-end mt-1">
                 <Link href="/forgot-password" className="text-[13px] font-semibold text-[#2d666d] hover:underline decoration-[#2d666d]/50 underline-offset-4">

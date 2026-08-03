@@ -17,6 +17,7 @@ export default function PostJobPage() {
   const [category, setCategory] = useState('');
   const [unitPay, setUnitPay] = useState('');
   const [unitCount, setUnitCount] = useState('');
+  const [link, setLink] = useState('');
   const amount = unitPay && unitCount ? String(parseFloat(unitPay) * parseInt(unitCount)) : '';
   const [images, setImages] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,6 +97,7 @@ export default function PostJobPage() {
         unitPay: unitPayNum,
         totalUnits: unitCountNum,
         mediaUrls,
+        link: link.trim() || undefined,
       };
 
       const res = await fetch(`${API_URL}/marketplace/jobs`, {
@@ -180,6 +182,17 @@ export default function PostJobPage() {
                 </select>
                 <span className="material-symbols-outlined text-[#45474b] pointer-events-none">expand_more</span>
               </div>
+            </div>
+            <div className="relative glass-input rounded-3xl p-5 flex flex-col justify-center group">
+              <label className="text-xs font-semibold text-[#45474b] mb-2 ml-1 transition-colors group-focus-within:text-[#2d666d]" htmlFor="job-link">Link (optional)</label>
+              <input
+                className="bg-transparent border-none outline-none text-lg text-[#1c1b1b] placeholder-[#c6c6cb] w-full"
+                id="job-link"
+                placeholder="https://example.com"
+                type="text"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+              />
             </div>
           </section>
 

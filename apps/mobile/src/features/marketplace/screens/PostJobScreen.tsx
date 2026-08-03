@@ -34,6 +34,7 @@ export default function PostJobScreen() {
   const [unitPay, setUnitPay] = useState('');
   const [totalUnits, setTotalUnits] = useState('1');
   const [images, setImages] = useState<LocalImage[]>([]);
+  const [link, setLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [fundsBalance, setFundsBalance] = useState(0);
 
@@ -159,6 +160,7 @@ export default function PostJobScreen() {
           unitPay: unitPayNum,
           totalUnits: totalUnitsNum,
           mediaUrls,
+          link: link.trim() || undefined,
         }),
       });
 
@@ -235,6 +237,18 @@ export default function PostJobScreen() {
           onChangeText={setDescription}
           multiline
           numberOfLines={4}
+        />
+
+        <Text style={styles.label}>Link (optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="https://example.com"
+          placeholderTextColor="#76777b"
+          value={link}
+          onChangeText={setLink}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
         />
 
         <Text style={styles.label}>Job Type</Text>

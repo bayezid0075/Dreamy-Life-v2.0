@@ -33,6 +33,8 @@ export interface JobPost {
   filledUnits: number;
   status: JobStatus;
   adminApproved: boolean;
+  mediaUrls?: string[];
+  link?: string;
   createdAt: string;
   updatedAt: string;
 }

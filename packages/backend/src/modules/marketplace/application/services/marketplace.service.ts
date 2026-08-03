@@ -22,6 +22,7 @@ export class MarketplaceService {
     unitPay: number;
     totalUnits?: number;
     mediaUrls?: string[];
+    link?: string;
   }) {
     if (data.amount <= 0) throw new BadRequestException('Amount must be positive');
     if (data.unitPay <= 0) throw new BadRequestException('Unit pay must be positive');
@@ -52,6 +53,7 @@ export class MarketplaceService {
         unitPay: String(data.unitPay),
         totalUnits,
         mediaUrls: data.mediaUrls || [],
+        link: data.link || null,
       })
       .returning();
 
