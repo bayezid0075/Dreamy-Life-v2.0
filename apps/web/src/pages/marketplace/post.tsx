@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import VerificationGuard from '@/shared/components/VerificationGuard';
@@ -19,6 +19,7 @@ export default function PostJobPage() {
   const [unitCount, setUnitCount] = useState('');
   const amount = unitPay && unitCount ? String(parseFloat(unitPay) * parseInt(unitCount)) : '';
   const [images, setImages] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [fundsBalance, setFundsBalance] = useState(0);
   const [descriptionLength, setDescriptionLength] = useState(0);
@@ -242,15 +243,18 @@ export default function PostJobPage() {
               </div>
             )}
 
-            <label className="relative border-2 border-dashed border-[#2d666d]/40 rounded-3xl p-10 flex flex-col items-center justify-center gap-5 bg-white/20 hover:bg-white/40 hover:border-[#2d666d] transition-all duration-300 cursor-pointer group">
-              <input
-                aria-label="Upload images"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                multiple
-                type="file"
-                accept="image/png,image/jpeg,image/gif"
-                onChange={handleImageUpload}
-              />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-[#2d666d]/40 rounded-3xl p-10 flex flex-col items-center justify-center gap-5 bg-white/20 hover:bg-white/40 hover:border-[#2d666d] transition-all duration-300 cursor-pointer group"
+            >
               <div className="w-16 h-16 rounded-full bg-[#e9fdff] shadow-sm flex items-center justify-center text-[#2d666d] group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined text-2xl">add_photo_alternate</span>
               </div>
@@ -258,7 +262,7 @@ export default function PostJobPage() {
                 <p className="text-sm font-bold text-[#1c1b1b] mb-2">Click to upload or drag and drop</p>
                 <p className="text-xs text-[#45474b] tracking-wide">PNG, JPG, GIF up to 10MB (max 5 files)</p>
               </div>
-            </label>
+            </div>
           </section>
 
           {/* Compensation Section */}
