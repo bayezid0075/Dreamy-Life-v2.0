@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface AdSenseBannerAdProps {
   /** Google AdSense ad slot ID (data-ad-slot) */
@@ -18,8 +18,12 @@ interface AdSenseBannerAdProps {
 declare global {
   interface Window {
     adsbygoogle: unknown[];
+    __adsenseLoadError?: boolean;
   }
 }
+
+const ADSENSE_PUBLISHER_ID =
+  process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-9617633768223840';
 
 export default function AdSenseBannerAd({
   adSlot,
@@ -31,18 +35,38 @@ export default function AdSenseBannerAd({
 }: AdSenseBannerAdProps) {
   const adRef = useRef<HTMLModElement>(null);
   const initializedRef = useRef(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    // Push the ad only once per mount
+    if (window.__adsenseLoadError) {
+      setLoadError(true);
+      return;
+    }
+
+    // Check if the adsbygoogle script is actually loaded
+    const scriptExists = document.querySelector(
+      `script[src*="pagead2.googlesyndication.com"][src*="client=${ADSENSE_PUBLISHER_ID}"]`,
+    );
+
+    if (!scriptExists && !window.adsbygoogle) {
+      setLoadError(true);
+      return;
+    }
+
     if (!initializedRef.current && adRef.current) {
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
         initializedRef.current = true;
       } catch (e) {
         console.error('AdSense push error:', e);
+        setLoadError(true);
       }
     }
   }, []);
+
+  if (loadError) {
+    return null;
+  }
 
   const style: React.CSSProperties = {};
   if (width) style.width = width;
@@ -59,7 +83,7 @@ export default function AdSenseBannerAd({
         ref={adRef}
         className="adsbygoogle"
         style={{ display: 'block', ...style }}
-        data-ad-client={process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-9617633768223840'}
+        data-ad-client={ADSENSE_PUBLISHER_ID}
         data-ad-slot={adSlot}
         data-ad-format={format}
         data-full-width-responsive="true"
