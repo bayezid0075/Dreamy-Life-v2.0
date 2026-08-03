@@ -1,5 +1,4 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import Script from 'next/script';
 
 const ADSENSE_PUBLISHER_ID =
   process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-9617633768223840';
@@ -21,21 +20,12 @@ export default function Document() {
         />
         <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`}
+          crossOrigin="anonymous"
+        />
       </Head>
-      <Script
-        id="adsbygoogle-init"
-        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`}
-        strategy="afterInteractive"
-        crossOrigin="anonymous"
-        onError={() => {
-          console.warn(
-            'AdSense script failed to load. This may be caused by an ad blocker or DNS issue.',
-          );
-          if (typeof window !== 'undefined') {
-            window.__adsenseLoadError = true;
-          }
-        }}
-      />
       <body>
         <Main />
         <NextScript />

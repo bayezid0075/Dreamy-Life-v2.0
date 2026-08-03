@@ -18,12 +18,13 @@ interface AdSenseBannerAdProps {
 declare global {
   interface Window {
     adsbygoogle: unknown[];
-    __adsenseLoadError?: boolean;
   }
 }
 
 const ADSENSE_PUBLISHER_ID =
   process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-9617633768223840';
+const MAX_RETRIES = 5;
+const RETRY_INTERVAL_MS = 1000;
 
 export default function AdSenseBannerAd({
   adSlot,
@@ -38,30 +39,31 @@ export default function AdSenseBannerAd({
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    if (window.__adsenseLoadError) {
-      setLoadError(true);
-      return;
-    }
+    let retries = 0;
+    let timer: ReturnType<typeof setTimeout>;
 
-    // Check if the adsbygoogle script is actually loaded
-    const scriptExists = document.querySelector(
-      `script[src*="pagead2.googlesyndication.com"][src*="client=${ADSENSE_PUBLISHER_ID}"]`,
-    );
+    const tryPush = () => {
+      if (initializedRef.current) return;
 
-    if (!scriptExists && !window.adsbygoogle) {
-      setLoadError(true);
-      return;
-    }
-
-    if (!initializedRef.current && adRef.current) {
-      try {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        initializedRef.current = true;
-      } catch (e) {
-        console.error('AdSense push error:', e);
-        setLoadError(true);
+      if (window.adsbygoogle && adRef.current) {
+        try {
+          window.adsbygoogle.push({});
+          initializedRef.current = true;
+        } catch (e) {
+          console.error('AdSense push error:', e);
+          setLoadError(true);
+        }
+        return;
       }
-    }
+
+      retries++;
+      if (retries < MAX_RETRIES) {
+        timer = setTimeout(tryPush, RETRY_INTERVAL_MS);
+      }
+    };
+
+    tryPush();
+    return () => clearTimeout(timer);
   }, []);
 
   if (loadError) {

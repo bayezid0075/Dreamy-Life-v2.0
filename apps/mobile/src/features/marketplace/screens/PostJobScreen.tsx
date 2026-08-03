@@ -8,13 +8,21 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+
+interface LocalImage {
+  uri: string;
+  uploading: boolean;
+  url?: string;
+}
 
 export default function PostJobScreen() {
   const router = useRouter();
@@ -25,6 +33,7 @@ export default function PostJobScreen() {
   const [amount, setAmount] = useState('');
   const [unitPay, setUnitPay] = useState('');
   const [totalUnits, setTotalUnits] = useState('1');
+  const [images, setImages] = useState<LocalImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [fundsBalance, setFundsBalance] = useState(0);
 
@@ -47,12 +56,82 @@ export default function PostJobScreen() {
     }
   };
 
+  const pickImages = async () => {
+    const permResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permResult.granted) {
+      Alert.alert('Permission needed', 'Please grant photo library access to upload images.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsMultipleSelection: true,
+      selectionLimit: 5 - images.length,
+    });
+
+    if (result.canceled || !result.assets.length) return;
+
+    const newImages: LocalImage[] = result.assets.map(asset => ({
+      uri: asset.uri,
+      uploading: true,
+    }));
+
+    setImages(prev => [...prev, ...newImages]);
+
+    for (let i = 0; i < newImages.length; i++) {
+      const asset = result.assets[i];
+      const formData = new FormData();
+      formData.append('file', {
+        uri: asset.uri,
+        type: asset.type || 'image/jpeg',
+        name: asset.fileName || `job_${Date.now()}_${i}.jpg`,
+      } as any);
+
+      try {
+        const res = await fetch(`${API_URL}/media/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          setImages(prev => prev.map((img, idx) => {
+            const globalIdx = prev.length - (newImages.length - i);
+            if (idx === globalIdx) return { ...img, uploading: false, url: data.url };
+            return img;
+          }));
+        } else {
+          setImages(prev => prev.map((img, idx) => {
+            const globalIdx = prev.length - (newImages.length - i);
+            if (idx === globalIdx) return { ...img, uploading: false };
+            return img;
+          }));
+        }
+      } catch {
+        setImages(prev => prev.map((img, idx) => {
+          const globalIdx = prev.length - (newImages.length - i);
+          if (idx === globalIdx) return { ...img, uploading: false };
+          return img;
+        }));
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handlePost = async () => {
     if (!token) return;
     if (!title.trim()) return Alert.alert('Error', 'Title is required');
     if (!description.trim()) return Alert.alert('Error', 'Description is required');
     if (!amount || parseFloat(amount) <= 0) return Alert.alert('Error', 'Valid amount is required');
     if (!unitPay || parseFloat(unitPay) <= 0) return Alert.alert('Error', 'Valid unit pay is required');
+
+    if (images.some(img => img.uploading)) {
+      return Alert.alert('Error', 'Please wait for all images to finish uploading');
+    }
 
     const amountNum = parseFloat(amount);
     const unitPayNum = parseFloat(unitPay);
@@ -68,6 +147,7 @@ export default function PostJobScreen() {
 
     setLoading(true);
     try {
+      const mediaUrls = images.filter(img => img.url).map(img => img.url!);
       const res = await fetch(`${API_URL}/marketplace/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -78,6 +158,7 @@ export default function PostJobScreen() {
           amount: amountNum,
           unitPay: unitPayNum,
           totalUnits: totalUnitsNum,
+          mediaUrls,
         }),
       });
 
@@ -105,6 +186,35 @@ export default function PostJobScreen() {
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Available Funds</Text>
           <Text style={styles.balanceAmount}>৳{fundsBalance.toFixed(2)}</Text>
+        </View>
+
+        {/* Image Upload Zone */}
+        <Text style={styles.label}>Job Images (max 5)</Text>
+        <View style={styles.imageGrid}>
+          {images.map((img, index) => (
+            <View key={index} style={styles.imageThumb}>
+              <Image source={{ uri: img.uri }} style={styles.imageThumbImg} />
+              {img.uploading && (
+                <View style={styles.imageUploading}>
+                  <ActivityIndicator size="small" color="#fff" />
+                </View>
+              )}
+              <TouchableOpacity style={styles.imageRemoveBtn} onPress={() => removeImage(index)}>
+                <Text style={styles.imageRemoveText}>✕</Text>
+              </TouchableOpacity>
+              {img.url && (
+                <View style={styles.imageDoneBadge}>
+                  <Text style={styles.imageDoneText}>✓</Text>
+                </View>
+              )}
+            </View>
+          ))}
+          {images.length < 5 && (
+            <TouchableOpacity style={styles.imageAddBtn} onPress={pickImages}>
+              <Text style={styles.imageAddIcon}>+</Text>
+              <Text style={styles.imageAddText}>Add</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={styles.label}>Job Title</Text>
@@ -234,6 +344,67 @@ const styles = StyleSheet.create({
     paddingVertical: 14, fontSize: 15, color: '#1c1b1b', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
   textArea: { height: 100, textAlignVertical: 'top' },
+
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  imageThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  imageThumbImg: {
+    width: '100%',
+    height: '100%',
+  },
+  imageUploading: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageRemoveBtn: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(186,26,26,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageRemoveText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  imageDoneBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(45,102,109,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageDoneText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  imageAddBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageAddIcon: { fontSize: 22, color: '#5d5e64', fontWeight: '300' },
+  imageAddText: { fontSize: 10, color: '#5d5e64', fontWeight: '600', marginTop: 2 },
+
   typeContainer: { flexDirection: 'row', gap: 12 },
   typeBtn: {
     flex: 1, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 12, padding: 16,
