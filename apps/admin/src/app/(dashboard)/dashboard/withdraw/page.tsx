@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+const getToken = () => localStorage.getItem('accessToken');
 
 interface Withdrawal {
   id: string;
@@ -72,11 +74,9 @@ export default function WithdrawControlPage() {
     fetchWithdrawals(1);
     fetchStats();
     fetchConfig();
-  }, []);
+  }, [fetchWithdrawals, fetchStats, fetchConfig]);
 
-  const getToken = () => localStorage.getItem('accessToken');
-
-  const fetchWithdrawals = async (pageNum: number) => {
+  const fetchWithdrawals = useCallback(async (pageNum: number) => {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/withdraw/admin/all?page=${pageNum}&limit=15${filter !== 'all' ? `&status=${filter}` : ''}`, {
@@ -93,18 +93,18 @@ export default function WithdrawControlPage() {
       }
     } catch {}
     setLoading(false);
-  };
+  }, [filter]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/withdraw/admin/stats`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (res.ok) setStats(await res.json());
     } catch {}
-  };
+  }, []);
 
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/withdraw/config`);
       if (res.ok) {
@@ -115,7 +115,7 @@ export default function WithdrawControlPage() {
         setConfigActive(data.isActive);
       }
     } catch {}
-  };
+  }, []);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     setUpdatingId(id);

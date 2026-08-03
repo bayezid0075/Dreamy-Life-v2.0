@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+const getToken = () => localStorage.getItem('accessToken');
+
 interface Vendor {
   id: string;
   userId: string;
@@ -49,13 +51,11 @@ export default function VendorPage() {
   useEffect(() => {
     setPage(1);
     fetchVendors(1);
-  }, [filter, searchDebounce]);
+  }, [filter, searchDebounce, fetchVendors]);
 
   useEffect(() => {
     fetchStats();
-  }, []);
-
-  const getToken = () => localStorage.getItem('accessToken');
+  }, [fetchStats]);
 
   const fetchVendors = useCallback(async (pageNum: number) => {
     setLoading(true);
@@ -80,7 +80,7 @@ export default function VendorPage() {
     setLoading(false);
   }, [filter, searchDebounce]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/admin/vendors?limit=1`, {
         headers: { Authorization: `Bearer ${getToken()}` },
@@ -94,7 +94,7 @@ export default function VendorPage() {
         });
       }
     } catch {}
-  };
+  }, []);
 
   const handleBanUnban = async (vendorId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'active' ? 'banned' : 'active';

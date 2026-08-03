@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -61,9 +61,9 @@ export default function SocialEarningsAdminPage() {
       fetchEarnings();
     }
     fetchStats();
-  }, [activeTab, statusFilter, page]);
+  }, [activeTab, statusFilter, page, fetchWithdrawals, fetchEarnings, fetchStats]);
 
-  const fetchWithdrawals = async () => {
+  const fetchWithdrawals = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: '15' });
@@ -78,9 +78,9 @@ export default function SocialEarningsAdminPage() {
       }
     } catch {}
     setLoading(false);
-  };
+  }, [statusFilter, page]);
 
-  const fetchEarnings = async () => {
+  const fetchEarnings = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/social-earnings/admin/all?page=${page}&limit=15`, {
@@ -93,9 +93,9 @@ export default function SocialEarningsAdminPage() {
       }
     } catch {}
     setLoading(false);
-  };
+  }, [page]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/social-earnings/admin/stats`, {
         headers: { Authorization: `Bearer ${getToken()}` },
@@ -105,7 +105,7 @@ export default function SocialEarningsAdminPage() {
         setStats(data.data);
       }
     } catch {}
-  };
+  }, []);
 
   const handleStatusUpdate = async (id: string, status: string) => {
     setActionLoading(id);

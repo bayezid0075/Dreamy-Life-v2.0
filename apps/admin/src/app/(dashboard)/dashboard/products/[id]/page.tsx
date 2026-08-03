@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+const getToken = () => localStorage.getItem('accessToken');
 
 interface Product {
   id: string;
@@ -37,11 +40,9 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (id) fetchProduct();
-  }, [id]);
+  }, [id, fetchProduct]);
 
-  const getToken = () => localStorage.getItem('accessToken');
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/admin/products/${id}`, {
@@ -53,7 +54,7 @@ export default function ProductDetailPage() {
       }
     } catch {}
     setLoading(false);
-  };
+  }, [id]);
 
   const handleDelete = async () => {
     if (!product) return;
@@ -128,8 +129,8 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-2 gap-2">
               {product.imageUrls && product.imageUrls.length > 0 ? (
                 product.imageUrls.map((url, i) => (
-                  <div key={i} className="aspect-square rounded-xl overflow-hidden bg-gray-100">
-                    <img src={url} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                  <div key={i} className="aspect-square rounded-xl overflow-hidden bg-gray-100 relative">
+                    <Image src={url} alt={`${product.name} ${i + 1}`} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
                   </div>
                 ))
               ) : (

@@ -1,8 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+const getToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('accessToken');
+  }
+  return null;
+};
 
 interface Job {
   id: string;
@@ -38,16 +45,9 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchAll();
-  }, [statusFilter]);
+  }, [fetchAll]);
 
-  const getToken = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('accessToken');
-    }
-    return null;
-  };
-
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     const token = getToken();
     try {
@@ -73,7 +73,7 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   const handleApprove = async (jobId: string) => {
     const token = getToken();

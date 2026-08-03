@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getFundPayments, getFundStats, type FundPayment, type FundStats } from './api';
 
 function StatCard({
@@ -57,6 +57,7 @@ export default function FundsTracker() {
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, page]);
 
   const fetchData = async () => {

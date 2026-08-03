@@ -278,8 +278,8 @@ export default function AdsDebugger() {
                 {
                   publisherId: ADSENSE_PUBLISHER_ID,
                   envVar: process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || '(undefined)',
-                  protocol: window.location?.protocol,
-                  hostname: window.location?.hostname,
+                  protocol: typeof window !== 'undefined' ? window.location?.protocol : undefined,
+                  hostname: typeof window !== 'undefined' ? window.location?.hostname : undefined,
                   adsbygoogleExists: typeof window !== 'undefined' && !!window.adsbygoogle,
                   adsbygoogleLength: typeof window !== 'undefined' ? window.adsbygoogle?.length : 0,
                   adSlotsOnPage: typeof document !== 'undefined' ? document.querySelectorAll('.adsbygoogle').length : 0,

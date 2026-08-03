@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   createNotification,
   sendNotification,
@@ -247,7 +248,7 @@ export default function NotificationCenter() {
             <label className="text-on-surface-variant font-body-sm text-body-sm font-medium">Image (optional)</label>
             {imagePreview ? (
               <div className="relative rounded-lg overflow-hidden">
-                <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover" />
+                <Image src={imagePreview} alt="Preview" fill className="object-cover" sizes="100vw" />
                 <button
                   onClick={() => { setImagePreview(''); setForm((prev) => ({ ...prev, imageUrl: '' })); }}
                   className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
@@ -324,9 +325,9 @@ export default function NotificationCenter() {
             <div className="space-y-sm">
               {notifications.map((n) => (
                 <div key={n.id} className="glass-panel rounded-xl p-md flex items-center gap-md">
-                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0 overflow-hidden relative">
                     {n.imageUrl ? (
-                      <img src={n.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      <Image src={n.imageUrl} alt="" fill className="object-cover rounded-full" sizes="40px" />
                     ) : (
                       <span className="material-symbols-outlined text-on-primary">{n.icon || 'notifications'}</span>
                     )}

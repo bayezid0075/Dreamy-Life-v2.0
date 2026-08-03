@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -50,11 +51,11 @@ export default function ProductsPage() {
   useEffect(() => {
     setPage(1);
     fetchProducts(1);
-  }, [searchDebounce, categoryFilter]);
+  }, [searchDebounce, categoryFilter, fetchProducts]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   const getToken = () => localStorage.getItem('accessToken');
 
@@ -85,7 +86,7 @@ export default function ProductsPage() {
     setLoading(false);
   }, [searchDebounce, categoryFilter]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/categories/all`, {
         headers: { Authorization: `Bearer ${getToken()}` },
@@ -96,7 +97,7 @@ export default function ProductsPage() {
         setCategories(items);
       }
     } catch {}
-  };
+  }, []);
 
   const handleDelete = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product? This action can be undone later.')) return;
@@ -185,9 +186,9 @@ export default function ProductsPage() {
           {products.map((product) => (
             <div key={product.id} className="glass-panel rounded-xl p-4 border border-outline-variant hover:shadow-md transition-all">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 relative">
                   {product.imageUrls?.[0] ? (
-                    <img src={product.imageUrls[0]} alt={product.name} className="w-full h-full object-cover" />
+                    <Image src={product.imageUrls[0]} alt={product.name} fill className="object-cover" sizes="64px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="material-symbols-outlined text-gray-400">image</span>

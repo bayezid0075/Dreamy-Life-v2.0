@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { getUsers, updateUserStatus, deleteUser, resetUserPassword, updateUserRefercode, type AdminUser, type UsersResponse } from './api';
 import { useAdminSocket } from '@/hooks/useAdminSocket';
 
@@ -195,9 +196,9 @@ export default function UsersList() {
                   <tr key={user.id} className="border-b border-outline-variant/30 hover:bg-primary-container/10 transition-colors">
                     <td className="p-md">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+                        <div className="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant relative">
                           {user.avatarUrl ? (
-                            <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            <Image src={user.avatarUrl} alt="" fill className="object-cover" sizes="32px" />
                           ) : (
                             <span className="material-symbols-outlined text-on-surface-variant text-sm">person</span>
                           )}
@@ -355,9 +356,9 @@ export default function UsersList() {
             </div>
             <div className="space-y-md">
               <div className="flex items-center gap-md">
-                <div className="w-16 h-16 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+                <div className="w-16 h-16 rounded-full bg-surface-variant overflow-hidden border border-outline-variant relative">
                   {showDetailModal.avatarUrl ? (
-                    <img src={showDetailModal.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    <Image src={showDetailModal.avatarUrl} alt="" fill className="object-cover" sizes="64px" />
                   ) : (
                     <span className="material-symbols-outlined text-on-surface-variant text-3xl flex items-center justify-center h-full">person</span>
                   )}
