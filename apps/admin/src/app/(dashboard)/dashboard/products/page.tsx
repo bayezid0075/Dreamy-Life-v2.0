@@ -43,20 +43,6 @@ export default function ProductsPage() {
   const [popupSuccess, setPopupSuccess] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
 
-  useEffect(() => {
-    const t = setTimeout(() => setSearchDebounce(search), 400);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
-    setPage(1);
-    fetchProducts(1);
-  }, [searchDebounce, categoryFilter, fetchProducts]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
   const getToken = () => localStorage.getItem('accessToken');
 
   const fetchProducts = useCallback(async (pageNum: number) => {
@@ -98,6 +84,20 @@ export default function ProductsPage() {
       }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounce(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchProducts(1);
+  }, [searchDebounce, categoryFilter, fetchProducts]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleDelete = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product? This action can be undone later.')) return;

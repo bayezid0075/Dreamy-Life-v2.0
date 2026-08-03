@@ -54,15 +54,6 @@ export default function SocialEarningsAdminPage() {
   const [note, setNote] = useState('');
   const [toast, setToast] = useState<{ success: boolean; message: string } | null>(null);
 
-  useEffect(() => {
-    if (activeTab === 'withdrawals') {
-      fetchWithdrawals();
-    } else {
-      fetchEarnings();
-    }
-    fetchStats();
-  }, [activeTab, statusFilter, page, fetchWithdrawals, fetchEarnings, fetchStats]);
-
   const fetchWithdrawals = useCallback(async () => {
     setLoading(true);
     try {
@@ -106,6 +97,15 @@ export default function SocialEarningsAdminPage() {
       }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'withdrawals') {
+      fetchWithdrawals();
+    } else {
+      fetchEarnings();
+    }
+    fetchStats();
+  }, [activeTab, statusFilter, page, fetchWithdrawals, fetchEarnings, fetchStats]);
 
   const handleStatusUpdate = async (id: string, status: string) => {
     setActionLoading(id);

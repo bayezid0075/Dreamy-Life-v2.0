@@ -70,12 +70,6 @@ export default function WithdrawControlPage() {
   const [chargePercent, setChargePercent] = useState('2');
   const [configActive, setConfigActive] = useState(true);
 
-  useEffect(() => {
-    fetchWithdrawals(1);
-    fetchStats();
-    fetchConfig();
-  }, [fetchWithdrawals, fetchStats, fetchConfig]);
-
   const fetchWithdrawals = useCallback(async (pageNum: number) => {
     setLoading(true);
     try {
@@ -116,6 +110,12 @@ export default function WithdrawControlPage() {
       }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    fetchWithdrawals(1);
+    fetchStats();
+    fetchConfig();
+  }, [fetchWithdrawals, fetchStats, fetchConfig]);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     setUpdatingId(id);

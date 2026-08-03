@@ -43,20 +43,6 @@ export default function VendorPage() {
   const [popupSuccess, setPopupSuccess] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
 
-  useEffect(() => {
-    const t = setTimeout(() => setSearchDebounce(search), 400);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
-    setPage(1);
-    fetchVendors(1);
-  }, [filter, searchDebounce, fetchVendors]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
   const fetchVendors = useCallback(async (pageNum: number) => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(pageNum), limit: String(LIMIT) });
@@ -95,6 +81,20 @@ export default function VendorPage() {
       }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounce(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchVendors(1);
+  }, [filter, searchDebounce, fetchVendors]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const handleBanUnban = async (vendorId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'active' ? 'banned' : 'active';

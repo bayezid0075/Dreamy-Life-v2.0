@@ -43,10 +43,6 @@ export default function MarketplacePage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
-
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const token = getToken();
@@ -74,6 +70,10 @@ export default function MarketplacePage() {
       setLoading(false);
     }
   }, [statusFilter]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
   const handleApprove = async (jobId: string) => {
     const token = getToken();

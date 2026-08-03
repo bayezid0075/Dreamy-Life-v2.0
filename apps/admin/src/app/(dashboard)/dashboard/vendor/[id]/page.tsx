@@ -48,10 +48,6 @@ export default function VendorDetailPage() {
   const [popupSuccess, setPopupSuccess] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
 
-  useEffect(() => {
-    if (id) fetchVendor();
-  }, [id, fetchVendor]);
-
   const fetchVendor = useCallback(async () => {
     setLoading(true);
     try {
@@ -65,6 +61,10 @@ export default function VendorDetailPage() {
     } catch {}
     setLoading(false);
   }, [id]);
+
+  useEffect(() => {
+    if (id) fetchVendor();
+  }, [id, fetchVendor]);
 
   const handleBanUnban = async () => {
     if (!vendor) return;

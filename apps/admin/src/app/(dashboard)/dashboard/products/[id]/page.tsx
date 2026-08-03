@@ -38,10 +38,6 @@ export default function ProductDetailPage() {
   const [popupSuccess, setPopupSuccess] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
 
-  useEffect(() => {
-    if (id) fetchProduct();
-  }, [id, fetchProduct]);
-
   const fetchProduct = useCallback(async () => {
     setLoading(true);
     try {
@@ -55,6 +51,10 @@ export default function ProductDetailPage() {
     } catch {}
     setLoading(false);
   }, [id]);
+
+  useEffect(() => {
+    if (id) fetchProduct();
+  }, [id, fetchProduct]);
 
   const handleDelete = async () => {
     if (!product) return;
