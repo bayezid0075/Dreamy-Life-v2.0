@@ -11,23 +11,29 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function PostJobPage() {
   const router = useRouter();
-  const { accessToken, logout } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
   const [unitPay, setUnitPay] = useState('');
   const [unitCount, setUnitCount] = useState('');
   const [link, setLink] = useState('');
-  const amount = unitPay && unitCount ? String(parseFloat(unitPay) * parseInt(unitCount)) : '';
   const [images, setImages] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [fundsBalance, setFundsBalance] = useState(0);
   const [descriptionLength, setDescriptionLength] = useState(0);
+  const [platformFeePercent, setPlatformFeePercent] = useState(5);
+
+  const unitPayNum = parseFloat(unitPay) || 0;
+  const unitCountNum = parseInt(unitCount) || 0;
+  const baseAmount = unitPayNum * unitCountNum;
+  const feeAmount = baseAmount * (platformFeePercent / 100);
+  const totalCost = baseAmount + feeAmount;
 
   useEffect(() => {
     if (!accessToken) return;
     fetchWallet();
+    fetchSettings();
   }, [accessToken]);
 
   const fetchWallet = async () => {
@@ -39,6 +45,18 @@ export default function PostJobPage() {
       }
     } catch (err) {
       console.error('Failed to fetch wallet', err);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/marketplace/settings`);
+      if (res.ok) {
+        const data = await res.json();
+        setPlatformFeePercent(Number(data.platformFeePercent) || 5);
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings', err);
     }
   };
 
@@ -61,17 +79,12 @@ export default function PostJobPage() {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handlePost = async (asDraft = false) => {
+  const handlePost = async () => {
     if (!title.trim()) return alert('Title is required');
     if (!description.trim()) return alert('Description is required');
-    if (!unitPay || parseFloat(unitPay) <= 0) return alert('Valid per unit price is required');
-    if (!unitCount || parseInt(unitCount) <= 0) return alert('Unit count is required');
-
-    const unitPayNum = parseFloat(unitPay);
-    const unitCountNum = parseInt(unitCount);
-    const amountNum = unitPayNum * unitCountNum;
-
-    if (!asDraft && amountNum > fundsBalance) return alert('Insufficient funds balance');
+    if (!unitPay || unitPayNum <= 0) return alert('Valid per unit price is required');
+    if (!unitCount || unitCountNum <= 0) return alert('Unit count is required');
+    if (totalCost > fundsBalance) return alert(`Insufficient funds. Required: ৳${totalCost.toFixed(2)}`);
 
     setLoading(true);
     try {
@@ -92,8 +105,6 @@ export default function PostJobPage() {
       const payload = {
         title: title.trim(),
         description: description.trim(),
-        type: unitCountNum > 1 ? 'multiple' as const : 'single' as const,
-        amount: amountNum,
         unitPay: unitPayNum,
         totalUnits: unitCountNum,
         mediaUrls,
@@ -110,7 +121,7 @@ export default function PostJobPage() {
       });
 
       if (res.ok) {
-        alert(asDraft ? 'Draft saved!' : 'Job posted successfully! Waiting for admin approval.');
+        alert('Job posted successfully! Waiting for admin approval.');
         router.push('/marketplace');
       } else {
         const err = await res.json();
@@ -130,12 +141,10 @@ export default function PostJobPage() {
         <title>Create Job Post - Dreamy Life</title>
       </Head>
 
-      {/* Atmospheric Background */}
       <div className="aurora-mesh" />
       <div className="aurora-orb-1" />
       <div className="aurora-orb-2" />
 
-      {/* Top App Bar */}
       <header className="w-full sticky top-0 z-50 px-6 py-4 flex justify-between items-center bg-white/30 backdrop-blur-md border-b border-white/40">
         <button onClick={() => router.back()} aria-label="Go back" className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/60 transition-colors">
           <span className="material-symbols-outlined text-[#1c1b1b] text-2xl">arrow_back</span>
@@ -146,7 +155,6 @@ export default function PostJobPage() {
         <div className="w-10" />
       </header>
 
-      {/* Main Content */}
       <main className="w-full max-w-[800px] px-6 py-10 md:py-16 flex flex-col gap-8 mx-auto">
         <form className="flex flex-col gap-8 w-full" onSubmit={(e) => { e.preventDefault(); handlePost(); }}>
 
@@ -163,25 +171,6 @@ export default function PostJobPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
-            </div>
-            <div className="relative glass-input rounded-3xl p-5 flex flex-col justify-center group">
-              <label className="text-xs font-semibold text-[#45474b] mb-2 ml-1 transition-colors group-focus-within:text-[#2d666d]" htmlFor="job-category">Category</label>
-              <div className="flex items-center justify-between w-full">
-                <select
-                  className="bg-transparent border-none outline-none text-lg text-[#1c1b1b] w-full appearance-none cursor-pointer"
-                  id="job-category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
-                  <option disabled value="">Select a category...</option>
-                  <option value="design">Design & Creative</option>
-                  <option value="tech">Technology</option>
-                  <option value="writing">Writing & Translation</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="admin">Admin Support</option>
-                </select>
-                <span className="material-symbols-outlined text-[#45474b] pointer-events-none">expand_more</span>
-              </div>
             </div>
             <div className="relative glass-input rounded-3xl p-5 flex flex-col justify-center group">
               <label className="text-xs font-semibold text-[#45474b] mb-2 ml-1 transition-colors group-focus-within:text-[#2d666d]" htmlFor="job-link">Link (optional)</label>
@@ -203,7 +192,6 @@ export default function PostJobPage() {
               <span className="text-xs font-semibold text-[#45474b]">{descriptionLength}/2000</span>
             </div>
             <div className="glass-input rounded-3xl overflow-hidden flex flex-col">
-              {/* Rich Text Toolbar */}
               <div className="flex items-center gap-1 p-3 border-b border-white/40 bg-white/30 backdrop-blur-sm">
                 <button aria-label="Bold" className="toolbar-btn" type="button">
                   <span className="material-symbols-outlined text-xl">format_bold</span>
@@ -222,7 +210,6 @@ export default function PostJobPage() {
                   <span className="material-symbols-outlined text-xl">format_list_numbered</span>
                 </button>
               </div>
-              {/* Text Area */}
               <textarea
                 className="bg-transparent border-none outline-none text-base text-[#1c1b1b] placeholder-[#c6c6cb] p-6 resize-y w-full min-h-[160px]"
                 id="job-description"
@@ -237,7 +224,7 @@ export default function PostJobPage() {
           {/* Media Upload Section */}
           <section className="glass-card rounded-[2rem] p-6 md:p-8 flex flex-col gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <h2 className="text-xl font-bold text-[#1c1b1b]">Visuals</h2>
-            <p className="text-base text-[#45474b] px-1">Add images to help candidates understand the project context or brand vibe.</p>
+            <p className="text-base text-[#45474b] px-1">Add images to help candidates understand the project context.</p>
 
             {images.length > 0 && (
               <div className="flex flex-wrap gap-3">
@@ -249,7 +236,7 @@ export default function PostJobPage() {
                       onClick={() => removeImage(i)}
                       className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#ba1a1a] text-white flex items-center justify-center text-xs"
                     >
-                      ×
+                      x
                     </button>
                   </div>
                 ))}
@@ -285,7 +272,7 @@ export default function PostJobPage() {
               <div className="glass-input rounded-3xl p-5 flex flex-col justify-center group">
                 <label className="text-xs font-semibold text-[#45474b] mb-2 ml-1 transition-colors group-focus-within:text-[#2d666d]" htmlFor="unit-pay">Per Unit Price</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-[#5d5e64]">$</span>
+                  <span className="text-xl font-bold text-[#5d5e64]">৳</span>
                   <input
                     className="bg-transparent border-none outline-none text-xl font-bold text-[#1c1b1b] w-full placeholder-[#c6c6cb]/50"
                     id="unit-pay"
@@ -319,44 +306,46 @@ export default function PostJobPage() {
                 <p className="text-lg font-bold text-[#1c1b1b]">৳{fundsBalance.toFixed(2)}</p>
               </div>
               <Link href="/wallet" className="text-xs font-semibold text-[#2d666d] hover:underline">
-                Add Funds →
+                Add Funds
               </Link>
             </div>
 
-            {unitPay && (
+            {unitPayNum > 0 && (
               <div className="bg-[#e9fdff]/30 rounded-2xl p-4 border border-[#e9fdff]/30">
                 <p className="text-sm font-bold text-[#2d666d] mb-2">Cost Summary</p>
-                {parseInt(unitCount || '1') > 1 && (
-                  <div className="flex justify-between text-sm text-[#45474b]">
-                    <span>Per Unit:</span>
-                    <span className="font-bold text-[#1c1b1b]">৳{parseFloat(unitPay || '0').toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm text-[#45474b]">
-                  <span>Total Amount:</span>
-                  <span className="font-bold text-[#1c1b1b]">৳{(parseFloat(unitPay || '0') * parseInt(unitCount || '1')).toFixed(2)}</span>
+                <div className="flex justify-between text-sm text-[#45474b] mb-1">
+                  <span>Per Unit:</span>
+                  <span className="font-bold text-[#1c1b1b]">৳{unitPayNum.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-[#45474b] mb-1">
+                  <span>Units:</span>
+                  <span className="font-bold text-[#1c1b1b]">{unitCountNum}</span>
+                </div>
+                <div className="flex justify-between text-sm text-[#45474b] mb-1">
+                  <span>Subtotal:</span>
+                  <span className="font-bold text-[#1c1b1b]">৳{baseAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-[#45474b] mb-2">
+                  <span>Platform Fee ({platformFeePercent}%):</span>
+                  <span className="font-bold text-[#76777b]">৳{feeAmount.toFixed(2)}</span>
+                </div>
+                <div className="border-t border-[#2d666d]/20 pt-2 flex justify-between text-sm">
+                  <span className="font-bold text-[#1c1b1b]">Total:</span>
+                  <span className="font-bold text-[#2d666d]">৳{totalCost.toFixed(2)}</span>
                 </div>
               </div>
             )}
           </section>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mt-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+          <div className="mt-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
             <button
-              className="flex-1 py-4 px-6 rounded-full glass-card text-[#1c1b1b] font-semibold text-sm hover:bg-white/80 transition-all shadow-sm hover:shadow-md text-center"
-              type="button"
-              onClick={() => handlePost(true)}
-              disabled={loading}
-            >
-              Save Draft
-            </button>
-            <button
-              className="flex-[2] py-4 px-6 rounded-full bg-gradient-to-r from-[#2d666d] to-[#1a4b52] text-white font-semibold text-sm shadow-[0_8px_20px_rgba(45,102,109,0.3)] hover:shadow-[0_12px_25px_rgba(45,102,109,0.5)] transition-all duration-300 hover:-translate-y-1 text-center relative overflow-hidden group"
+              className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-[#2d666d] to-[#1a4b52] text-white font-semibold text-sm shadow-[0_8px_20px_rgba(45,102,109,0.3)] hover:shadow-[0_12px_25px_rgba(45,102,109,0.5)] transition-all duration-300 hover:-translate-y-1 text-center relative overflow-hidden group"
               type="submit"
               disabled={loading}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? 'Publishing...' : 'Publish Post'}
+                {loading ? 'Publishing...' : 'Publish Job'}
                 {!loading && (
                   <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
                     rocket_launch

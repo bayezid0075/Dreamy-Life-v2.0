@@ -585,6 +585,16 @@ export const jobEscrow = pgTable('job_escrow', {
   escrowJobIdx: uniqueIndex('escrow_job_idx').on(table.jobId),
 }));
 
+// ─── Marketplace: Settings Table (singleton) ─────────────────────────────
+export const marketplaceSettings = pgTable('marketplace_settings', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  platformFeePercent: decimal('platform_fee_percent', { precision: 5, scale: 2 }).notNull().default('5.00'),
+  maxSubmissionsPerUser: integer('max_submissions_per_user').notNull().default(3),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // ─── Old Tables (kept for reference, to be removed after migration) ──────
 export const sessions = pgTable('sessions', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),

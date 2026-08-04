@@ -1,9 +1,10 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
+import { useMarketplaceSocket } from '@/hooks/useMarketplaceSocket';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -12,7 +13,7 @@ interface Job {
   posterId: string;
   title: string;
   description: string;
-  type: 'single' | 'multiple';
+  type: string;
   amount: string;
   unitPay: string;
   totalUnits: number;
@@ -20,11 +21,16 @@ interface Job {
   status: string;
   adminApproved: boolean;
   mediaUrls: string[];
+  link?: string;
   posterUsername: string;
   posterFullName?: string;
-  bids: any[];
-  assignments: any[];
+  posterAvatarUrl?: string;
+  escrow?: any;
   submissions: any[];
+  mySubmissions: any[];
+  mySubmissionCount: number;
+  maxSubmissions: number;
+  platformFeePercent: string;
 }
 
 export default function JobDetailPage() {
@@ -34,14 +40,51 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [bidAmount, setBidAmount] = useState('');
-  const [bidMessage, setBidMessage] = useState('');
   const [proof, setProof] = useState('');
+  const [proofFiles, setProofFiles] = useState<File[]>([]);
+  const [proofPreviews, setProofPreviews] = useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [rejectModal, setRejectModal] = useState<{ open: boolean; submissionId: string | null }>({ open: false, submissionId: null });
+  const [rejectComment, setRejectComment] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { subscribeToJob, unsubscribeFromJob } = useMarketplaceSocket(accessToken, {
+    onJobUpdated: (data: any) => {
+      if (data.job?.id === id) {
+        setJob((prev) => prev ? { ...prev, ...data.job } : prev);
+      }
+    },
+    onNewSubmission: (data: any) => {
+      if (data.submission?.jobId === id) {
+        fetchJob();
+      }
+    },
+    onSubmissionApproved: (data: any) => {
+      if (data.submission?.jobId === id) {
+        fetchJob();
+      }
+    },
+    onSubmissionRejected: (data: any) => {
+      if (data.submission?.jobId === id) {
+        fetchJob();
+      }
+    },
+    onJobCancelled: (data: any) => {
+      if (data.job?.id === id) {
+        fetchJob();
+      }
+    },
+  });
 
   useEffect(() => {
-    if (id && accessToken) fetchJob();
+    if (id && accessToken) {
+      fetchJob();
+      subscribeToJob(id as string);
+    }
+    return () => {
+      if (id) unsubscribeFromJob(id as string);
+    };
   }, [id, accessToken]);
 
   const fetchJob = async () => {
@@ -61,61 +104,67 @@ export default function JobDetailPage() {
     }
   };
 
-  const handlePlaceBid = async () => {
-    if (!job || !bidAmount) return;
-    setActionLoading('bid');
-    try {
-      const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/bids`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ amount: parseFloat(bidAmount), message: bidMessage }),
-      });
-      if (res.ok) {
-        setBidAmount('');
-        setBidMessage('');
-        fetchJob();
-      } else {
-        const err = await res.json();
-        alert(err.message || 'Failed to place bid');
-      }
-    } catch (err) {
-      alert('Failed to place bid');
-    } finally {
-      setActionLoading(null);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (proofFiles.length + files.length > 5) {
+      alert('Maximum 5 files allowed');
+      return;
     }
+    setProofFiles((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setProofPreviews((prev) => [...prev, ev.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const handleAcceptBid = async (bidId: string) => {
-    if (!job) return;
-    setActionLoading(bidId);
-    try {
-      const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/bids/${bidId}/accept`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (res.ok) fetchJob();
-      else {
-        const err = await res.json();
-        alert(err.message || 'Failed to accept');
+  const removeProofFile = (index: number) => {
+    setProofFiles((prev) => prev.filter((_, i) => i !== index));
+    setProofPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async (files: File[]): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const res = await fetch(`${API_URL}/media/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          urls.push(data.url);
+        }
+      } catch (err) {
+        console.error('Failed to upload file', err);
       }
-    } catch (err) {
-      alert('Failed to accept');
-    } finally {
-      setActionLoading(null);
     }
+    return urls;
   };
 
   const handleSubmitWork = async () => {
     if (!job || !proof.trim()) return;
     setActionLoading('submit');
     try {
+      let proofMediaUrls: string[] = [];
+      if (proofFiles.length > 0) {
+        proofMediaUrls = await uploadFiles(proofFiles);
+      }
+
       const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ proof: proof.trim() }),
+        body: JSON.stringify({ proof: proof.trim(), proofMediaUrls }),
       });
       if (res.ok) {
         setProof('');
+        setProofFiles([]);
+        setProofPreviews([]);
         fetchJob();
       } else {
         const err = await res.json();
@@ -137,7 +186,6 @@ export default function JobDetailPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
-        alert('Work approved! Payment released.');
         fetchJob();
       } else {
         const err = await res.json();
@@ -145,6 +193,30 @@ export default function JobDetailPage() {
       }
     } catch (err) {
       alert('Failed to approve');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectSubmission = async () => {
+    if (!job || !rejectModal.submissionId) return;
+    setActionLoading(rejectModal.submissionId);
+    try {
+      const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/submissions/${rejectModal.submissionId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ comment: rejectComment || undefined }),
+      });
+      if (res.ok) {
+        setRejectModal({ open: false, submissionId: null });
+        setRejectComment('');
+        fetchJob();
+      } else {
+        const err = await res.json();
+        alert(err.message || 'Failed to reject');
+      }
+    } catch (err) {
+      alert('Failed to reject');
     } finally {
       setActionLoading(null);
     }
@@ -160,7 +232,6 @@ export default function JobDetailPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
-        alert('Job cancelled. Funds refunded.');
         router.push('/marketplace');
       } else {
         const err = await res.json();
@@ -190,60 +261,33 @@ export default function JobDetailPage() {
   }
 
   const isPoster = job.posterId === user?.id;
-  const hasPendingBid = job.bids?.some((b) => b.bidderId === user?.id && b.status === 'pending');
-  const hasAcceptedBid = job.bids?.some((b) => b.bidderId === user?.id && b.status === 'accepted');
-  const myAssignment = job.assignments?.find((a) => a.workerId === user?.id);
-  const hasPendingSubmission = job.submissions?.some((s) => s.workerId === user?.id && s.status === 'pending');
+  const canSubmit = !isPoster && job.status === 'active' && job.adminApproved && job.mySubmissionCount < job.maxSubmissions && !job.mySubmissions?.some((s: any) => s.status === 'pending');
+  const hasApprovedSubmission = job.mySubmissions?.some((s: any) => s.status === 'approved');
+  const pendingSubmissions = job.submissions?.filter((s: any) => s.status === 'pending') || [];
 
   return (
     <AuthGuard>
       <Head>
         <title>{job.title} - Dreamy Life Marketplace</title>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </Head>
 
       <div className="aurora-mesh" />
       <div className="aurora-orb-1" />
       <div className="aurora-orb-2" />
 
-      <header className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-xl border-b border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] h-20 flex items-center px-6">
-        <div className="flex items-center gap-4 max-w-[1280px] mx-auto w-full">
+      <header className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-xl border-b border-white/30 shadow-[0_20px_40px_rgba(0,0,0,0.04)] h-16 flex items-center px-4">
+        <div className="flex items-center gap-3 max-w-[1280px] mx-auto w-full">
           <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/40 transition-colors active:scale-95 text-[#5d5e64]">
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
-          <h1 className="text-[24px] font-bold text-[#5d5e64] tracking-tight">Job Details</h1>
+          <h1 className="text-[18px] font-bold text-[#1c1b1b] tracking-tight truncate">{job.title}</h1>
         </div>
       </header>
 
-      <main className="pt-28 pb-20 px-4 md:px-6 max-w-[600px] mx-auto w-full">
-        <div className="glass-card rounded-2xl p-6 border border-white/30 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-2.5 py-1 rounded-full bg-[#e9fdff] text-[#2d666d] text-[12px] font-semibold">
-              {job.type === 'single' ? 'Single Unit' : 'Multiple Unit'}
-            </span>
-            <span className={`px-2.5 py-1 rounded-full text-[12px] font-semibold ${
-              job.status === 'active' ? 'bg-[#e9fdff] text-[#2d666d]' :
-              job.status === 'completed' ? 'bg-[#e9fdff] text-[#2d666d]' :
-              'bg-[#e5e2e1] text-[#45474b]'
-            }`}>
-              {job.status.replace('_', ' ')}
-            </span>
-          </div>
-          <h2 className="text-[20px] font-bold text-[#1c1b1b] mb-2">{job.title}</h2>
-          <p className="text-[14px] text-[#45474b] leading-relaxed mb-4">{job.description}</p>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[28px] font-bold text-[#1c1b1b]">৳{Number(job.amount).toFixed(2)}</p>
-              <p className="text-[13px] text-[#76777b]">৳{Number(job.unitPay).toFixed(2)}/unit</p>
-            </div>
-            <p className="text-[13px] text-[#76777b]">by @{job.posterUsername}</p>
-          </div>
-        </div>
-
-        {/* Job Images Slider */}
+      <main className="pt-20 pb-20 px-4 md:px-6 max-w-[600px] mx-auto w-full">
+        {/* Job Images */}
         {job.mediaUrls && job.mediaUrls.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="relative rounded-2xl overflow-hidden bg-white/30 border border-white/30">
               <div className="flex transition-transform duration-300 ease-in-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
                 {job.mediaUrls.map((url, i) => (
@@ -286,128 +330,249 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        {job.type === 'single' && (
-          <div className="mb-6">
-            <h3 className="text-[16px] font-bold text-[#1c1b1b] mb-3">Bids ({job.bids?.length || 0})</h3>
-            {!isPoster && !hasPendingBid && !hasAcceptedBid && job.status === 'active' && (
-              <div className="glass-card rounded-xl p-4 border border-white/30 mb-3">
-                <input
-                  type="number"
-                  placeholder="Your bid amount (৳)"
-                  value={bidAmount}
-                  onChange={(e) => setBidAmount(e.target.value)}
-                  className="w-full glass-input rounded-lg px-3 py-2 text-[14px] text-[#1c1b1b] placeholder:text-[#45474b]/50 outline-none mb-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Message (optional)"
-                  value={bidMessage}
-                  onChange={(e) => setBidMessage(e.target.value)}
-                  className="w-full glass-input rounded-lg px-3 py-2 text-[14px] text-[#1c1b1b] placeholder:text-[#45474b]/50 outline-none mb-2"
-                />
-                <button
-                  onClick={handlePlaceBid}
-                  disabled={actionLoading === 'bid'}
-                  className="w-full py-2 rounded-lg bg-[#2d666d] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50"
-                >
-                  {actionLoading === 'bid' ? 'Placing...' : 'Place Bid'}
-                </button>
+        {/* Title */}
+        <h2 className="text-[22px] font-bold text-[#1c1b1b] mb-2">{job.title}</h2>
+
+        {/* Description */}
+        <p className="text-[14px] text-[#45474b] leading-relaxed mb-4">{job.description}</p>
+
+        {/* Link Button */}
+        {job.link && (
+          <a
+            href={job.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#e9fdff] text-[#2d666d] text-[13px] font-semibold mb-4 hover:bg-[#d4f5f8] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">link</span>
+            Visit Link
+          </a>
+        )}
+
+        {/* Unit Price */}
+        <div className="glass-card rounded-xl p-4 border border-white/30 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[13px] text-[#76777b]">Per Unit Price</p>
+              <p className="text-[24px] font-bold text-[#2d666d]">৳{Number(job.unitPay).toFixed(2)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[13px] text-[#76777b]">Total Units</p>
+              <p className="text-[18px] font-bold text-[#1c1b1b]">{job.totalUnits}</p>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex-1 h-2 bg-[#e5e2e1] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#2d666d] rounded-full transition-all"
+                style={{ width: `${Math.min((job.filledUnits / job.totalUnits) * 100, 100)}%` }}
+              />
+            </div>
+            <span className="text-[12px] text-[#76777b]">{job.filledUnits}/{job.totalUnits} submitted</span>
+          </div>
+        </div>
+
+        {/* Poster Info */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center overflow-hidden">
+            {job.posterAvatarUrl ? (
+              <img alt="Poster" className="w-full h-full object-cover" src={job.posterAvatarUrl} />
+            ) : (
+              <span className="material-symbols-outlined text-[#5d5e64] text-lg">person</span>
+            )}
+          </div>
+          <div>
+            <p className="text-[13px] font-semibold text-[#1c1b1b]">@{job.posterUsername}</p>
+            <p className="text-[11px] text-[#76777b]">Posted {new Date(job.createdAt).toLocaleDateString()}</p>
+          </div>
+        </div>
+
+        {/* Submit Proof Section - for workers */}
+        {canSubmit && (
+          <div className="glass-card rounded-xl p-4 border border-white/30 mb-4">
+            <h3 className="text-[15px] font-bold text-[#1c1b1b] mb-3">Submit Proof</h3>
+            <textarea
+              placeholder="Describe your work completion..."
+              value={proof}
+              onChange={(e) => setProof(e.target.value)}
+              rows={3}
+              className="w-full glass-input rounded-lg px-3 py-2 text-[14px] text-[#1c1b1b] placeholder:text-[#45474b]/50 outline-none resize-none mb-3"
+            />
+
+            {/* File Upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e5e2e1] text-[#45474b] text-[12px] font-semibold mb-3 hover:bg-[#d8d5d3] transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">attach_file</span>
+              Attach Files ({proofFiles.length}/5)
+            </button>
+
+            {/* File Previews */}
+            {proofPreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {proofPreviews.map((preview, i) => (
+                  <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/30">
+                    <img src={preview} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removeProofFile(i)}
+                      className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px]"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-            {job.bids?.map((bid) => (
-              <div key={bid.id} className="glass-card rounded-xl p-4 border border-white/30 mb-2">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[14px] font-semibold text-[#1c1b1b]">@{bid.bidderUsername}</span>
-                  <span className="text-[16px] font-bold text-[#1c1b1b]">৳{Number(bid.amount).toFixed(2)}</span>
-                </div>
-                {bid.message && <p className="text-[13px] text-[#45474b] mb-1">{bid.message}</p>}
-                <p className="text-[11px] text-[#76777b] capitalize">{bid.status}</p>
-                {isPoster && bid.status === 'pending' && (
-                  <button
-                    onClick={() => handleAcceptBid(bid.id)}
-                    disabled={actionLoading === bid.id}
-                    className="mt-2 w-full py-2 rounded-lg bg-[#2d666d] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50"
-                  >
-                    {actionLoading === bid.id ? '...' : 'Accept Bid'}
-                  </button>
-                )}
-              </div>
-            ))}
+
+            <button
+              onClick={handleSubmitWork}
+              disabled={actionLoading === 'submit' || !proof.trim()}
+              className="w-full py-2.5 rounded-xl bg-[#2d666d] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {actionLoading === 'submit' ? 'Submitting...' : 'Submit Proof'}
+            </button>
           </div>
         )}
 
-        {job.type === 'multiple' && (
-          <div className="mb-6">
-            <h3 className="text-[16px] font-bold text-[#1c1b1b] mb-3">Workers ({job.filledUnits}/{job.totalUnits})</h3>
-            {job.assignments?.map((a) => (
-              <div key={a.id} className="glass-card rounded-xl p-4 border border-white/30 mb-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-[14px] font-semibold text-[#1c1b1b]">@{a.workerUsername}</span>
-                  <span className="text-[13px] text-[#76777b]">{a.units} units - {a.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {job.submissions?.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-[16px] font-bold text-[#1c1b1b] mb-3">Submissions</h3>
-            {job.submissions.map((s) => (
+        {/* My Submissions - for workers */}
+        {job.mySubmissions && job.mySubmissions.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-[15px] font-bold text-[#1c1b1b] mb-3">My Submissions</h3>
+            {job.mySubmissions.map((s: any) => (
               <div key={s.id} className="glass-card rounded-xl p-4 border border-white/30 mb-2">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-[14px] font-semibold text-[#1c1b1b]">@{s.workerUsername}</span>
-                  <span className={`text-[11px] font-semibold capitalize ${
-                    s.status === 'approved' ? 'text-[#2d666d]' : 'text-[#76777b]'
+                  <span className="text-[12px] text-[#76777b]">{new Date(s.createdAt).toLocaleDateString()}</span>
+                  <span className={`text-[11px] font-semibold capitalize px-2 py-0.5 rounded-full ${
+                    s.status === 'approved' ? 'bg-[#e9fdff] text-[#2d666d]' :
+                    s.status === 'rejected' ? 'bg-[#ffd1dc] text-[#78555e]' :
+                    'bg-[#e5e2e1] text-[#45474b]'
                   }`}>{s.status}</span>
                 </div>
                 <p className="text-[13px] text-[#45474b]">{s.proof}</p>
-                {isPoster && s.status === 'pending' && (
-                  <button
-                    onClick={() => handleApproveSubmission(s.id)}
-                    disabled={actionLoading === s.id}
-                    className="mt-2 w-full py-2 rounded-lg bg-[#2d666d] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50"
-                  >
-                    {actionLoading === s.id ? '...' : 'Approve & Pay'}
-                  </button>
+                {s.proofMediaUrls && s.proofMediaUrls.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {s.proofMediaUrls.map((url: string, i: number) => (
+                      <img key={i} src={resolveMediaUrl(url) || url} alt="" className="w-12 h-12 rounded-lg object-cover" />
+                    ))}
+                  </div>
+                )}
+                {s.status === 'rejected' && s.posterComment && (
+                  <div className="mt-2 p-2 rounded-lg bg-[#ffd1dc]/30 text-[12px] text-[#78555e]">
+                    <span className="font-semibold">Feedback:</span> {s.posterComment}
+                  </div>
                 )}
               </div>
             ))}
           </div>
         )}
 
-        {(hasAcceptedBid || myAssignment) && job.status === 'in_progress' && !hasPendingSubmission && (
-          <div className="mb-6">
-            <h3 className="text-[16px] font-bold text-[#1c1b1b] mb-3">Submit Work</h3>
-            <div className="glass-card rounded-xl p-4 border border-white/30">
-              <textarea
-                placeholder="Describe your work completion..."
-                value={proof}
-                onChange={(e) => setProof(e.target.value)}
-                rows={4}
-                className="w-full glass-input rounded-lg px-3 py-2 text-[14px] text-[#1c1b1b] placeholder:text-[#45474b]/50 outline-none resize-none mb-2"
-              />
-              <button
-                onClick={handleSubmitWork}
-                disabled={actionLoading === 'submit'}
-                className="w-full py-2 rounded-lg bg-[#2d666d] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50"
-              >
-                {actionLoading === 'submit' ? 'Submitting...' : 'Submit Work'}
-              </button>
-            </div>
+        {/* Submission limit info */}
+        {!isPoster && job.status === 'active' && (
+          <p className="text-[11px] text-[#76777b] mb-4">
+            Submissions: {job.mySubmissionCount}/{job.maxSubmissions}
+          </p>
+        )}
+
+        {/* Pending Submissions - for poster */}
+        {isPoster && pendingSubmissions.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-[15px] font-bold text-[#1c1b1b] mb-3">Pending Submissions ({pendingSubmissions.length})</h3>
+            {pendingSubmissions.map((s: any) => (
+              <div key={s.id} className="glass-card rounded-xl p-4 border border-white/30 mb-2">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-[#e5e2e1] flex items-center justify-center overflow-hidden">
+                      {s.workerAvatarUrl ? (
+                        <img alt="" className="w-full h-full object-cover" src={s.workerAvatarUrl} />
+                      ) : (
+                        <span className="material-symbols-outlined text-[#5d5e64] text-sm">person</span>
+                      )}
+                    </div>
+                    <span className="text-[13px] font-semibold text-[#1c1b1b]">@{s.workerUsername}</span>
+                  </div>
+                  <span className="text-[12px] text-[#76777b]">{new Date(s.createdAt).toLocaleDateString()}</span>
+                </div>
+                <p className="text-[13px] text-[#45474b] mb-2">{s.proof}</p>
+                {s.proofMediaUrls && s.proofMediaUrls.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {s.proofMediaUrls.map((url: string, i: number) => (
+                      <img key={i} src={resolveMediaUrl(url) || url} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleApproveSubmission(s.id)}
+                    disabled={actionLoading === s.id}
+                    className="flex-1 py-2 rounded-lg bg-[#2d666d] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50"
+                  >
+                    {actionLoading === s.id ? '...' : `Approve (৳${Number(job.unitPay).toFixed(2)})`}
+                  </button>
+                  <button
+                    onClick={() => setRejectModal({ open: true, submissionId: s.id })}
+                    disabled={actionLoading === s.id}
+                    className="flex-1 py-2 rounded-lg border border-[#ba1a1a] text-[#ba1a1a] text-[13px] font-semibold hover:bg-[#ffd1dc]/30 disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
+        {/* Cancel Job - for poster */}
         {isPoster && (job.status === 'active' || job.status === 'pending_approval') && (
           <button
             onClick={handleCancelJob}
             disabled={actionLoading === 'cancel'}
-            className="w-full py-3 rounded-xl border border-[#ba1a1a] text-[#ba1a1a] text-[14px] font-semibold hover:bg-[#ffdad6]/30 transition-colors disabled:opacity-50"
+            className="w-full py-3 rounded-xl border border-[#ba1a1a] text-[#ba1a1a] text-[14px] font-semibold hover:bg-[#ffd1dc]/30 transition-colors disabled:opacity-50"
           >
             {actionLoading === 'cancel' ? 'Cancelling...' : 'Cancel Job'}
           </button>
         )}
       </main>
+
+      {/* Reject Modal */}
+      {rejectModal.open && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={() => setRejectModal({ open: false, submissionId: null })}>
+          <div className="w-full max-w-[600px] bg-white rounded-t-2xl p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[18px] font-bold text-[#1c1b1b] mb-3">Reject Submission</h3>
+            <p className="text-[13px] text-[#76777b] mb-3">Provide feedback to help the worker improve.</p>
+            <textarea
+              placeholder="Feedback (optional)..."
+              value={rejectComment}
+              onChange={(e) => setRejectComment(e.target.value)}
+              rows={3}
+              className="w-full glass-input rounded-lg px-3 py-2 text-[14px] text-[#1c1b1b] placeholder:text-[#45474b]/50 outline-none resize-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRejectModal({ open: false, submissionId: null })}
+                className="flex-1 py-2.5 rounded-xl border border-[#e5e2e1] text-[#45474b] text-[13px] font-semibold hover:bg-[#f5f5f5] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectSubmission}
+                disabled={actionLoading === rejectModal.submissionId}
+                className="flex-1 py-2.5 rounded-xl bg-[#ba1a1a] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50"
+              >
+                {actionLoading === rejectModal.submissionId ? '...' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Image Lightbox */}
       {lightboxImage && (

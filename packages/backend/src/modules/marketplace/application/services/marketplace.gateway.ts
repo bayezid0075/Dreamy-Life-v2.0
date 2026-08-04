@@ -80,11 +80,10 @@ export class MarketplaceGateway implements OnGatewayConnection, OnGatewayDisconn
 
   emitToUser(userId: string, event: string, data: any) {
     const sockets = this.userSockets.get(userId);
-    if (sockets) {
-      for (const socketId of sockets) {
-        const socket = this.server.sockets.sockets.get(socketId);
-        socket?.emit(event, data);
-      }
+    if (!sockets || !this.server?.sockets?.sockets) return;
+    for (const socketId of sockets) {
+      const socket = this.server.sockets.sockets.get(socketId);
+      socket?.emit(event, data);
     }
   }
 

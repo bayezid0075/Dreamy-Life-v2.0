@@ -21,7 +21,7 @@ export class MarketplaceController {
 
   @Post('marketplace/jobs')
   async createJob(
-    @Body() body: { title: string; description: string; type: 'single' | 'multiple'; amount: number; unitPay: number; totalUnits?: number; mediaUrls?: string[]; link?: string },
+    @Body() body: { title: string; description: string; unitPay: number; totalUnits: number; mediaUrls?: string[]; link?: string },
     @Req() req: any,
   ) {
     return this.marketplaceService.createJob(req.user.userId, body);
@@ -32,14 +32,12 @@ export class MarketplaceController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
-    @Query('type') type?: string,
     @Query('search') search?: string,
   ) {
     return this.marketplaceService.getJobs({
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 20,
       status,
-      type,
       search,
     });
   }
@@ -49,64 +47,14 @@ export class MarketplaceController {
     return this.marketplaceService.getPostedJobs(req.user.userId);
   }
 
-  @Get('marketplace/jobs/available')
-  async getAvailableJobs(@Req() req: any) {
-    return this.marketplaceService.getAvailableJobs(req.user.userId);
-  }
-
-  @Get('marketplace/jobs/assigned')
-  async getAssignedJobs(@Req() req: any) {
-    return this.marketplaceService.getAssignedJobs(req.user.userId);
+  @Get('marketplace/jobs/my-submissions')
+  async getMySubmissions(@Req() req: any) {
+    return this.marketplaceService.getMySubmissions(req.user.userId);
   }
 
   @Get('marketplace/jobs/:id')
-  async getJobById(@Param('id') id: string) {
-    return this.marketplaceService.getJobById(id);
-  }
-
-  // ─── Bidding (Single Unit) ─────────────────────────────────────────────
-
-  @Post('marketplace/jobs/:id/bids')
-  async placeBid(
-    @Param('id') jobId: string,
-    @Body() body: { amount: number; message?: string },
-    @Req() req: any,
-  ) {
-    return this.marketplaceService.placeBid(jobId, req.user.userId, body.amount, body.message);
-  }
-
-  @Delete('marketplace/bids/:bidId')
-  async cancelBid(@Param('bidId') bidId: string, @Req() req: any) {
-    return this.marketplaceService.cancelBid(bidId, req.user.userId);
-  }
-
-  @Post('marketplace/jobs/:jobId/bids/:bidId/accept')
-  async acceptBid(
-    @Param('jobId') jobId: string,
-    @Param('bidId') bidId: string,
-    @Req() req: any,
-  ) {
-    return this.marketplaceService.acceptBid(jobId, bidId, req.user.userId);
-  }
-
-  @Post('marketplace/jobs/:jobId/bids/:bidId/reject')
-  async rejectBid(
-    @Param('jobId') jobId: string,
-    @Param('bidId') bidId: string,
-    @Req() req: any,
-  ) {
-    return this.marketplaceService.rejectBid(jobId, bidId, req.user.userId);
-  }
-
-  // ─── Multi-Unit Assignments ────────────────────────────────────────────
-
-  @Post('marketplace/jobs/:id/assign')
-  async assignWorker(
-    @Param('id') jobId: string,
-    @Body() body: { workerId: string; units: number },
-    @Req() req: any,
-  ) {
-    return this.marketplaceService.assignWorker(jobId, body.workerId, body.units, req.user.userId);
+  async getJobById(@Param('id') id: string, @Req() req: any) {
+    return this.marketplaceService.getJobById(id, req.user.userId);
   }
 
   // ─── Submissions ───────────────────────────────────────────────────────
@@ -144,5 +92,12 @@ export class MarketplaceController {
   @Delete('marketplace/jobs/:id')
   async cancelJob(@Param('id') jobId: string, @Req() req: any) {
     return this.marketplaceService.cancelJob(jobId, req.user.userId);
+  }
+
+  // ─── Settings ──────────────────────────────────────────────────────────
+
+  @Get('marketplace/settings')
+  async getSettings() {
+    return this.marketplaceService.getSettings();
   }
 }

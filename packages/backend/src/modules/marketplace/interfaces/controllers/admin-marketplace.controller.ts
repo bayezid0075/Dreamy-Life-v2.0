@@ -11,7 +11,6 @@ import {
 import { MarketplaceService } from '../../application/services/marketplace.service';
 import { MarketplaceGateway } from '../../application/services/marketplace.gateway';
 import { AdminGuard } from '../../../admin/guards/admin.guard';
-import { JwtService } from '@nestjs/jwt';
 
 @Controller('admin/marketplace')
 @UseGuards(AdminGuard)
@@ -19,7 +18,6 @@ export class AdminMarketplaceController {
   constructor(
     private marketplaceService: MarketplaceService,
     private marketplaceGateway: MarketplaceGateway,
-    private jwtService: JwtService,
   ) {}
 
   @Get('jobs')
@@ -42,25 +40,25 @@ export class AdminMarketplaceController {
 
   @Patch('jobs/:id/approve')
   async approveJob(@Param('id') jobId: string) {
-    const result = await this.marketplaceService.adminApproveJob(jobId);
-    const job = await this.marketplaceService.getJobById(jobId);
-    this.marketplaceGateway.emitJobApproved(job);
-    return result;
+    return this.marketplaceService.adminApproveJob(jobId);
   }
 
   @Patch('jobs/:id/reject')
   async rejectJob(@Param('id') jobId: string) {
-    const result = await this.marketplaceService.adminRejectJob(jobId);
-    const job = await this.marketplaceService.getJobById(jobId);
-    this.marketplaceGateway.emitJobRejected(job);
-    return result;
+    return this.marketplaceService.adminRejectJob(jobId);
   }
 
-  @Patch('assignments/:id/units')
-  async updateAssignmentUnits(
-    @Param('id') assignmentId: string,
-    @Body() body: { units: number },
+  // ─── Settings ──────────────────────────────────────────────────────────
+
+  @Get('settings')
+  async getSettings() {
+    return this.marketplaceService.getSettings();
+  }
+
+  @Patch('settings')
+  async updateSettings(
+    @Body() body: { platformFeePercent?: number; maxSubmissionsPerUser?: number; isActive?: boolean },
   ) {
-    return this.marketplaceService.updateAssignmentUnits(assignmentId, body.units, 'admin');
+    return this.marketplaceService.updateSettings(body);
   }
 }

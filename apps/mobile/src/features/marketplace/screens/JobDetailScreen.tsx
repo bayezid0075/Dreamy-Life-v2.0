@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,19 +15,20 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { MediaTypeOptions } from 'expo-image-picker';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
+import { useMarketplaceSocket } from '@/shared/hooks/useMarketplaceSocket';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Job {
   id: string;
   posterId: string;
   title: string;
   description: string;
-  type: 'single' | 'multiple';
+  type: string;
   amount: string;
   unitPay: string;
   totalUnits: number;
@@ -35,11 +36,17 @@ interface Job {
   status: string;
   adminApproved: boolean;
   mediaUrls: string[];
+  link?: string;
   posterUsername: string;
   posterFullName?: string;
-  bids: any[];
-  assignments: any[];
+  posterAvatarUrl?: string;
+  escrow?: any;
   submissions: any[];
+  mySubmissions: any[];
+  mySubmissionCount: number;
+  maxSubmissions: number;
+  platformFeePercent: string;
+  createdAt: string;
 }
 
 interface SelectedFile {
@@ -51,21 +58,14 @@ interface SelectedFile {
 
 const MAX_FILES = 5;
 
-function isImageUrl(url: string) {
-  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
-}
-
 export default function JobDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [token, setToken] = useState<string | null>(null);
-  const [job, setJob] = useState<Job | null>(null);
   const [userId, setUserId] = useState<string>('');
+  const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  const [bidAmount, setBidAmount] = useState('');
-  const [bidMessage, setBidMessage] = useState('');
 
   const [proof, setProof] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
@@ -73,32 +73,49 @@ export default function JobDetailScreen() {
 
   const [rejectComment, setRejectComment] = useState('');
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [jobLightboxUrl, setJobLightboxUrl] = useState<string | null>(null);
+
+  useMarketplaceSocket({
+    onJobUpdated: (data: any) => {
+      if (data.job?.id === id) fetchJob();
+    },
+    onNewSubmission: (data: any) => {
+      if (data.submission?.jobId === id) fetchJob();
+    },
+    onSubmissionApproved: (data: any) => {
+      if (data.submission?.jobId === id) fetchJob();
+    },
+    onSubmissionRejected: (data: any) => {
+      if (data.submission?.jobId === id) fetchJob();
+    },
+    onJobCancelled: (data: any) => {
+      if (data.job?.id === id) fetchJob();
+    },
+  });
 
   useEffect(() => {
     AsyncStorage.getItem('accessToken').then((t) => {
       setToken(t);
-      if (t) {
-        fetchJob(t);
-      } else {
-        setLoading(false);
-      }
+      AsyncStorage.getItem('userId').then(setUserId);
+      if (t) fetchJob(t);
+      else setLoading(false);
     });
   }, [id]);
 
-  const fetchJob = async (t: string) => {
+  const fetchJob = async (t?: string) => {
+    const authToken = t || token;
+    if (!authToken) return;
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/marketplace/jobs/${id}`, {
-        headers: { Authorization: `Bearer ${t}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (res.ok) {
         const data = await res.json();
         setJob(data);
-        setUserId(data.posterId);
       }
     } catch (err) {
       console.error('Failed to fetch job', err);
@@ -107,27 +124,28 @@ export default function JobDetailScreen() {
     }
   };
 
-  const pickImages = async () => {
-    if (selectedFiles.length >= MAX_FILES) {
+  const pickFiles = async () => {
+    const remaining = MAX_FILES - selectedFiles.length;
+    if (remaining <= 0) {
       Alert.alert('Limit', `Maximum ${MAX_FILES} files allowed`);
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
-      selectionLimit: MAX_FILES - selectedFiles.length,
+      selectionLimit: remaining,
       quality: 0.8,
     });
 
     if (!result.canceled) {
       const newFiles: SelectedFile[] = result.assets.map((asset) => ({
         uri: asset.uri,
-        name: asset.fileName || `image_${Date.now()}.jpg`,
+        name: asset.uri.split('/').pop() || 'image.jpg',
         type: asset.mimeType || 'image/jpeg',
         size: asset.fileSize || 0,
       }));
-      setSelectedFiles((prev) => [...prev, ...newFiles].slice(0, MAX_FILES));
+      setSelectedFiles((prev) => [...prev, ...newFiles]);
     }
   };
 
@@ -135,112 +153,58 @@ export default function JobDetailScreen() {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFiles = async (): Promise<string[]> => {
-    if (selectedFiles.length === 0) return [];
+  const uploadFiles = async (files: SelectedFile[]): Promise<string[]> => {
     const urls: string[] = [];
-    for (const file of selectedFiles) {
+    for (const file of files) {
       const formData = new FormData();
       formData.append('file', {
         uri: file.uri,
         name: file.name,
         type: file.type,
       } as any);
-
-      const res = await fetch(`${API_URL}/media/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        urls.push(data.url);
-      } else {
-        throw new Error('Failed to upload file');
+      try {
+        const res = await fetch(`${API_URL}/media/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          urls.push(data.url);
+        }
+      } catch (err) {
+        console.error('Upload failed', err);
       }
     }
     return urls;
   };
 
-  const handlePlaceBid = async () => {
-    if (!token || !job) return;
-    if (!bidAmount || parseFloat(bidAmount) <= 0) {
-      return Alert.alert('Error', 'Valid bid amount is required');
-    }
-    if (parseFloat(bidAmount) > parseFloat(job.amount)) {
-      return Alert.alert('Error', 'Bid cannot exceed job amount');
-    }
-
-    setActionLoading('bid');
-    try {
-      const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/bids`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ amount: parseFloat(bidAmount), message: bidMessage }),
-      });
-      if (res.ok) {
-        Alert.alert('Success', 'Bid placed successfully');
-        setBidAmount('');
-        setBidMessage('');
-        fetchJob(token);
-      } else {
-        const err = await res.json();
-        Alert.alert('Error', err.message || 'Failed to place bid');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to place bid');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleAcceptBid = async (bidId: string) => {
-    if (!token || !job) return;
-    setActionLoading(bidId);
-    try {
-      const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/bids/${bidId}/accept`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        Alert.alert('Success', 'Bid accepted');
-        fetchJob(token);
-      } else {
-        const err = await res.json();
-        Alert.alert('Error', err.message || 'Failed to accept bid');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to accept bid');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleSubmitWork = async () => {
-    if (!token || !job) return;
-    if (!proof.trim() && selectedFiles.length === 0) {
-      return Alert.alert('Error', 'Please provide proof text or attach files');
-    }
-
+    if (!job || !proof.trim()) return;
     setActionLoading('submit');
-    setUploadingFiles(true);
     try {
-      const mediaUrls = await uploadFiles();
+      let proofMediaUrls: string[] = [];
+      if (selectedFiles.length > 0) {
+        setUploadingFiles(true);
+        proofMediaUrls = await uploadFiles(selectedFiles);
+        setUploadingFiles(false);
+      }
+
       const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ proof: proof.trim(), proofMediaUrls: mediaUrls }),
+        body: JSON.stringify({ proof: proof.trim(), proofMediaUrls }),
       });
       if (res.ok) {
-        Alert.alert('Success', 'Work submitted successfully');
         setProof('');
         setSelectedFiles([]);
-        fetchJob(token);
+        fetchJob();
       } else {
         const err = await res.json();
-        Alert.alert('Error', err.message || 'Failed to submit work');
+        Alert.alert('Error', err.message || 'Failed to submit');
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to submit work');
+      Alert.alert('Error', 'Failed to submit');
     } finally {
       setActionLoading(null);
       setUploadingFiles(false);
@@ -248,7 +212,7 @@ export default function JobDetailScreen() {
   };
 
   const handleApproveSubmission = async (submissionId: string) => {
-    if (!token || !job) return;
+    if (!job) return;
     setActionLoading(submissionId);
     try {
       const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/submissions/${submissionId}/approve`, {
@@ -256,8 +220,7 @@ export default function JobDetailScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        Alert.alert('Success', 'Work approved! Payment released.');
-        fetchJob(token);
+        fetchJob();
       } else {
         const err = await res.json();
         Alert.alert('Error', err.message || 'Failed to approve');
@@ -269,20 +232,20 @@ export default function JobDetailScreen() {
     }
   };
 
-  const handleRejectSubmission = async (submissionId: string) => {
-    if (!token || !job) return;
-    setActionLoading(`reject-${submissionId}`);
+  const handleRejectSubmission = async () => {
+    if (!job || !rejectingId) return;
+    setActionLoading(rejectingId);
     try {
-      const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/submissions/${submissionId}/reject`, {
+      const res = await fetch(`${API_URL}/marketplace/jobs/${job.id}/submissions/${rejectingId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ comment: rejectComment || undefined }),
       });
       if (res.ok) {
+        setShowRejectModal(false);
         setRejectComment('');
         setRejectingId(null);
-        Alert.alert('Success', 'Submission rejected');
-        fetchJob(token);
+        fetchJob();
       } else {
         const err = await res.json();
         Alert.alert('Error', err.message || 'Failed to reject');
@@ -295,11 +258,12 @@ export default function JobDetailScreen() {
   };
 
   const handleCancelJob = async () => {
-    if (!token || !job) return;
+    if (!job) return;
     Alert.alert('Cancel Job', 'Are you sure? Funds will be refunded.', [
       { text: 'No', style: 'cancel' },
       {
         text: 'Yes',
+        style: 'destructive',
         onPress: async () => {
           setActionLoading('cancel');
           try {
@@ -308,7 +272,6 @@ export default function JobDetailScreen() {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
-              Alert.alert('Success', 'Job cancelled. Funds refunded.');
               router.back();
             } else {
               const err = await res.json();
@@ -326,446 +289,182 @@ export default function JobDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <AuroraBackground />
-        <TopBar title="Job Details" showBack showSearch={false} showNotification={false} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2d666d" />
-        </View>
+        <ActivityIndicator size="large" color="#2d666d" />
       </View>
     );
   }
 
   if (!job) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <AuroraBackground />
-        <TopBar title="Job Details" showBack showSearch={false} showNotification={false} />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.emptyTitle}>Job Not Found</Text>
-          <Text style={styles.emptySubtitle}>This job may have been removed</Text>
-        </View>
+        <Text style={{ color: '#45474b' }}>Job not found</Text>
       </View>
     );
   }
 
   const isPoster = job.posterId === userId;
-  const hasPendingBid = job.bids?.some((b) => b.bidderId === userId && b.status === 'pending');
-  const hasAcceptedBid = job.bids?.some((b) => b.bidderId === userId && b.status === 'accepted');
-  const myAssignment = job.assignments?.find((a) => a.workerId === userId);
-  const hasPendingSubmission = job.submissions?.some(
-    (s) => s.workerId === userId && s.status === 'pending'
-  );
-
-  const statusColorMap: Record<string, { bg: string; text: string }> = {
-    active: { bg: '#e9fdff', text: '#2d666d' },
-    in_progress: { bg: '#fef7e0', text: '#b06000' },
-    under_review: { bg: '#e8f0fe', text: '#1a73e8' },
-    completed: { bg: '#e6f4ea', text: '#0b8043' },
-    cancelled: { bg: '#fce8e6', text: '#ba1a1a' },
-    pending_approval: { bg: '#fef7e0', text: '#b06000' },
-  };
-
-  const sc = statusColorMap[job.status] || { bg: '#e5e2e1', text: '#45474b' };
+  const canSubmit = !isPoster && job.status === 'active' && job.adminApproved && job.mySubmissionCount < job.maxSubmissions && !job.mySubmissions?.some((s: any) => s.status === 'pending');
+  const pendingSubmissions = job.submissions?.filter((s: any) => s.status === 'pending') || [];
+  const remainingUnits = job.totalUnits - job.filledUnits;
 
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <TopBar title="Job Details" showBack showSearch={false} showNotification={false} />
+      <TopBar title="Job Details" showBack onBack={() => router.back()} />
 
-      {/* Lightbox Modal */}
-      <Modal visible={!!lightboxUrl} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.lightboxOverlay}
-          activeOpacity={1}
-          onPress={() => setLightboxUrl(null)}
-        >
-          <Image
-            source={{ uri: lightboxUrl || '' }}
-            style={styles.lightboxImage}
-            resizeMode="contain"
-          />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Job Images */}
+        {job.mediaUrls && job.mediaUrls.length > 0 && (
+          <View style={styles.imageSlider}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                setCurrentSlide(Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH));
+              }}
+            >
+              {job.mediaUrls.map((url, i) => (
+                <TouchableOpacity key={i} onPress={() => setLightboxUrl(url)}>
+                  <Image
+                    source={{ uri: resolveMediaUrl(url) || url }}
+                    style={styles.slideImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {job.mediaUrls.length > 1 && (
+              <View style={styles.dots}>
+                {job.mediaUrls.map((_, i) => (
+                  <View
+                    key={i}
+                    style={[styles.dot, i === currentSlide && styles.dotActive]}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Title */}
+        <Text style={styles.title}>{job.title}</Text>
+
+        {/* Description */}
+        <Text style={styles.description}>{job.description}</Text>
+
+        {/* Link Button */}
+        {job.link && (
           <TouchableOpacity
-            style={styles.lightboxClose}
-            onPress={() => setLightboxUrl(null)}
+            style={styles.linkButton}
+            onPress={() => {}}
           >
-            <Text style={styles.lightboxCloseText}>✕</Text>
+            <Text style={styles.linkButtonText}>Visit Link</Text>
           </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        )}
 
-      {/* Job Image Lightbox */}
-      <Modal visible={!!jobLightboxUrl} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.lightboxOverlay}
-          activeOpacity={1}
-          onPress={() => setJobLightboxUrl(null)}
-        >
-          <Image
-            source={{ uri: jobLightboxUrl || '' }}
-            style={styles.lightboxImage}
-            resizeMode="contain"
-          />
-          <TouchableOpacity
-            style={styles.lightboxClose}
-            onPress={() => setJobLightboxUrl(null)}
-          >
-            <Text style={styles.lightboxCloseText}>✕</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Job Header Card */}
-        <View style={styles.headerCard}>
-          <View style={styles.headerTopRow}>
-            <View style={[styles.badge, { backgroundColor: '#e9fdff' }]}>
-              <Text style={[styles.badgeText, { color: '#2d666d' }]}>
-                {job.type === 'single' ? 'Single Unit' : 'Multiple Unit'}
-              </Text>
+        {/* Unit Price Card */}
+        <View style={styles.priceCard}>
+          <View style={styles.priceRow}>
+            <View>
+              <Text style={styles.priceLabel}>Per Unit Price</Text>
+              <Text style={styles.priceValue}>৳{Number(job.unitPay).toFixed(2)}</Text>
             </View>
-            <View style={[styles.badge, { backgroundColor: sc.bg }]}>
-              <Text style={[styles.badgeText, { color: sc.text }]}>
-                {job.status.replace(/_/g, ' ')}
-              </Text>
+            <View style={styles.priceRight}>
+              <Text style={styles.priceLabel}>Remaining</Text>
+              <Text style={styles.priceValueRight}>{remainingUnits}</Text>
             </View>
           </View>
-
-          <Text style={styles.title}>{job.title}</Text>
-          <Text style={styles.description}>{job.description}</Text>
-
-          <View style={styles.amountContainer}>
-            <View style={styles.amountBlock}>
-              <Text style={styles.amountLabel}>Budget</Text>
-              <Text style={styles.amountValue}>৳{Number(job.amount).toFixed(2)}</Text>
-            </View>
-            <View style={styles.amountDivider} />
-            <View style={styles.amountBlock}>
-              <Text style={styles.amountLabel}>Per Unit</Text>
-              <Text style={styles.amountValue}>৳{Number(job.unitPay).toFixed(2)}</Text>
-            </View>
+          <View style={styles.progressBar}>
+            <View
+              style={[styles.progressFill, { width: `${Math.min((job.filledUnits / job.totalUnits) * 100, 100)}%` }]}
+            />
           </View>
+          <Text style={styles.progressText}>{job.filledUnits}/{job.totalUnits} submitted</Text>
+        </View>
 
-          {job.type === 'multiple' && (
-            <View style={styles.progressContainer}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>Slots Filled</Text>
-                <Text style={styles.progressCount}>{job.filledUnits}/{job.totalUnits}</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${(job.filledUnits / job.totalUnits) * 100}%` },
-                  ]}
-                />
-              </View>
-            </View>
-          )}
-
-          <View style={styles.posterRow}>
-            <View style={styles.posterAvatar}>
-              <Text style={styles.posterInitial}>
-                {job.posterUsername?.[0]?.toUpperCase()}
-              </Text>
-            </View>
+        {/* Poster Info */}
+        <View style={styles.posterRow}>
+          <View style={styles.posterAvatar}>
+            {job.posterAvatarUrl ? (
+              <Image source={{ uri: job.posterAvatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarPlaceholder}>@</Text>
+            )}
+          </View>
+          <View>
             <Text style={styles.posterName}>@{job.posterUsername}</Text>
+            <Text style={styles.posterDate}>{new Date(job.createdAt).toLocaleDateString()}</Text>
           </View>
         </View>
 
-        {/* Job Images Slider */}
-        {job.mediaUrls && job.mediaUrls.length > 0 && (
-          <View style={styles.imageSliderContainer}>
-            <View style={styles.imageSliderTrack}>
-              {job.mediaUrls.map((url, i) => (
-                <TouchableOpacity
-                  key={i}
-                  activeOpacity={0.9}
-                  onPress={() => setJobLightboxUrl(resolveMediaUrl(url))}
-                  style={[
-                    styles.imageSliderSlide,
-                    { transform: [{ translateX: -currentSlide * (Dimensions.get('window').width - 32) }] },
-                  ]}
-                >
-                  <Image source={{ uri: resolveMediaUrl(url) }} style={styles.imageSliderImage} resizeMode="cover" />
-                </TouchableOpacity>
-              ))}
-            </View>
-            {job.mediaUrls.length > 1 && (
-              <>
-                <TouchableOpacity
-                  style={[styles.imageSliderArrow, { left: 8 }]}
-                  onPress={() => setCurrentSlide((prev) => (prev > 0 ? prev - 1 : job.mediaUrls.length - 1))}
-                >
-                  <Text style={styles.imageSliderArrowText}>{'‹'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.imageSliderArrow, { right: 8 }]}
-                  onPress={() => setCurrentSlide((prev) => (prev < job.mediaUrls.length - 1 ? prev + 1 : 0))}
-                >
-                  <Text style={styles.imageSliderArrowText}>{'›'}</Text>
-                </TouchableOpacity>
-                <View style={styles.imageSliderDots}>
-                  {job.mediaUrls.map((_, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.imageSliderDot,
-                        i === currentSlide && styles.imageSliderDotActive,
-                      ]}
-                    />
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-        )}
+        {/* Submit Proof Section */}
+        {canSubmit && (
+          <View style={styles.submitSection}>
+            <Text style={styles.sectionTitle}>Submit Proof</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Describe your work completion..."
+              placeholderTextColor="#999"
+              value={proof}
+              onChangeText={setProof}
+              multiline
+              numberOfLines={3}
+            />
 
-        {/* Single Unit - Bids Section */}
-        {job.type === 'single' && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Bids</Text>
-              <Text style={styles.sectionCount}>{job.bids?.length || 0}</Text>
-            </View>
+            {/* File Selection */}
+            <TouchableOpacity style={styles.attachButton} onPress={pickFiles}>
+              <Text style={styles.attachButtonText}>Attach Files ({selectedFiles.length}/{MAX_FILES})</Text>
+            </TouchableOpacity>
 
-            {!isPoster && !hasPendingBid && !hasAcceptedBid && job.status === 'active' && (
-              <View style={styles.bidForm}>
-                <Text style={styles.formLabel}>Your Bid</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Amount (৳)"
-                  placeholderTextColor="#76777b"
-                  value={bidAmount}
-                  onChangeText={setBidAmount}
-                  keyboardType="decimal-pad"
-                />
-                <TextInput
-                  style={[styles.input, styles.messageInput]}
-                  placeholder="Why you're a good fit (optional)"
-                  placeholderTextColor="#76777b"
-                  value={bidMessage}
-                  onChangeText={setBidMessage}
-                  multiline
-                />
-                <TouchableOpacity
-                  style={styles.primaryBtn}
-                  onPress={handlePlaceBid}
-                  disabled={actionLoading === 'bid'}
-                >
-                  {actionLoading === 'bid' ? (
-                    <ActivityIndicator color="#ffffff" />
-                  ) : (
-                    <Text style={styles.primaryBtnText}>Place Bid</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {job.bids?.map((bid) => (
-              <View key={bid.id} style={styles.bidCard}>
-                <View style={styles.bidCardHeader}>
-                  <View style={styles.bidUser}>
-                    <View style={styles.bidAvatar}>
-                      <Text style={styles.bidAvatarText}>
-                        {bid.bidderUsername?.[0]?.toUpperCase()}
-                      </Text>
-                    </View>
-                    <Text style={styles.bidderName}>@{bid.bidderUsername}</Text>
-                  </View>
-                  <Text style={styles.bidAmount}>৳{Number(bid.amount).toFixed(2)}</Text>
-                </View>
-                {bid.message && <Text style={styles.bidMessage}>{bid.message}</Text>}
-                <View style={styles.bidFooter}>
-                  <View style={[
-                    styles.statusPill,
-                    bid.status === 'accepted' && { backgroundColor: '#e9fdff' },
-                    bid.status === 'rejected' && { backgroundColor: '#fce8e6' },
-                  ]}>
-                    <Text style={[
-                      styles.statusPillText,
-                      bid.status === 'accepted' && { color: '#2d666d' },
-                      bid.status === 'rejected' && { color: '#ba1a1a' },
-                    ]}>
-                      {bid.status}
-                    </Text>
-                  </View>
-                  {isPoster && bid.status === 'pending' && (
-                    <TouchableOpacity
-                      style={styles.acceptBtn}
-                      onPress={() => handleAcceptBid(bid.id)}
-                      disabled={actionLoading === bid.id}
-                    >
-                      {actionLoading === bid.id ? (
-                        <ActivityIndicator color="#ffffff" size="small" />
-                      ) : (
-                        <Text style={styles.acceptBtnText}>Accept</Text>
-                      )}
+            {/* Selected Files */}
+            {selectedFiles.length > 0 && (
+              <View style={styles.fileList}>
+                {selectedFiles.map((file, i) => (
+                  <View key={i} style={styles.fileItem}>
+                    <Image source={{ uri: file.uri }} style={styles.fileThumb} />
+                    <TouchableOpacity onPress={() => removeFile(i)} style={styles.removeFile}>
+                      <Text style={styles.removeFileText}>x</Text>
                     </TouchableOpacity>
-                  )}
-                </View>
+                  </View>
+                ))}
               </View>
-            ))}
+            )}
+
+            <TouchableOpacity
+              style={[styles.submitButton, (!proof.trim() || actionLoading === 'submit') && styles.submitButtonDisabled]}
+              onPress={handleSubmitWork}
+              disabled={!proof.trim() || actionLoading === 'submit'}
+            >
+              <Text style={styles.submitButtonText}>
+                {actionLoading === 'submit' ? 'Submitting...' : 'Submit Proof'}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Multiple Unit - Assignments Section */}
-        {job.type === 'multiple' && (
+        {/* My Submissions */}
+        {job.mySubmissions && job.mySubmissions.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Workers</Text>
-              <Text style={styles.sectionCount}>{job.assignments?.length || 0}</Text>
-            </View>
-            {job.assignments?.map((assignment) => (
-              <View key={assignment.id} style={styles.assignmentCard}>
-                <View style={styles.assignmentLeft}>
-                  <View style={styles.bidAvatar}>
-                    <Text style={styles.bidAvatarText}>
-                      {assignment.workerUsername?.[0]?.toUpperCase()}
-                    </Text>
-                  </View>
-                  <View>
-                    <Text style={styles.workerName}>@{assignment.workerUsername}</Text>
-                    <Text style={styles.unitsLabel}>{assignment.units} units</Text>
-                  </View>
-                </View>
-                <View style={[
-                  styles.statusPill,
-                  assignment.status === 'completed' && { backgroundColor: '#e6f4ea' },
-                ]}>
-                  <Text style={[
-                    styles.statusPillText,
-                    assignment.status === 'completed' && { color: '#0b8043' },
-                  ]}>
-                    {assignment.status}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Submissions Section */}
-        {job.submissions?.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Submissions</Text>
-              <Text style={styles.sectionCount}>{job.submissions.length}</Text>
-            </View>
-            {job.submissions.map((submission) => (
-              <View key={submission.id} style={styles.submissionCard}>
+            <Text style={styles.sectionTitle}>My Submissions</Text>
+            {job.mySubmissions.map((s: any) => (
+              <View key={s.id} style={styles.submissionCard}>
                 <View style={styles.submissionHeader}>
-                  <View style={styles.bidUser}>
-                    <View style={styles.bidAvatar}>
-                      <Text style={styles.bidAvatarText}>
-                        {submission.workerUsername?.[0]?.toUpperCase()}
-                      </Text>
-                    </View>
-                    <Text style={styles.submitterName}>@{submission.workerUsername}</Text>
-                  </View>
-                  <View style={[
-                    styles.statusPill,
-                    submission.status === 'approved' && { backgroundColor: '#e6f4ea' },
-                    submission.status === 'rejected' && { backgroundColor: '#fce8e6' },
-                  ]}>
-                    <Text style={[
-                      styles.statusPillText,
-                      submission.status === 'approved' && { color: '#0b8043' },
-                      submission.status === 'rejected' && { color: '#ba1a1a' },
-                    ]}>
-                      {submission.status}
+                  <Text style={styles.submissionDate}>{new Date(s.createdAt).toLocaleDateString()}</Text>
+                  <View style={[styles.statusBadge, s.status === 'approved' ? styles.statusApproved : s.status === 'rejected' ? styles.statusRejected : styles.statusPending]}>
+                    <Text style={[styles.statusText, s.status === 'approved' ? styles.statusTextApproved : s.status === 'rejected' ? styles.statusTextRejected : styles.statusTextPending]}>
+                      {s.status}
                     </Text>
                   </View>
                 </View>
-
-                {submission.proof && (
-                  <Text style={styles.proofText}>{submission.proof}</Text>
-                )}
-
-                {submission.proofMediaUrls && submission.proofMediaUrls.length > 0 && (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.mediaScroll}
-                    contentContainerStyle={styles.mediaScrollContent}
-                  >
-                    {submission.proofMediaUrls.map((url: string, idx: number) => (
-                      isImageUrl(url) ? (
-                        <TouchableOpacity key={idx} onPress={() => setLightboxUrl(resolveMediaUrl(url))}>
-                          <Image source={{ uri: resolveMediaUrl(url) }} style={styles.mediaThumb} />
-                        </TouchableOpacity>
-                      ) : (
-                        <TouchableOpacity
-                          key={idx}
-                          style={styles.fileChip}
-                          onPress={() => Alert.alert('File', url)}
-                        >
-                          <Text style={styles.fileChipIcon}>📄</Text>
-                          <Text style={styles.fileChipText} numberOfLines={1}>
-                            {url.split('/').pop() || 'File'}
-                          </Text>
-                        </TouchableOpacity>
-                      )
-                    ))}
-                  </ScrollView>
-                )}
-
-                {submission.posterComment && (
-                  <View style={styles.rejectBanner}>
-                    <Text style={styles.rejectBannerText}>Rejection: {submission.posterComment}</Text>
-                  </View>
-                )}
-
-                {isPoster && submission.status === 'pending' && (
-                  <View style={styles.submissionActions}>
-                    <TouchableOpacity
-                      style={styles.approveBtn}
-                      onPress={() => handleApproveSubmission(submission.id)}
-                      disabled={actionLoading === submission.id}
-                    >
-                      {actionLoading === submission.id ? (
-                        <ActivityIndicator color="#ffffff" size="small" />
-                      ) : (
-                        <Text style={styles.approveBtnText}>Approve & Pay</Text>
-                      )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.rejectBtn}
-                      onPress={() => setRejectingId(rejectingId === submission.id ? null : submission.id)}
-                    >
-                      <Text style={styles.rejectBtnText}>Reject</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {rejectingId === submission.id && isPoster && submission.status === 'pending' && (
-                  <View style={styles.rejectForm}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Reason for rejection (optional)"
-                      placeholderTextColor="#76777b"
-                      value={rejectComment}
-                      onChangeText={setRejectComment}
-                    />
-                    <View style={styles.rejectFormActions}>
-                      <TouchableOpacity
-                        style={styles.confirmRejectBtn}
-                        onPress={() => handleRejectSubmission(submission.id)}
-                        disabled={actionLoading === `reject-${submission.id}`}
-                      >
-                        {actionLoading === `reject-${submission.id}` ? (
-                          <ActivityIndicator color="#ffffff" size="small" />
-                        ) : (
-                          <Text style={styles.confirmRejectBtnText}>Confirm</Text>
-                        )}
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.cancelRejectBtn}
-                        onPress={() => { setRejectingId(null); setRejectComment(''); }}
-                      >
-                        <Text style={styles.cancelRejectBtnText}>Cancel</Text>
-                      </TouchableOpacity>
-                    </View>
+                <Text style={styles.submissionProof}>{s.proof}</Text>
+                {s.status === 'rejected' && s.posterComment && (
+                  <View style={styles.feedbackBox}>
+                    <Text style={styles.feedbackLabel}>Feedback:</Text>
+                    <Text style={styles.feedbackText}>{s.posterComment}</Text>
                   </View>
                 )}
               </View>
@@ -773,389 +472,231 @@ export default function JobDetailScreen() {
           </View>
         )}
 
-        {/* Submit Work Section */}
-        {(hasAcceptedBid || myAssignment) && job.status === 'in_progress' && !hasPendingSubmission && (
+        {/* Submission limit */}
+        {!isPoster && job.status === 'active' && (
+          <Text style={styles.limitText}>
+            Submissions: {job.mySubmissionCount}/{job.maxSubmissions}
+          </Text>
+        )}
+
+        {/* Pending Submissions (Poster View) */}
+        {isPoster && pendingSubmissions.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Submit Work</Text>
-            </View>
-            <View style={styles.submitCard}>
-              <TextInput
-                style={[styles.input, styles.proofInput]}
-                placeholder="Describe your completed work..."
-                placeholderTextColor="#76777b"
-                value={proof}
-                onChangeText={setProof}
-                multiline
-              />
-
-              <TouchableOpacity
-                style={styles.pickFilesBtn}
-                onPress={pickImages}
-                disabled={selectedFiles.length >= MAX_FILES || uploadingFiles}
-              >
-                <Text style={styles.pickFilesBtnText}>
-                  Attach Images ({selectedFiles.length}/{MAX_FILES})
-                </Text>
-              </TouchableOpacity>
-
-              {selectedFiles.length > 0 && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.selectedFilesScroll}
-                  contentContainerStyle={styles.selectedFilesContent}
-                >
-                  {selectedFiles.map((file, idx) => (
-                    <View key={idx} style={styles.selectedFileItem}>
-                      <Image source={{ uri: file.uri }} style={styles.selectedFileThumb} />
-                      <TouchableOpacity
-                        style={styles.removeFileBtn}
-                        onPress={() => removeFile(idx)}
-                      >
-                        <Text style={styles.removeFileBtnText}>✕</Text>
-                      </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Pending Submissions ({pendingSubmissions.length})</Text>
+            {pendingSubmissions.map((s: any) => (
+              <View key={s.id} style={styles.submissionCard}>
+                <View style={styles.posterSubmissionHeader}>
+                  <View style={styles.submissionUser}>
+                    <View style={styles.miniAvatar}>
+                      {s.workerAvatarUrl ? (
+                        <Image source={{ uri: s.workerAvatarUrl }} style={styles.miniAvatarImage} />
+                      ) : (
+                        <Text style={styles.miniAvatarText}>@</Text>
+                      )}
                     </View>
-                  ))}
-                </ScrollView>
-              )}
+                    <Text style={styles.submissionUsername}>@{s.workerUsername}</Text>
+                  </View>
+                  <Text style={styles.submissionDate}>{new Date(s.createdAt).toLocaleDateString()}</Text>
+                </View>
+                <Text style={styles.submissionProof}>{s.proof}</Text>
 
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                onPress={handleSubmitWork}
-                disabled={actionLoading === 'submit' || uploadingFiles}
-              >
-                {uploadingFiles || actionLoading === 'submit' ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <Text style={styles.primaryBtnText}>Submit Work</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+                <View style={styles.actionRow}>
+                  <TouchableOpacity
+                    style={[styles.approveButton, actionLoading === s.id && styles.buttonDisabled]}
+                    onPress={() => handleApproveSubmission(s.id)}
+                    disabled={actionLoading === s.id}
+                  >
+                    <Text style={styles.approveButtonText}>
+                      {actionLoading === s.id ? '...' : `Approve (৳${Number(job.unitPay).toFixed(2)})`}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.rejectButton, actionLoading === s.id && styles.buttonDisabled]}
+                    onPress={() => {
+                      setRejectingId(s.id);
+                      setShowRejectModal(true);
+                    }}
+                    disabled={actionLoading === s.id}
+                  >
+                    <Text style={styles.rejectButtonText}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
           </View>
         )}
 
-        {/* Cancel Job Button */}
+        {/* Cancel Job */}
         {isPoster && (job.status === 'active' || job.status === 'pending_approval') && (
           <TouchableOpacity
-            style={styles.cancelJobBtn}
+            style={[styles.cancelButton, actionLoading === 'cancel' && styles.buttonDisabled]}
             onPress={handleCancelJob}
             disabled={actionLoading === 'cancel'}
           >
-            {actionLoading === 'cancel' ? (
-              <ActivityIndicator color="#ba1a1a" size="small" />
-            ) : (
-              <Text style={styles.cancelJobBtnText}>Cancel Job</Text>
-            )}
+            <Text style={styles.cancelButtonText}>
+              {actionLoading === 'cancel' ? 'Cancelling...' : 'Cancel Job'}
+            </Text>
           </TouchableOpacity>
         )}
-
-        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Reject Modal */}
+      <Modal visible={showRejectModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Reject Submission</Text>
+            <Text style={styles.modalSubtitle}>Provide feedback to help the worker improve.</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Feedback (optional)..."
+              placeholderTextColor="#999"
+              value={rejectComment}
+              onChangeText={setRejectComment}
+              multiline
+              numberOfLines={3}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowRejectModal(false);
+                  setRejectComment('');
+                  setRejectingId(null);
+                }}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalRejectButton, actionLoading === rejectingId && styles.buttonDisabled]}
+                onPress={handleRejectSubmission}
+                disabled={actionLoading === rejectingId}
+              >
+                <Text style={styles.modalRejectText}>
+                  {actionLoading === rejectingId ? '...' : 'Reject'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Lightbox */}
+      <Modal visible={!!lightboxUrl} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.lightboxOverlay}
+          onPress={() => setLightboxUrl(null)}
+          activeOpacity={1}
+        >
+          {lightboxUrl && (
+            <Image
+              source={{ uri: resolveMediaUrl(lightboxUrl) || lightboxUrl }}
+              style={styles.lightboxImage}
+              resizeMode="contain"
+            />
+          )}
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f8ff' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 },
-  content: { padding: 16, paddingTop: 110 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f8ff' },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 16, paddingTop: 100, paddingBottom: 40 },
 
-  // Header Card
-  headerCard: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  headerTopRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
-  badgeText: { fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
-  title: { fontSize: 22, fontWeight: '800', color: '#1c1b1b', marginBottom: 8, lineHeight: 28 },
-  description: { fontSize: 14, color: '#45474b', lineHeight: 21, marginBottom: 16 },
+  imageSlider: { borderRadius: 16, overflow: 'hidden', marginBottom: 16, backgroundColor: '#e5e2e1' },
+  slideImage: { width: SCREEN_WIDTH - 32, height: 220 },
+  dots: { flexDirection: 'row', justifyContent: 'center', position: 'absolute', bottom: 12, left: 0, right: 0 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)', marginHorizontal: 3 },
+  dotActive: { backgroundColor: '#fff', width: 16 },
 
-  // Amount Block
-  amountContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
-  amountBlock: { flex: 1, alignItems: 'center' },
-  amountLabel: { fontSize: 11, fontWeight: '600', color: '#76777b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  amountValue: { fontSize: 20, fontWeight: '800', color: '#1c1b1b' },
-  amountDivider: { width: 1, backgroundColor: 'rgba(0,0,0,0.08)', marginHorizontal: 8 },
+  title: { fontSize: 22, fontWeight: '700', color: '#1c1b1b', marginBottom: 8 },
+  description: { fontSize: 14, color: '#45474b', lineHeight: 22, marginBottom: 16 },
 
-  // Progress
-  progressContainer: { marginBottom: 12 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  progressLabel: { fontSize: 12, fontWeight: '600', color: '#76777b' },
-  progressCount: { fontSize: 12, fontWeight: '700', color: '#2d666d' },
-  progressTrack: { height: 6, backgroundColor: 'rgba(45,102,109,0.12)', borderRadius: 3, overflow: 'hidden' },
+  linkButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e9fdff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, marginBottom: 16, alignSelf: 'flex-start' },
+  linkButtonText: { color: '#2d666d', fontSize: 13, fontWeight: '600' },
+
+  priceCard: { backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', marginBottom: 16 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  priceRight: { alignItems: 'flex-end' },
+  priceLabel: { fontSize: 12, color: '#76777b', marginBottom: 4 },
+  priceValue: { fontSize: 24, fontWeight: '700', color: '#2d666d' },
+  priceValueRight: { fontSize: 18, fontWeight: '700', color: '#1c1b1b' },
+  progressBar: { height: 6, backgroundColor: '#e5e2e1', borderRadius: 3, overflow: 'hidden', marginBottom: 6 },
   progressFill: { height: '100%', backgroundColor: '#2d666d', borderRadius: 3 },
+  progressText: { fontSize: 11, color: '#76777b', textAlign: 'right' },
 
-  // Poster
-  posterRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-  posterAvatar: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: '#e9fdff', alignItems: 'center', justifyContent: 'center',
-  },
-  posterInitial: { fontSize: 12, fontWeight: '700', color: '#2d666d' },
-  posterName: { fontSize: 13, fontWeight: '600', color: '#76777b' },
+  posterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
+  posterAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#e5e2e1', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  avatarImage: { width: 40, height: 40, borderRadius: 20 },
+  avatarPlaceholder: { fontSize: 16, fontWeight: '600', color: '#5d5e64' },
+  posterName: { fontSize: 13, fontWeight: '600', color: '#1c1b1b' },
+  posterDate: { fontSize: 11, color: '#76777b' },
 
-  // Sections
-  section: { marginBottom: 20 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1c1b1b' },
-  sectionCount: {
-    fontSize: 12, fontWeight: '700', color: '#76777b',
-    backgroundColor: 'rgba(0,0,0,0.05)', paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: 8, overflow: 'hidden',
-  },
+  submitSection: { backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', marginBottom: 16 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1c1b1b', marginBottom: 12 },
+  textInput: { backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 8, padding: 12, fontSize: 14, color: '#1c1b1b', minHeight: 80, textAlignVertical: 'top', marginBottom: 12 },
+  attachButton: { backgroundColor: '#e5e2e1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 12 },
+  attachButtonText: { fontSize: 12, fontWeight: '600', color: '#45474b' },
+  fileList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  fileItem: { width: 64, height: 64, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  fileThumb: { width: 64, height: 64 },
+  removeFile: { position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: 8, backgroundColor: '#ba1a1a', justifyContent: 'center', alignItems: 'center' },
+  removeFileText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  submitButton: { backgroundColor: '#2d666d', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  submitButtonDisabled: { opacity: 0.5 },
+  submitButtonText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
-  // Bid Form
-  bidForm: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
-  formLabel: { fontSize: 13, fontWeight: '700', color: '#45474b', marginBottom: 8 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#1c1b1b',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
-  messageInput: { height: 70, textAlignVertical: 'top' },
-  proofInput: { height: 90, textAlignVertical: 'top' },
-  primaryBtn: {
-    backgroundColor: '#2d666d',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  primaryBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '700' },
-
-  // Bid Card
-  bidCard: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
-  bidCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  bidUser: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bidAvatar: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#e9fdff', alignItems: 'center', justifyContent: 'center',
-  },
-  bidAvatarText: { fontSize: 13, fontWeight: '700', color: '#2d666d' },
-  bidderName: { fontSize: 14, fontWeight: '600', color: '#1c1b1b' },
-  bidAmount: { fontSize: 17, fontWeight: '800', color: '#1c1b1b' },
-  bidMessage: { fontSize: 13, color: '#45474b', lineHeight: 18, marginBottom: 8 },
-  bidFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusPill: {
-    backgroundColor: '#e5e2e1',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusPillText: { fontSize: 11, fontWeight: '700', color: '#45474b', textTransform: 'capitalize' },
-  acceptBtn: { backgroundColor: '#2d666d', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 20 },
-  acceptBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
-
-  // Assignment Card
-  assignmentCard: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
-  assignmentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  workerName: { fontSize: 14, fontWeight: '600', color: '#1c1b1b' },
-  unitsLabel: { fontSize: 12, color: '#76777b', marginTop: 2 },
-
-  // Submission Card
-  submissionCard: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
+  section: { marginBottom: 16 },
+  submissionCard: { backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', marginBottom: 8 },
   submissionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  submitterName: { fontSize: 14, fontWeight: '600', color: '#1c1b1b' },
-  proofText: { fontSize: 13, color: '#45474b', lineHeight: 19, marginBottom: 10 },
-  mediaScroll: { marginBottom: 10 },
-  mediaScrollContent: { gap: 8 },
-  mediaThumb: { width: 88, height: 88, borderRadius: 12, backgroundColor: '#e5e2e1' },
-  fileChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
-  },
-  fileChipIcon: { fontSize: 14 },
-  fileChipText: { fontSize: 12, color: '#45474b', maxWidth: 100 },
-  rejectBanner: {
-    backgroundColor: '#fce8e6', borderRadius: 10, padding: 10, marginBottom: 10,
-  },
-  rejectBannerText: { fontSize: 12, color: '#ba1a1a', lineHeight: 17 },
-  submissionActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  approveBtn: {
-    flex: 1, backgroundColor: '#2d666d', borderRadius: 10,
-    paddingVertical: 11, alignItems: 'center',
-  },
-  approveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
-  rejectBtn: {
-    borderRadius: 10, paddingVertical: 11, paddingHorizontal: 20,
-    borderWidth: 1.5, borderColor: '#ba1a1a', alignItems: 'center',
-  },
-  rejectBtnText: { color: '#ba1a1a', fontSize: 14, fontWeight: '700' },
-  rejectForm: {
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 12, padding: 14, marginTop: 10,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
-  },
-  rejectFormActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  confirmRejectBtn: { flex: 1, backgroundColor: '#ba1a1a', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  confirmRejectBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
-  cancelRejectBtn: { paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
-  cancelRejectBtnText: { color: '#76777b', fontSize: 13, fontWeight: '600' },
+  submissionDate: { fontSize: 11, color: '#76777b' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  statusPending: { backgroundColor: '#e5e2e1' },
+  statusApproved: { backgroundColor: '#e9fdff' },
+  statusRejected: { backgroundColor: '#ffd1dc' },
+  statusText: { fontSize: 10, fontWeight: '600', textTransform: 'capitalize' },
+  statusTextPending: { color: '#45474b' },
+  statusTextApproved: { color: '#2d666d' },
+  statusTextRejected: { color: '#78555e' },
+  submissionProof: { fontSize: 13, color: '#45474b', marginBottom: 8 },
 
-  // Submit Work
-  submitCard: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
-  pickFilesBtn: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-    borderStyle: 'dashed',
-  },
-  pickFilesBtnText: { fontSize: 13, color: '#45474b', fontWeight: '600' },
-  selectedFilesScroll: { marginBottom: 10 },
-  selectedFilesContent: { gap: 8 },
-  selectedFileItem: { position: 'relative' },
-  selectedFileThumb: { width: 88, height: 88, borderRadius: 12, backgroundColor: '#e5e2e1' },
-  removeFileBtn: {
-    position: 'absolute', top: -4, right: -4,
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#ba1a1a', alignItems: 'center', justifyContent: 'center',
-  },
-  removeFileBtnText: { color: '#ffffff', fontSize: 11, fontWeight: '700' },
+  posterSubmissionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  submissionUser: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  miniAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#e5e2e1', justifyContent: 'center', alignItems: 'center' },
+  miniAvatarImage: { width: 28, height: 28, borderRadius: 14 },
+  miniAvatarText: { fontSize: 11, fontWeight: '600', color: '#5d5e64' },
+  submissionUsername: { fontSize: 13, fontWeight: '600', color: '#1c1b1b' },
 
-  // Cancel Job
-  cancelJobBtn: {
-    borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8,
-    borderWidth: 1.5, borderColor: '#ba1a1a', backgroundColor: 'rgba(186,26,26,0.04)',
-  },
-  cancelJobBtnText: { color: '#ba1a1a', fontSize: 15, fontWeight: '700' },
+  actionRow: { flexDirection: 'row', gap: 8 },
+  approveButton: { flex: 1, backgroundColor: '#2d666d', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  approveButtonText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  rejectButton: { flex: 1, borderWidth: 1, borderColor: '#ba1a1a', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  rejectButtonText: { color: '#ba1a1a', fontSize: 12, fontWeight: '600' },
+  buttonDisabled: { opacity: 0.5 },
 
-  // Empty State
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1c1b1b' },
-  emptySubtitle: { fontSize: 14, color: '#76777b', marginTop: 4 },
+  cancelButton: { borderWidth: 1, borderColor: '#ba1a1a', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 20 },
+  cancelButtonText: { color: '#ba1a1a', fontSize: 14, fontWeight: '600' },
 
-  // Lightbox
-  lightboxOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center',
-  },
-  lightboxImage: { width: '92%', height: '80%' },
-  lightboxClose: {
-    position: 'absolute', top: 50, right: 20,
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center',
-  },
-  lightboxCloseText: { color: '#ffffff', fontSize: 18, fontWeight: '700' },
+  limitText: { fontSize: 11, color: '#76777b', marginBottom: 16 },
 
-  // Image Slider
-  imageSliderContainer: {
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-  },
-  imageSliderTrack: {
-    flexDirection: 'row',
-    overflow: 'hidden',
-  },
-  imageSliderSlide: {
-    width: Dimensions.get('window').width - 32,
-    aspectRatio: 16 / 10,
-  },
-  imageSliderImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageSliderArrow: {
-    position: 'absolute',
-    top: '50%',
-    marginTop: -18,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageSliderArrowText: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '300',
-    lineHeight: 28,
-  },
-  imageSliderDots: {
-    position: 'absolute',
-    bottom: 10,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  imageSliderDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  imageSliderDotActive: {
-    backgroundColor: '#ffffff',
-    width: 18,
-  },
+  feedbackBox: { backgroundColor: 'rgba(255,209,220,0.3)', borderRadius: 8, padding: 8, marginTop: 8 },
+  feedbackLabel: { fontSize: 11, fontWeight: '600', color: '#78555e', marginBottom: 2 },
+  feedbackText: { fontSize: 12, color: '#78555e' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1c1b1b', marginBottom: 8 },
+  modalSubtitle: { fontSize: 13, color: '#76777b', marginBottom: 16 },
+  modalInput: { backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 14, color: '#1c1b1b', minHeight: 80, textAlignVertical: 'top', marginBottom: 16 },
+  modalActions: { flexDirection: 'row', gap: 12 },
+  modalCancelButton: { flex: 1, borderWidth: 1, borderColor: '#e5e2e1', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  modalCancelText: { color: '#45474b', fontSize: 13, fontWeight: '600' },
+  modalRejectButton: { flex: 1, backgroundColor: '#ba1a1a', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  modalRejectText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+
+  lightboxOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  lightboxImage: { width: SCREEN_WIDTH, height: SCREEN_WIDTH },
 });

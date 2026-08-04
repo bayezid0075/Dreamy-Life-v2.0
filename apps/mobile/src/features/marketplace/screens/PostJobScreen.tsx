@@ -29,19 +29,27 @@ export default function PostJobScreen() {
   const [token, setToken] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState<'single' | 'multiple'>('single');
-  const [amount, setAmount] = useState('');
   const [unitPay, setUnitPay] = useState('');
-  const [totalUnits, setTotalUnits] = useState('1');
-  const [images, setImages] = useState<LocalImage[]>([]);
+  const [totalUnits, setTotalUnits] = useState('');
   const [link, setLink] = useState('');
+  const [images, setImages] = useState<LocalImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [fundsBalance, setFundsBalance] = useState(0);
+  const [platformFeePercent, setPlatformFeePercent] = useState(5);
+
+  const unitPayNum = parseFloat(unitPay) || 0;
+  const totalUnitsNum = parseInt(totalUnits) || 0;
+  const baseAmount = unitPayNum * totalUnitsNum;
+  const feeAmount = baseAmount * (platformFeePercent / 100);
+  const totalCost = baseAmount + feeAmount;
 
   useEffect(() => {
     AsyncStorage.getItem('accessToken').then((t) => {
       setToken(t);
-      if (t) fetchWallet(t);
+      if (t) {
+        fetchWallet(t);
+        fetchSettings();
+      }
     });
   }, []);
 
@@ -54,6 +62,18 @@ export default function PostJobScreen() {
       }
     } catch (err) {
       console.error('Failed to fetch wallet', err);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/marketplace/settings`);
+      if (res.ok) {
+        const data = await res.json();
+        setPlatformFeePercent(Number(data.platformFeePercent) || 5);
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings', err);
     }
   };
 
@@ -127,23 +147,15 @@ export default function PostJobScreen() {
     if (!token) return;
     if (!title.trim()) return Alert.alert('Error', 'Title is required');
     if (!description.trim()) return Alert.alert('Error', 'Description is required');
-    if (!amount || parseFloat(amount) <= 0) return Alert.alert('Error', 'Valid amount is required');
-    if (!unitPay || parseFloat(unitPay) <= 0) return Alert.alert('Error', 'Valid unit pay is required');
+    if (!unitPay || unitPayNum <= 0) return Alert.alert('Error', 'Valid per unit price is required');
+    if (!totalUnits || totalUnitsNum <= 0) return Alert.alert('Error', 'Valid unit count is required');
 
     if (images.some(img => img.uploading)) {
       return Alert.alert('Error', 'Please wait for all images to finish uploading');
     }
 
-    const amountNum = parseFloat(amount);
-    const unitPayNum = parseFloat(unitPay);
-    const totalUnitsNum = type === 'single' ? 1 : parseInt(totalUnits) || 1;
-
-    if (unitPayNum > amountNum) {
-      return Alert.alert('Error', 'Unit pay cannot exceed total amount');
-    }
-
-    if (amountNum > fundsBalance) {
-      return Alert.alert('Error', 'Insufficient funds balance');
+    if (totalCost > fundsBalance) {
+      return Alert.alert('Error', `Insufficient funds. Required: ৳${totalCost.toFixed(2)}`);
     }
 
     setLoading(true);
@@ -155,8 +167,6 @@ export default function PostJobScreen() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
-          type,
-          amount: amountNum,
           unitPay: unitPayNum,
           totalUnits: totalUnitsNum,
           mediaUrls,
@@ -202,11 +212,11 @@ export default function PostJobScreen() {
                 </View>
               )}
               <TouchableOpacity style={styles.imageRemoveBtn} onPress={() => removeImage(index)}>
-                <Text style={styles.imageRemoveText}>✕</Text>
+                <Text style={styles.imageRemoveText}>x</Text>
               </TouchableOpacity>
               {img.url && (
                 <View style={styles.imageDoneBadge}>
-                  <Text style={styles.imageDoneText}>✓</Text>
+                  <Text style={styles.imageDoneText}>done</Text>
                 </View>
               )}
             </View>
@@ -251,39 +261,7 @@ export default function PostJobScreen() {
           keyboardType="url"
         />
 
-        <Text style={styles.label}>Job Type</Text>
-        <View style={styles.typeContainer}>
-          <TouchableOpacity
-            style={[styles.typeBtn, type === 'single' && styles.activeTypeBtn]}
-            onPress={() => setType('single')}
-          >
-            <Text style={[styles.typeBtnText, type === 'single' && styles.activeTypeBtnText]}>
-              Single Unit
-            </Text>
-            <Text style={styles.typeHint}>Bid system</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.typeBtn, type === 'multiple' && styles.activeTypeBtn]}
-            onPress={() => setType('multiple')}
-          >
-            <Text style={[styles.typeBtnText, type === 'multiple' && styles.activeTypeBtnText]}>
-              Multiple Unit
-            </Text>
-            <Text style={styles.typeHint}>Assign workers</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.label}>Total Amount (৳)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="0.00"
-          placeholderTextColor="#76777b"
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-        />
-
-        <Text style={styles.label}>Pay Per Unit (৳)</Text>
+        <Text style={styles.label}>Per Unit Price (৳)</Text>
         <TextInput
           style={styles.input}
           placeholder="0.00"
@@ -293,37 +271,39 @@ export default function PostJobScreen() {
           keyboardType="decimal-pad"
         />
 
-        {type === 'multiple' && (
-          <>
-            <Text style={styles.label}>Total Units</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="1"
-              placeholderTextColor="#76777b"
-              value={totalUnits}
-              onChangeText={setTotalUnits}
-              keyboardType="number-pad"
-            />
-          </>
-        )}
+        <Text style={styles.label}>Unit Count</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. 50"
+          placeholderTextColor="#76777b"
+          value={totalUnits}
+          onChangeText={setTotalUnits}
+          keyboardType="number-pad"
+        />
 
-        {amount && unitPay && (
+        {unitPayNum > 0 && totalUnitsNum > 0 && (
           <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>Cost Summary</Text>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Amount:</Text>
-              <Text style={styles.summaryValue}>৳{parseFloat(amount || '0').toFixed(2)}</Text>
+              <Text style={styles.summaryLabel}>Per Unit:</Text>
+              <Text style={styles.summaryValue}>৳{unitPayNum.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Per Unit:</Text>
-              <Text style={styles.summaryValue}>৳{parseFloat(unitPay || '0').toFixed(2)}</Text>
+              <Text style={styles.summaryLabel}>Units:</Text>
+              <Text style={styles.summaryValue}>{totalUnitsNum}</Text>
             </View>
-            {type === 'multiple' && (
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Units:</Text>
-                <Text style={styles.summaryValue}>{totalUnits || '1'}</Text>
-              </View>
-            )}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal:</Text>
+              <Text style={styles.summaryValue}>৳{baseAmount.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Platform Fee ({platformFeePercent}%):</Text>
+              <Text style={[styles.summaryValue, { color: '#76777b' }]}>৳{feeAmount.toFixed(2)}</Text>
+            </View>
+            <View style={[styles.summaryRow, styles.summaryTotal]}>
+              <Text style={styles.summaryTotalLabel}>Total:</Text>
+              <Text style={styles.summaryTotalValue}>৳{totalCost.toFixed(2)}</Text>
+            </View>
           </View>
         )}
 
@@ -404,7 +384,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  imageDoneText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  imageDoneText: { color: '#fff', fontSize: 8, fontWeight: '700' },
   imageAddBtn: {
     width: 80,
     height: 80,
@@ -419,15 +399,6 @@ const styles = StyleSheet.create({
   imageAddIcon: { fontSize: 22, color: '#5d5e64', fontWeight: '300' },
   imageAddText: { fontSize: 10, color: '#5d5e64', fontWeight: '600', marginTop: 2 },
 
-  typeContainer: { flexDirection: 'row', gap: 12 },
-  typeBtn: {
-    flex: 1, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 12, padding: 16,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', alignItems: 'center',
-  },
-  activeTypeBtn: { backgroundColor: '#1c1b1b', borderColor: '#1c1b1b' },
-  typeBtnText: { fontSize: 14, fontWeight: '600', color: '#45474b' },
-  activeTypeBtnText: { color: '#ffffff' },
-  typeHint: { fontSize: 11, color: '#76777b', marginTop: 4 },
   summaryCard: {
     backgroundColor: 'rgba(233,253,255,0.4)', borderRadius: 12, padding: 16, marginTop: 16,
     borderWidth: 1, borderColor: 'rgba(233,253,255,0.3)',
@@ -436,6 +407,10 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   summaryLabel: { fontSize: 13, color: '#45474b' },
   summaryValue: { fontSize: 13, fontWeight: '600', color: '#1c1b1b' },
+  summaryTotal: { borderTopWidth: 1, borderTopColor: 'rgba(45,102,109,0.2)', paddingTop: 8, marginTop: 4 },
+  summaryTotalLabel: { fontSize: 14, fontWeight: '700', color: '#1c1b1b' },
+  summaryTotalValue: { fontSize: 14, fontWeight: '700', color: '#2d666d' },
+
   submitBtn: {
     backgroundColor: '#2d666d', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24,
   },

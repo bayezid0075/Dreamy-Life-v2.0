@@ -58,10 +58,10 @@ export default function MarketplaceScreen() {
   const fetchAll = async (t: string) => {
     setLoading(true);
     try {
-      const [jobsRes, postedRes, assignedRes] = await Promise.all([
+      const [jobsRes, postedRes, submissionsRes] = await Promise.all([
         fetch(`${API_URL}/marketplace/jobs/available`, { headers: { Authorization: `Bearer ${t}` } }),
         fetch(`${API_URL}/marketplace/jobs/posted`, { headers: { Authorization: `Bearer ${t}` } }),
-        fetch(`${API_URL}/marketplace/jobs/assigned`, { headers: { Authorization: `Bearer ${t}` } }),
+        fetch(`${API_URL}/marketplace/jobs/my-submissions`, { headers: { Authorization: `Bearer ${t}` } }),
       ]);
 
       if (jobsRes.ok) {
@@ -72,8 +72,8 @@ export default function MarketplaceScreen() {
         const data = await postedRes.json();
         setPostedJobs(data.jobs || []);
       }
-      if (assignedRes.ok) {
-        const data = await assignedRes.json();
+      if (submissionsRes.ok) {
+        const data = await submissionsRes.json();
         setAssignedJobs(data || []);
       }
     } catch (err) {
@@ -95,27 +95,30 @@ export default function MarketplaceScreen() {
     return j.title.toLowerCase().includes(q) || j.description.toLowerCase().includes(q);
   });
 
-  const renderJobItem = ({ item }: { item: Job }) => (
-    <TouchableOpacity
-      style={styles.jobCard}
-      onPress={() => router.push(`/marketplace/${item.id}`)}
-    >
-      <View style={styles.jobHeader}>
-        <View style={styles.jobTypeBadge}>
-          <Text style={styles.jobTypeText}>{item.type === 'single' ? t('singleUnit') : t('multiUnit')}</Text>
+  const renderJobItem = ({ item }: { item: Job }) => {
+    const remainingUnits = item.totalUnits - item.filledUnits;
+    return (
+      <TouchableOpacity
+        style={styles.jobCard}
+        onPress={() => router.push(`/marketplace/${item.id}`)}
+      >
+        <View style={styles.jobHeader}>
+          {remainingUnits > 0 && (
+            <View style={styles.remainingBadge}>
+              <Text style={styles.remainingText}>{remainingUnits} left</Text>
+            </View>
+          )}
+          <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
         </View>
-        <Text style={styles.jobAmount}>৳{Number(item.amount).toFixed(0)}</Text>
-      </View>
-      <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
-      <Text style={styles.jobDescription} numberOfLines={2}>{item.description}</Text>
-      <View style={styles.jobFooter}>
-        <Text style={styles.jobPoster}>@{item.posterUsername}</Text>
-        {item.type === 'multiple' && (
-          <Text style={styles.jobUnits}>{item.filledUnits}/{item.totalUnits} units</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+        <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.jobDescription} numberOfLines={2}>{item.description}</Text>
+        <View style={styles.jobFooter}>
+          <Text style={styles.jobPoster}>@{item.posterUsername}</Text>
+          <Text style={styles.jobUnits}>{item.filledUnits}/{item.totalUnits} submitted</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderPostedItem = ({ item }: { item: Job }) => (
     <TouchableOpacity
@@ -128,11 +131,11 @@ export default function MarketplaceScreen() {
             {item.status.replace('_', ' ')}
           </Text>
         </View>
-        <Text style={styles.jobAmount}>৳{Number(item.amount).toFixed(0)}</Text>
+        <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
       </View>
       <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
       <View style={styles.jobFooter}>
-        <Text style={styles.jobType}>{item.type === 'single' ? t('singleUnit') : `${item.totalUnits} ${t('units')}`}</Text>
+        <Text style={styles.jobUnits}>{item.filledUnits}/{item.totalUnits} submitted</Text>
       </View>
     </TouchableOpacity>
   );
@@ -148,7 +151,7 @@ export default function MarketplaceScreen() {
             {item.status}
           </Text>
         </View>
-        <Text style={styles.jobAmount}>{item.units} units</Text>
+        <Text style={styles.jobAmount}>৳{Number(item.jobUnitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
       </View>
       <Text style={styles.jobTitle} numberOfLines={2}>{item.jobTitle}</Text>
       <View style={styles.jobFooter}>
@@ -160,7 +163,7 @@ export default function MarketplaceScreen() {
   const tabs = [
     { key: 'available', label: t('browseJobs') },
     { key: 'posted', label: t('myJobs') },
-    { key: 'assigned', label: t('assigned') },
+    { key: 'assigned', label: 'My Submissions' },
   ];
 
   return (
@@ -211,7 +214,7 @@ export default function MarketplaceScreen() {
               <Text style={styles.emptyText}>
                 {activeTab === 'available' && t('noJobsFound')}
                 {activeTab === 'posted' && t('noJobsPostedYet')}
-                {activeTab === 'assigned' && t('noAssignedJobs')}
+                {activeTab === 'assigned' && 'No submissions yet'}
               </Text>
               {activeTab === 'posted' && (
                 <TouchableOpacity
@@ -261,15 +264,15 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
   jobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  jobTypeBadge: { backgroundColor: '#e9fdff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  jobTypeText: { fontSize: 11, fontWeight: '600', color: '#2d666d' },
-  jobAmount: { fontSize: 18, fontWeight: '700', color: '#1c1b1b' },
+  remainingBadge: { backgroundColor: '#1c1b1b', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  remainingText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  jobAmount: { fontSize: 18, fontWeight: '700', color: '#2d666d' },
+  perUnit: { fontSize: 11, fontWeight: '400', color: '#76777b' },
   jobTitle: { fontSize: 16, fontWeight: '600', color: '#1c1b1b', marginBottom: 4 },
   jobDescription: { fontSize: 13, color: '#45474b', lineHeight: 18, marginBottom: 8 },
   jobFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   jobPoster: { fontSize: 12, color: '#76777b' },
   jobUnits: { fontSize: 12, color: '#76777b' },
-  jobType: { fontSize: 12, color: '#76777b' },
   statusBadge: { backgroundColor: '#e5e2e1', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   activeBadge: { backgroundColor: '#e9fdff' },
   statusText: { fontSize: 11, fontWeight: '600', color: '#45474b', textTransform: 'capitalize' },

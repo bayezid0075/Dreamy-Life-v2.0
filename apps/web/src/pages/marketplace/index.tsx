@@ -27,8 +27,6 @@ interface Job {
   posterAvatarUrl?: string;
 }
 
-const CATEGORIES = ['All Jobs', 'Design', 'Development', 'Marketing', 'Writing'] as const;
-
 export default function MarketplacePage() {
   const { t } = useI18n();
   const router = useRouter();
@@ -36,10 +34,9 @@ export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'browse' | 'posted' | 'assigned'>('browse');
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [postedJobs, setPostedJobs] = useState<any[]>([]);
-  const [assignedJobs, setAssignedJobs] = useState<any[]>([]);
+  const [mySubmissions, setMySubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('All Jobs');
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -53,10 +50,10 @@ export default function MarketplacePage() {
       const endpoints = [
         fetch(`${API_URL}/marketplace/jobs`, { headers: { Authorization: `Bearer ${accessToken}` } }),
         fetch(`${API_URL}/marketplace/jobs/posted`, { headers: { Authorization: `Bearer ${accessToken}` } }),
-        fetch(`${API_URL}/marketplace/jobs/assigned`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+        fetch(`${API_URL}/marketplace/jobs/my-submissions`, { headers: { Authorization: `Bearer ${accessToken}` } }),
       ];
 
-      const [jobsRes, postedRes, assignedRes] = await Promise.all(endpoints);
+      const [jobsRes, postedRes, submissionsRes] = await Promise.all(endpoints);
 
       if (jobsRes.ok) {
         const data = await jobsRes.json();
@@ -66,9 +63,9 @@ export default function MarketplacePage() {
         const data = await postedRes.json();
         setPostedJobs(data.jobs || []);
       }
-      if (assignedRes.ok) {
-        const data = await assignedRes.json();
-        setAssignedJobs(data || []);
+      if (submissionsRes.ok) {
+        const data = await submissionsRes.json();
+        setMySubmissions(data || []);
       }
     } catch (err) {
       console.error('Failed to fetch marketplace data', err);
@@ -78,36 +75,15 @@ export default function MarketplacePage() {
   };
 
   const filteredJobs = allJobs.filter((j) => {
-    const matchesSearch = !searchQuery || (() => {
-      const q = searchQuery.toLowerCase();
-      return j.title.toLowerCase().includes(q) || j.description.toLowerCase().includes(q);
-    })();
-    const matchesCategory = activeCategory === 'All Jobs' || (() => {
-      const title = j.title.toLowerCase();
-      const desc = j.description.toLowerCase();
-      switch (activeCategory) {
-        case 'Design': return title.includes('design') || desc.includes('design') || title.includes('brand') || desc.includes('brand');
-        case 'Development': return title.includes('develop') || desc.includes('develop') || title.includes('code') || desc.includes('code') || title.includes('frontend') || title.includes('backend');
-        case 'Marketing': return title.includes('market') || desc.includes('market') || title.includes('seo') || desc.includes('seo') || title.includes('content');
-        case 'Writing': return title.includes('writ') || desc.includes('writ') || title.includes('blog') || desc.includes('blog') || title.includes('copy');
-        default: return true;
-      }
-    })();
-    return matchesSearch && matchesCategory;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return j.title.toLowerCase().includes(q) || j.description.toLowerCase().includes(q);
   });
-
-  const categoryLabels: Record<string, string> = {
-    'All Jobs': t('allJobs'),
-    'Design': t('design'),
-    'Development': t('development'),
-    'Marketing': t('marketing'),
-    'Writing': t('writing'),
-  };
 
   const tabs = [
     { key: 'browse', label: t('browseJobs'), count: allJobs.length },
     { key: 'posted', label: t('myJobs'), count: postedJobs.length },
-    { key: 'assigned', label: t('assigned'), count: assignedJobs.length },
+    { key: 'submissions', label: 'My Submissions', count: mySubmissions.length },
   ];
 
   return (
@@ -196,23 +172,6 @@ export default function MarketplacePage() {
               />
             </div>
 
-            {/* Category Filters */}
-            <div className="flex overflow-x-auto hide-scrollbar gap-3 mb-10 pb-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`whitespace-nowrap px-6 py-2 rounded-full font-semibold text-sm transition-all ${
-                    activeCategory === cat
-                      ? 'bg-[#1c1b1b] text-white'
-                      : 'glass-card text-[#45474b] hover:opacity-80 transition-opacity'
-                  }`}
-                >
-                  {categoryLabels[cat]}
-                </button>
-              ))}
-            </div>
-
             {/* Ad Banner */}
             <div className="my-8">
               <AdSenseBannerAd adSlot="3051399239" format="auto" />
@@ -227,61 +186,97 @@ export default function MarketplacePage() {
               <div className="glass-card rounded-2xl p-12 text-center">
                 <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">work</span>
                 <p className="text-[#45474b] text-lg font-semibold">{t('noJobsFound')}</p>
-                <p className="text-[#45474b]/60 text-sm mt-2">{t('tryDifferentSearchOrCategory')}</p>
+                <p className="text-[#45474b]/60 text-sm mt-2">{t('tryDifferentSearch')}</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredJobs.map((job) => (
-                  <Link key={job.id} href={`/marketplace/jobs/${job.id}`}>
-                    <article className="glass-card rounded-2xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300 h-full">
-                      <div>
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-[#e5e2e1] flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {job.posterAvatarUrl ? (
-                                <img alt="Company Logo" className="w-full h-full object-cover" src={job.posterAvatarUrl} />
-                              ) : (
-                                <span className="material-symbols-outlined text-[#5d5e64]">business</span>
-                              )}
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-lg text-[#1c1b1b] leading-tight">{job.title}</h3>
-                              <p className="text-sm text-[#45474b]">@{job.posterUsername}</p>
+              <>
+                {/* Mobile Cards - Visual Shop Style */}
+                <div className="grid grid-cols-2 gap-3 md:hidden">
+                  {filteredJobs.map((job) => {
+                    const remainingUnits = job.totalUnits - job.filledUnits;
+                    return (
+                      <Link key={job.id} href={`/marketplace/jobs/${job.id}`}>
+                        <article className="glass-card rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform duration-300 h-full flex flex-col">
+                          {/* Image Section */}
+                          <div className="relative aspect-square bg-gradient-to-br from-[#e9fdff] to-[#ffd1dc] flex items-center justify-center">
+                            {job.posterAvatarUrl ? (
+                              <img alt={job.title} className="w-full h-full object-cover" src={job.posterAvatarUrl} />
+                            ) : (
+                              <span className="material-symbols-outlined text-5xl text-[#2d666d]">work</span>
+                            )}
+                            {/* Remaining Units Overlay */}
+                            {remainingUnits > 0 && (
+                              <div className="absolute top-2 right-2 bg-[#1c1b1b]/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                                {remainingUnits} {t('left')}
+                              </div>
+                            )}
+                          </div>
+                          {/* Content Section */}
+                          <div className="p-3 flex-1 flex flex-col">
+                            <h3 className="font-bold text-sm text-[#1c1b1b] leading-tight line-clamp-2 mb-1">{job.title}</h3>
+                            <p className="text-[11px] text-[#45474b] mb-2">@{job.posterUsername}</p>
+                            <div className="mt-auto">
+                              <div className="text-base font-bold text-[#2d666d]">
+                                ৳{Number(job.unitPay).toFixed(0)}
+                                <span className="text-[10px] font-normal text-[#45474b] ml-0.5">/ {t('unit')}</span>
+                              </div>
                             </div>
                           </div>
-                          <button className="text-[#45474b] hover:text-[#78555e] transition-colors">
-                            <span className="material-symbols-outlined">bookmark_border</span>
-                          </button>
+                        </article>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Cards - Original Layout */}
+                <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-8">
+                  {filteredJobs.map((job) => (
+                    <Link key={job.id} href={`/marketplace/jobs/${job.id}`}>
+                      <article className="glass-card rounded-2xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300 h-full">
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-full bg-[#e5e2e1] flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {job.posterAvatarUrl ? (
+                                  <img alt="Company Logo" className="w-full h-full object-cover" src={job.posterAvatarUrl} />
+                                ) : (
+                                  <span className="material-symbols-outlined text-[#5d5e64]">business</span>
+                                )}
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-lg text-[#1c1b1b] leading-tight">{job.title}</h3>
+                                <p className="text-sm text-[#45474b]">@{job.posterUsername}</p>
+                              </div>
+                            </div>
+                            <button className="text-[#45474b] hover:text-[#78555e] transition-colors">
+                              <span className="material-symbols-outlined">bookmark_border</span>
+                            </button>
+                          </div>
+                          <div className="text-lg font-bold text-[#2d666d] mb-3">
+                            ৳{Number(job.amount).toFixed(0)}
+                            {job.type === 'multiple' && (
+                              <span className="text-xs font-normal text-[#45474b] ml-1">/ {job.totalUnits} {t('units')}</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-[#45474b] mb-6 line-clamp-3 leading-relaxed">
+                            {job.description}
+                          </p>
                         </div>
-                        <div className="text-lg font-bold text-[#2d666d] mb-3">
-                          ৳{Number(job.amount).toFixed(0)}
-                          {job.type === 'multiple' && (
-                            <span className="text-xs font-normal text-[#45474b] ml-1">/ {job.totalUnits} {t('units')}</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-[#45474b] mb-6 line-clamp-3 leading-relaxed">
-                          {job.description}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-auto">
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#e9fdff] text-[#2d666d]">
-                          {job.type === 'single' ? t('singleUnit') : t('multiUnit')}
-                        </span>
-                        {job.type === 'multiple' && (
+                        <div className="flex flex-wrap gap-2 mt-auto">
                           <span className="px-3 py-1 rounded-full text-xs font-semibold glass-card text-[#45474b]">
                             {job.filledUnits}/{job.totalUnits} {t('filled')}
                           </span>
-                        )}
-                        {job.status === 'active' && (
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#e9fdff] text-[#2d666d]">
-                            {t('open')}
-                          </span>
-                        )}
-                      </div>
-                    </article>
-                  </Link>
-                ))}
-              </div>
+                          {job.status === 'active' && (
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#e9fdff] text-[#2d666d]">
+                              {t('open')}
+                            </span>
+                          )}
+                        </div>
+                      </article>
+                    </Link>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -316,13 +311,12 @@ export default function MarketplacePage() {
                           }`}>
                             {job.status?.replace('_', ' ')}
                           </span>
-                          <span className="text-[13px] text-[#45474b]">{job.type === 'single' ? 'Single' : 'Multi'}</span>
                         </div>
                         <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate">{job.title}</h3>
                         <p className="text-[13px] text-[#45474b] truncate mt-0.5">{job.description}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-[18px] font-bold text-[#1c1b1b]">৳{Number(job.amount).toFixed(0)}</p>
+                        <p className="text-[18px] font-bold text-[#1c1b1b]">৳{Number(job.unitPay).toFixed(0)}<span className="text-[11px] font-normal text-[#76777b]">/unit</span></p>
                       </div>
                     </div>
                   </Link>
@@ -339,37 +333,37 @@ export default function MarketplacePage() {
           </div>
         )}
 
-        {/* Assigned Jobs Tab */}
-        {activeTab === 'assigned' && (
+        {/* My Submissions Tab */}
+        {activeTab === 'submissions' && (
           <div className="space-y-4">
             {loading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin h-10 w-10 border-2 border-[#5d5e64] border-t-transparent rounded-full" />
               </div>
-            ) : assignedJobs.length === 0 ? (
+            ) : mySubmissions.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <span className="material-symbols-outlined text-5xl text-[#5d5e64] mb-4 block">assignment</span>
-                <p className="text-[#45474b] text-lg font-semibold">{t('noAssignedJobs')}</p>
-                <p className="text-[#45474b]/60 text-sm mt-2">{t('bidOnJobsOrGetAssigned')}</p>
+                <p className="text-[#45474b] text-lg font-semibold">No submissions yet</p>
+                <p className="text-[#45474b]/60 text-sm mt-2">Submit proof on jobs to see them here</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assignedJobs.map((assignment: any) => (
-                  <Link key={assignment.id} href={`/marketplace/jobs/${assignment.jobId}`}>
+                {mySubmissions.map((sub: any) => (
+                  <Link key={sub.id} href={`/marketplace/jobs/${sub.jobId}`}>
                     <div className="glass-card rounded-2xl p-5 flex items-center gap-4 hover:scale-[1.01] transition-transform duration-300">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                            assignment.status === 'approved' ? 'bg-[#e9fdff] text-[#2d666d]' :
-                            assignment.status === 'submitted' ? 'bg-[#ffd1dc] text-[#78555e]' :
+                            sub.status === 'approved' ? 'bg-[#e9fdff] text-[#2d666d]' :
+                            sub.status === 'rejected' ? 'bg-[#ffd1dc] text-[#78555e]' :
                             'bg-[#e5e2e1] text-[#45474b]'
                           }`}>
-                            {assignment.status}
+                            {sub.status}
                           </span>
-                          <span className="text-[13px] text-[#45474b]">{assignment.units} {t('units')}</span>
+                          <span className="text-[13px] text-[#45474b]">৳{Number(sub.jobUnitPay).toFixed(2)}/unit</span>
                         </div>
-                        <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate">{assignment.jobTitle}</h3>
-                        <p className="text-[13px] text-[#45474b] truncate mt-0.5">@{assignment.posterUsername}</p>
+                        <h3 className="text-[15px] font-bold text-[#1c1b1b] truncate">{sub.jobTitle}</h3>
+                        <p className="text-[13px] text-[#45474b] truncate mt-0.5">@{sub.posterUsername}</p>
                       </div>
                     </div>
                   </Link>
