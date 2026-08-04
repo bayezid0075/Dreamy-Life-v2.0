@@ -484,7 +484,6 @@ const bn = {
   assigned: 'নির্ধারিত',
   searchJobs: 'চাকরি, দক্ষতা, বা কোম্পানি অনুসন্ধান করুন...',
   noJobsFound: 'কোনো চাকরি পাওয়া যায়নি',
-  tryDifferentSearch: 'অন্য অনুসন্ধান চেষ্টা করুন',
   singleUnit: 'সিঙ্গেল ইউনিট',
   multiUnit: 'মাল্টি ইউনিট',
   open: 'খোলা',

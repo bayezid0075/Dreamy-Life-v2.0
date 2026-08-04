@@ -484,7 +484,6 @@ const en = {
   assigned: 'Assigned',
   searchJobs: 'Search for jobs, skills, or companies...',
   noJobsFound: 'No jobs found',
-  tryDifferentSearch: 'Try a different search',
   singleUnit: 'Single Unit',
   multiUnit: 'Multi Unit',
   open: 'Open',

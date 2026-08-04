@@ -31,7 +31,7 @@ export default function MarketplacePage() {
   const { t } = useI18n();
   const router = useRouter();
   const { accessToken, logout } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'browse' | 'posted' | 'assigned'>('browse');
+  const [activeTab, setActiveTab] = useState<'browse' | 'posted' | 'assigned' | 'submissions'>('browse');
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [postedJobs, setPostedJobs] = useState<any[]>([]);
   const [mySubmissions, setMySubmissions] = useState<any[]>([]);
