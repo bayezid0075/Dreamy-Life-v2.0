@@ -22,8 +22,8 @@ export default function VendorBannedPage() {
     if (!isAuthenticated) { router.replace('/login'); return; }
     Promise.all([
       getMyVendorProfile().then(d => { setVendorProfile(d.data || null); }).catch(() => setVendorProfile(null)),
-      api.get('/auth/profile').then(d => setUser(d.data?.data?.user)).catch(() => {}),
-      api.get('/notifications/unread-count').then(d => { if (d.data?.count !== undefined) setUnreadNotifCount(d.data.count); }).catch(() => {}),
+      api.get('/auth/profile').then((d: any) => setUser(d.data?.data?.user)).catch(() => {}),
+      api.get('/notifications/unread-count').then((d: any) => { if (d.data?.count !== undefined) setUnreadNotifCount(d.data.count); }).catch(() => {}),
     ]);
   }, [isAuthenticated]);
 

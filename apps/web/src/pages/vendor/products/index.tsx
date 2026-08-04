@@ -45,8 +45,8 @@ export default function VendorProductsPage() {
       setProducts(productsRes?.data || []);
       setError('');
 
-      api.get('/auth/profile').then(res => setUser(res.data?.data?.user)).catch(() => {});
-      api.get('/notifications/unread-count').then(res => { if (res.data?.count !== undefined) setUnreadNotifCount(res.data.count); }).catch(() => {});
+      api.get('/auth/profile').then((res: any) => setUser(res.data?.data?.user)).catch(() => {});
+      api.get('/notifications/unread-count').then((res: any) => { if (res.data?.count !== undefined) setUnreadNotifCount(res.data.count); }).catch(() => {});
     } catch (err: any) {
       const message = err?.response?.data?.error?.message || err?.message || 'Failed to load products';
       setError(message);

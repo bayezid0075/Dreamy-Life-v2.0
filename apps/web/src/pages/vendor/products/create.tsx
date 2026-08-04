@@ -87,8 +87,8 @@ export default function CreateProductPage() {
           router.replace('/vendor/banned');
         }
       }).catch(() => setVendorProfile(null)),
-      api.get('/auth/profile').then(d => setUser(d.data?.data?.user)).catch(() => {}),
-      api.get('/notifications/unread-count').then(d => { if (d.data?.count !== undefined) setUnreadNotifCount(d.data.count); }).catch(() => {}),
+      api.get('/auth/profile').then((d: any) => setUser(d.data?.data?.user)).catch(() => {}),
+      api.get('/notifications/unread-count').then((d: any) => { if (d.data?.count !== undefined) setUnreadNotifCount(d.data.count); }).catch(() => {}),
     ]);
   }, []);
 

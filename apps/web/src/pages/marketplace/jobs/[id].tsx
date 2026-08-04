@@ -31,6 +31,7 @@ interface Job {
   mySubmissionCount: number;
   maxSubmissions: number;
   platformFeePercent: string;
+  createdAt: string;
 }
 
 export default function JobDetailPage() {
