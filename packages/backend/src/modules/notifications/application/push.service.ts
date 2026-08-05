@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { initializeApp, cert, App } from 'firebase-admin/app';
 import { getMessaging, MulticastMessage } from 'firebase-admin/messaging';
 import * as fs from 'fs';
@@ -106,7 +106,80 @@ export class PushService {
           await this.db
             .delete(schema.pushTokens)
             .where(
-              eq(schema.pushTokens.token, failedTokens[0]),
+              inArray(schema.pushTokens.token, failedTokens),
+            );
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Push send error: ${error.message}`);
+    }
+
+    return { total: tokens.length, success, failed };
+  }
+
+  async sendPushToUsers(userIds: string[], data: {
+    title: string;
+    body: string;
+    icon?: string;
+    imageUrl?: string;
+    notificationId: string;
+  }): Promise<{ total: number; success: number; failed: number }> {
+    if (!this.firebaseApp) {
+      this.logger.warn('Firebase not initialized - skipping push');
+      return { total: 0, success: 0, failed: 0 };
+    }
+
+    if (userIds.length === 0) {
+      return { total: 0, success: 0, failed: 0 };
+    }
+
+    const tokens = await this.db
+      .select()
+      .from(schema.pushTokens)
+      .where(inArray(schema.pushTokens.userId, userIds));
+
+    if (tokens.length === 0) {
+      return { total: 0, success: 0, failed: 0 };
+    }
+
+    const message: MulticastMessage = {
+      tokens: tokens.map((t) => t.token),
+      notification: {
+        title: data.title,
+        body: data.body,
+      },
+      data: {
+        notificationId: data.notificationId,
+        type: 'notification',
+      },
+      webpush: data.icon
+        ? { fcmOptions: { link: `/notifications` } }
+        : undefined,
+      android: { priority: 'high' },
+    };
+
+    let success = 0;
+    let failed = 0;
+
+    try {
+      const response = await getMessaging(this.firebaseApp).sendEachForMulticast(message);
+      success = response.successCount;
+      failed = response.failureCount;
+
+      if (response.failureCount > 0) {
+        const failedTokens: string[] = [];
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            failedTokens.push(tokens[idx].token);
+            this.logger.warn(`Push failed for token: ${resp.error?.message}`);
+          }
+        });
+
+        if (failedTokens.length > 0) {
+          await this.db
+            .delete(schema.pushTokens)
+            .where(
+              inArray(schema.pushTokens.token, failedTokens),
             );
         }
       }

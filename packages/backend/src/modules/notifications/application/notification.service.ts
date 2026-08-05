@@ -76,6 +76,46 @@ export class NotificationService {
     return notification;
   }
 
+  async sendToUsers(userIds: string[], data: {
+    title: string;
+    body: string;
+    icon?: string;
+    imageUrl?: string;
+    link?: string;
+    category?: string;
+    createdBy: string;
+  }) {
+    if (userIds.length === 0) return null;
+
+    const [notification] = await this.db
+      .insert(schema.notifications)
+      .values({
+        title: data.title,
+        body: data.body,
+        icon: data.icon,
+        imageUrl: data.imageUrl,
+        link: data.link,
+        type: 'targeted',
+        category: data.category || 'app',
+        status: 'sent',
+        sentAt: new Date(),
+        totalRecipients: userIds.length,
+        createdBy: data.createdBy,
+      })
+      .returning();
+
+    await this.db.insert(schema.notificationRecipients).values(
+      userIds.map((userId) => ({
+        notificationId: notification.id,
+        userId,
+        sent: true,
+        sentAt: new Date(),
+      })),
+    );
+
+    return notification;
+  }
+
   async broadcast(notificationId: string) {
     const notification = await this.db.query.notifications.findFirst({
       where: eq(schema.notifications.id, notificationId),

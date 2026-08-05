@@ -4,6 +4,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, desc, and, gte, count, sum, sql, like, or } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { NotificationService } from '../../../notifications/application/notification.service';
+import { NotificationGateway } from '../../../notifications/application/notification.gateway';
 import { WalletService } from './wallet.service';
 
 interface UddoktaPayCreateResponse {
@@ -39,6 +40,7 @@ export class FundPaymentService {
     private readonly configService: ConfigService,
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
     private readonly notificationService: NotificationService,
+    private readonly notificationGateway: NotificationGateway,
     private readonly walletService: WalletService,
   ) {
     this.baseUrl = this.configService.get<string>('UDDOKTAPAY_BASE_URL') || 'https://sandbox.uddoktapay.com';
@@ -189,33 +191,50 @@ export class FundPaymentService {
 
       const username = user?.username || 'Unknown';
 
+      const userNotification = await this.notificationService.sendToUser(userId, {
+        title: 'Fund Addition Successful',
+        body: `৳${amount.toFixed(2)} has been added to your funds balance.`,
+        icon: 'payments',
+        category: 'app',
+        createdBy: userId,
+      });
+
+      this.notificationGateway.notifyUser(userId, {
+        id: userNotification.id,
+        title: 'Fund Addition Successful',
+        body: `৳${amount.toFixed(2)} has been added to your funds balance.`,
+        icon: 'payments',
+        category: 'app',
+        createdAt: userNotification.createdAt?.toISOString() || new Date().toISOString(),
+      });
+
       const admins = await this.db
         .select({ id: schema.users.id })
         .from(schema.users)
         .where(eq(schema.users.memberStatus, 'super_admin'));
 
-      const userNotification = await this.notificationService.create({
-        title: 'Fund Addition Successful',
-        body: `৳${amount.toFixed(2)} has been added to your funds balance.`,
-        icon: 'payments',
-        type: 'targeted',
-        category: 'app',
-        createdBy: userId,
-      });
-
-      await this.notificationService.broadcast(userNotification.id);
-
       if (admins.length > 0) {
-        const adminNotification = await this.notificationService.create({
+        const adminIds = admins.map(a => a.id);
+        const adminNotification = await this.notificationService.sendToUsers(adminIds, {
           title: 'New Fund Addition',
           body: `User ${username} added ৳${amount.toFixed(2)} to their funds.`,
           icon: 'account_balance',
-          type: 'targeted',
           category: 'app',
           createdBy: userId,
         });
 
-        await this.notificationService.broadcast(adminNotification.id);
+        if (adminNotification) {
+          for (const adminId of adminIds) {
+            this.notificationGateway.notifyUser(adminId, {
+              id: adminNotification.id,
+              title: 'New Fund Addition',
+              body: `User ${username} added ৳${amount.toFixed(2)} to their funds.`,
+              icon: 'account_balance',
+              category: 'app',
+              createdAt: adminNotification.createdAt?.toISOString() || new Date().toISOString(),
+            });
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to send payment notifications:', err);

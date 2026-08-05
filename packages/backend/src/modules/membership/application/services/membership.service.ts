@@ -4,6 +4,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, desc, asc } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { NotificationService } from '../../../notifications/application/notification.service';
+import { NotificationGateway } from '../../../notifications/application/notification.gateway';
 
 // Default commission percentages per level (used when plan has no configured rates)
 const DEFAULT_COMMISSION_PERCENTAGES: number[] = [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5];
@@ -41,6 +42,7 @@ export class MembershipService implements OnModuleInit {
     private readonly configService: ConfigService,
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
     private readonly notificationService: NotificationService,
+    private readonly notificationGateway: NotificationGateway,
   ) {
     this.baseUrl = this.configService.get<string>('UDDOKTAPAY_BASE_URL') || 'https://sandbox.uddoktapay.com';
     this.apiKey = this.configService.get<string>('UDDOKTAPAY_API_KEY') || '';
@@ -458,7 +460,6 @@ export class MembershipService implements OnModuleInit {
       });
       const username = user?.username || 'Unknown';
 
-      // Notify user
       await this.notificationService.sendToUser(userId, {
         title: 'Membership Purchased!',
         body: `Congratulations! You've been upgraded to "${planName}" membership. Your account is now verified.`,
@@ -467,22 +468,33 @@ export class MembershipService implements OnModuleInit {
         createdBy: userId,
       });
 
-      // Notify admins
       const admins = await this.db
         .select({ id: schema.users.id })
         .from(schema.users)
         .where(eq(schema.users.memberStatus, 'super_admin'));
 
       if (admins.length > 0) {
-        const adminNotification = await this.notificationService.create({
+        const adminIds = admins.map(a => a.id);
+        const adminNotification = await this.notificationService.sendToUsers(adminIds, {
           title: 'New Membership Purchase',
           body: `User ${username} purchased "${planName}" membership for ৳${amount.toFixed(2)}.`,
           icon: 'workspace_premium',
-          type: 'targeted',
           category: 'app',
           createdBy: userId,
         });
-        await this.notificationService.broadcast(adminNotification.id);
+
+        if (adminNotification) {
+          for (const adminId of adminIds) {
+            this.notificationGateway.notifyUser(adminId, {
+              id: adminNotification.id,
+              title: 'New Membership Purchase',
+              body: `User ${username} purchased "${planName}" membership for ৳${amount.toFixed(2)}.`,
+              icon: 'workspace_premium',
+              category: 'app',
+              createdAt: adminNotification.createdAt?.toISOString() || new Date().toISOString(),
+            });
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to send membership notifications:', err);

@@ -4,6 +4,7 @@ import { eq, desc, count, sql, and } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { PaymentService } from './payment.service';
 import { NotificationService } from '../../../notifications/application/notification.service';
+import { NotificationGateway } from '../../../notifications/application/notification.gateway';
 
 @Injectable()
 export class VendorService {
@@ -11,6 +12,7 @@ export class VendorService {
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
     private readonly paymentService: PaymentService,
     private readonly notificationService: NotificationService,
+    private readonly notificationGateway: NotificationGateway,
   ) {}
 
   async applyForVendor(userId: string, shopName: string, address: string, bannerUrl?: string) {
@@ -344,17 +346,26 @@ export class VendorService {
 
   private async sendVendorCreatedNotification(userId: string, shopName: string, isFree: boolean) {
     try {
-      const userNotification = await this.notificationService.create({
+      const userNotification = await this.notificationService.sendToUser(userId, {
         title: 'Vendor Shop Created',
         body: isFree
           ? `Your vendor shop "${shopName}" has been created successfully! Welcome aboard!`
           : `Payment received! Your vendor shop "${shopName}" is now active. Welcome aboard!`,
         icon: 'storefront',
-        type: 'targeted',
         category: 'app',
         createdBy: userId,
       });
-      await this.notificationService.broadcast(userNotification.id);
+
+      this.notificationGateway.notifyUser(userId, {
+        id: userNotification.id,
+        title: 'Vendor Shop Created',
+        body: isFree
+          ? `Your vendor shop "${shopName}" has been created successfully! Welcome aboard!`
+          : `Payment received! Your vendor shop "${shopName}" is now active. Welcome aboard!`,
+        icon: 'storefront',
+        category: 'app',
+        createdAt: userNotification.createdAt?.toISOString() || new Date().toISOString(),
+      });
 
       const admins = await this.db
         .select({ id: schema.users.id })
@@ -362,17 +373,31 @@ export class VendorService {
         .where(eq(schema.users.memberStatus, 'super_admin'));
 
       if (admins.length > 0) {
-        const adminNotification = await this.notificationService.create({
+        const adminIds = admins.map(a => a.id);
+        const adminNotification = await this.notificationService.sendToUsers(adminIds, {
           title: 'New Vendor Joined',
           body: isFree
             ? `New vendor "${shopName}" has joined (VVIP - free vendorship).`
             : `New vendor "${shopName}" has joined. Payment of ৳700 received.`,
           icon: 'person_add',
-          type: 'targeted',
           category: 'app',
           createdBy: userId,
         });
-        await this.notificationService.broadcast(adminNotification.id);
+
+        if (adminNotification) {
+          for (const adminId of adminIds) {
+            this.notificationGateway.notifyUser(adminId, {
+              id: adminNotification.id,
+              title: 'New Vendor Joined',
+              body: isFree
+                ? `New vendor "${shopName}" has joined (VVIP - free vendorship).`
+                : `New vendor "${shopName}" has joined. Payment of ৳700 received.`,
+              icon: 'person_add',
+              category: 'app',
+              createdAt: adminNotification.createdAt?.toISOString() || new Date().toISOString(),
+            });
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to send vendor notifications:', err);
