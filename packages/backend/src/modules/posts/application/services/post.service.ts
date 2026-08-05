@@ -158,7 +158,7 @@ export class PostService {
         where: eq(schema.posts.id, postId),
       });
       if (post) {
-        await this.socialEarningsService.debitReaction(post.authorId);
+        await this.socialEarningsService.debitReaction(userId);
       }
 
       return { liked: false };
@@ -174,7 +174,7 @@ export class PostService {
       });
       if (post) {
         this.sendSocialNotification(post.authorId, userId, 'New Like', 'liked your post', 'favorite');
-        await this.socialEarningsService.creditReaction(post.authorId, userId);
+        await this.socialEarningsService.creditReaction(userId, post.authorId);
       }
 
       return { liked: true };
