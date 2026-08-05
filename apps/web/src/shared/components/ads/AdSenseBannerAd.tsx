@@ -23,7 +23,7 @@ declare global {
 
 const ADSENSE_PUBLISHER_ID =
   process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-9617633768223840';
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 10;
 const RETRY_INTERVAL_MS = 1000;
 
 export default function AdSenseBannerAd({
@@ -36,7 +36,7 @@ export default function AdSenseBannerAd({
 }: AdSenseBannerAdProps) {
   const adRef = useRef<HTMLModElement>(null);
   const initializedRef = useRef(false);
-  const [loadError, setLoadError] = useState(false);
+  const [pushed, setPushed] = useState(false);
 
   useEffect(() => {
     let retries = 0;
@@ -49,9 +49,9 @@ export default function AdSenseBannerAd({
         try {
           window.adsbygoogle.push({});
           initializedRef.current = true;
+          setPushed(true);
         } catch (e) {
-          console.error('AdSense push error:', e);
-          setLoadError(true);
+          console.warn('AdSense push error:', e);
         }
         return;
       }
@@ -66,11 +66,9 @@ export default function AdSenseBannerAd({
     return () => clearTimeout(timer);
   }, []);
 
-  if (loadError) {
-    return null;
-  }
-
-  const style: React.CSSProperties = {};
+  const style: React.CSSProperties = {
+    minHeight: format === 'auto' ? '90px' : undefined,
+  };
   if (width) style.width = width;
   if (height) style.height = height;
 
