@@ -386,21 +386,6 @@ export default function JobDetailScreen() {
           <Text style={styles.progressText}>{job.filledUnits}/{job.totalUnits} submitted</Text>
         </View>
 
-        {/* Poster Info */}
-        <View style={styles.posterRow}>
-          <View style={styles.posterAvatar}>
-            {job.posterAvatarUrl ? (
-              <Image source={{ uri: job.posterAvatarUrl }} style={styles.avatarImage} />
-            ) : (
-              <Text style={styles.avatarPlaceholder}>@</Text>
-            )}
-          </View>
-          <View>
-            <Text style={styles.posterName}>@{job.posterUsername}</Text>
-            <Text style={styles.posterDate}>{new Date(job.createdAt).toLocaleDateString()}</Text>
-          </View>
-        </View>
-
         {/* Submit Proof Section */}
         {canSubmit && (
           <View style={styles.submitSection}>

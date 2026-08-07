@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   FlatList,
   TouchableOpacity,
   StyleSheet,
@@ -15,6 +16,7 @@ import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
 import GlassPanel from '@/shared/components/GlassPanel';
 import { useI18n } from '@/shared/i18n';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -29,6 +31,7 @@ interface Job {
   totalUnits: number;
   filledUnits: number;
   status: string;
+  mediaUrls: string[];
   createdAt: string;
   posterUsername: string;
   posterFullName?: string;
@@ -97,48 +100,66 @@ export default function MarketplaceScreen() {
 
   const renderJobItem = ({ item }: { item: Job }) => {
     const remainingUnits = item.totalUnits - item.filledUnits;
+    const imageUrl = item.mediaUrls?.[0] ? resolveMediaUrl(item.mediaUrls[0]) : item.posterAvatarUrl ? resolveMediaUrl(item.posterAvatarUrl) : null;
     return (
       <TouchableOpacity
         style={styles.jobCard}
         onPress={() => router.push(`/marketplace/${item.id}`)}
       >
-        <View style={styles.jobHeader}>
-          {remainingUnits > 0 && (
-            <View style={styles.remainingBadge}>
-              <Text style={styles.remainingText}>{remainingUnits} left</Text>
-            </View>
-          )}
-          <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
-        </View>
-        <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.jobDescription} numberOfLines={2}>{item.description}</Text>
-        <View style={styles.jobFooter}>
-          <Text style={styles.jobPoster}>@{item.posterUsername}</Text>
-          <Text style={styles.jobUnits}>{item.filledUnits}/{item.totalUnits} submitted</Text>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.jobImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.jobImagePlaceholder}>
+            <Text style={styles.jobImagePlaceholderIcon}>💼</Text>
+          </View>
+        )}
+        <View style={styles.jobContent}>
+          <View style={styles.jobHeader}>
+            {remainingUnits > 0 && (
+              <View style={styles.remainingBadge}>
+                <Text style={styles.remainingText}>{remainingUnits} left</Text>
+              </View>
+            )}
+            <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
+          </View>
+          <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.jobDescription} numberOfLines={2}>{item.description}</Text>
+          <View style={styles.jobFooter}>
+            <Text style={styles.jobPoster}>@{item.posterUsername}</Text>
+            <Text style={styles.jobUnits}>{item.filledUnits}/{item.totalUnits} submitted</Text>
+          </View>
         </View>
       </TouchableOpacity>
     );
   };
 
-  const renderPostedItem = ({ item }: { item: Job }) => (
-    <TouchableOpacity
-      style={styles.jobCard}
-      onPress={() => router.push(`/marketplace/${item.id}`)}
-    >
-      <View style={styles.jobHeader}>
-        <View style={[styles.statusBadge, item.status === 'active' && styles.activeBadge]}>
-          <Text style={[styles.statusText, item.status === 'active' && styles.activeText]}>
-            {item.status.replace('_', ' ')}
-          </Text>
+  const renderPostedItem = ({ item }: { item: Job }) => {
+    const imageUrl = item.mediaUrls?.[0] ? resolveMediaUrl(item.mediaUrls[0]) : null;
+    return (
+      <TouchableOpacity
+        style={styles.jobCard}
+        onPress={() => router.push(`/marketplace/${item.id}`)}
+      >
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.jobImage} resizeMode="cover" />
+        ) : null}
+        <View style={styles.jobContent}>
+          <View style={styles.jobHeader}>
+            <View style={[styles.statusBadge, item.status === 'active' && styles.activeBadge]}>
+              <Text style={[styles.statusText, item.status === 'active' && styles.activeText]}>
+                {item.status.replace('_', ' ')}
+              </Text>
+            </View>
+            <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
+          </View>
+          <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
+          <View style={styles.jobFooter}>
+            <Text style={styles.jobUnits}>{item.filledUnits}/{item.totalUnits} submitted</Text>
+          </View>
         </View>
-        <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
-      </View>
-      <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
-      <View style={styles.jobFooter}>
-        <Text style={styles.jobUnits}>{item.filledUnits}/{item.totalUnits} submitted</Text>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderAssignedItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -260,9 +281,17 @@ const styles = StyleSheet.create({
   },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   jobCard: {
-    backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 16, padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden',
   },
+  jobImage: { width: '100%', height: 160 },
+  jobImagePlaceholder: {
+    width: '100%', height: 120,
+    backgroundColor: 'rgba(233,253,255,0.5)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  jobImagePlaceholderIcon: { fontSize: 36 },
+  jobContent: { padding: 16 },
   jobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   remainingBadge: { backgroundColor: '#1c1b1b', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   remainingText: { fontSize: 10, fontWeight: '600', color: '#fff' },

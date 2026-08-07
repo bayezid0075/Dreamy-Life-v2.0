@@ -373,21 +373,6 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        {/* Poster Info */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-[#e5e2e1] flex items-center justify-center overflow-hidden">
-            {job.posterAvatarUrl ? (
-              <img alt="Poster" className="w-full h-full object-cover" src={job.posterAvatarUrl} />
-            ) : (
-              <span className="material-symbols-outlined text-[#5d5e64] text-lg">person</span>
-            )}
-          </div>
-          <div>
-            <p className="text-[13px] font-semibold text-[#1c1b1b]">@{job.posterUsername}</p>
-            <p className="text-[11px] text-[#76777b]">Posted {new Date(job.createdAt).toLocaleDateString()}</p>
-          </div>
-        </div>
-
         {/* Submit Proof Section - for workers */}
         {canSubmit && (
           <div className="glass-card rounded-xl p-4 border border-white/30 mb-4">

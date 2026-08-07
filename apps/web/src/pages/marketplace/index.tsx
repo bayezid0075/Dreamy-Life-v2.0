@@ -7,6 +7,7 @@ import AuthGuard from '@/shared/components/AuthGuard';
 import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../../i18n';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
+import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -21,6 +22,7 @@ interface Job {
   totalUnits: number;
   filledUnits: number;
   status: string;
+  mediaUrls: string[];
   createdAt: string;
   posterUsername: string;
   posterFullName?: string;
@@ -198,8 +200,10 @@ export default function MarketplacePage() {
                       <Link key={job.id} href={`/marketplace/jobs/${job.id}`}>
                         <article className="glass-card rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform duration-300 h-full flex flex-col">
                           {/* Image Section */}
-                          <div className="relative aspect-square bg-gradient-to-br from-[#e9fdff] to-[#ffd1dc] flex items-center justify-center">
-                            {job.posterAvatarUrl ? (
+                          <div className="relative aspect-square bg-gradient-to-br from-[#e9fdff] to-[#ffd1dc] flex items-center justify-center overflow-hidden">
+                            {job.mediaUrls?.[0] ? (
+                              <img alt={job.title} className="w-full h-full object-cover" src={resolveMediaUrl(job.mediaUrls[0]) || job.posterAvatarUrl || undefined} />
+                            ) : job.posterAvatarUrl ? (
                               <img alt={job.title} className="w-full h-full object-cover" src={job.posterAvatarUrl} />
                             ) : (
                               <span className="material-symbols-outlined text-5xl text-[#2d666d]">work</span>
@@ -234,6 +238,12 @@ export default function MarketplacePage() {
                     <Link key={job.id} href={`/marketplace/jobs/${job.id}`}>
                       <article className="glass-card rounded-2xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300 h-full">
                         <div>
+                          {/* Job Image */}
+                          {job.mediaUrls?.[0] && (
+                            <div className="w-full h-40 rounded-xl overflow-hidden mb-4 bg-gradient-to-br from-[#e9fdff] to-[#ffd1dc]">
+                              <img alt={job.title} className="w-full h-full object-cover" src={resolveMediaUrl(job.mediaUrls[0]) || undefined} />
+                            </div>
+                          )}
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 rounded-full bg-[#e5e2e1] flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -253,7 +263,7 @@ export default function MarketplacePage() {
                             </button>
                           </div>
                           <div className="text-lg font-bold text-[#2d666d] mb-3">
-                            ৳{Number(job.amount).toFixed(0)}
+                            ৳{Number(job.unitPay).toFixed(0)}
                             {job.type === 'multiple' && (
                               <span className="text-xs font-normal text-[#45474b] ml-1">/ {job.totalUnits} {t('units')}</span>
                             )}
