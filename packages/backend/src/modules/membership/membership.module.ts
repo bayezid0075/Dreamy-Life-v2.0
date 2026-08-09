@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MembershipService } from './application/services/membership.service';
 import { MembershipController } from './interfaces/controllers/membership.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     }),
     ConfigModule,
     NotificationsModule,
+    WalletModule,
   ],
   controllers: [MembershipController],
   providers: [MembershipService],

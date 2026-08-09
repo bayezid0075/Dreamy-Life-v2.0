@@ -361,8 +361,9 @@ export class RechargeService {
 
     const userCommission = (rechargeAmount * userCommissionRate) / 100;
 
-    await this.walletService.creditWallet(buyerId, userCommission, `${isDrivePack ? 'Drive Pack' : 'Recharge'} commission (${userCommissionRate}%)`);
-
+    if (userCommission > 0) {
+      await this.walletService.creditWallet(buyerId, userCommission, `${isDrivePack ? 'Drive Pack' : 'Recharge'} commission (${userCommissionRate}%)`);
+    }
     // Apply drive pack cashback rate (separate from buyer commission)
     if (isDrivePack) {
       const cashbackRate = Number(config.drivePackCashbackRate) || 0;
@@ -408,6 +409,28 @@ export class RechargeService {
         });
 
         await this.walletService.creditWallet(uplineUser.id, amount, `Level ${level} ${isDrivePack ? 'drive pack' : 'recharge'} commission from ${buyer.username}`);
+
+        try {
+          const sourceLabel = isDrivePack ? 'Drive Pack' : 'Recharge';
+          const notification = await this.notificationService.sendToUser(uplineUser.id, {
+            title: 'Commission Earned!',
+            body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyer.username}'s ${sourceLabel}. Level ${level} referral commission.`,
+            icon: 'payments',
+            category: 'app',
+            createdBy: buyerId,
+          });
+
+          this.notificationGateway.notifyUser(uplineUser.id, {
+            id: notification.id,
+            title: 'Commission Earned!',
+            body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyer.username}'s ${sourceLabel}. Level ${level} referral commission.`,
+            icon: 'payments',
+            category: 'app',
+            createdAt: notification.createdAt?.toISOString() || new Date().toISOString(),
+          });
+        } catch (err) {
+          this.logger.error(`Failed to send commission notification to upline ${uplineUser.id}: ${err.message}`);
+        }
 
         this.logger.debug(`Level ${level} commission: ${amount} (${percentage}%) -> upline ${uplineUser.id}`);
         commissions.push({ level, amount, percentage, toUserId: uplineUser.id });

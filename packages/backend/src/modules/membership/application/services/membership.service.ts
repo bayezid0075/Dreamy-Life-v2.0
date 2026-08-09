@@ -5,6 +5,7 @@ import { eq, desc, asc } from 'drizzle-orm';
 import * as schema from '../../../../infrastructure/database/schema';
 import { NotificationService } from '../../../notifications/application/notification.service';
 import { NotificationGateway } from '../../../notifications/application/notification.gateway';
+import { WalletService } from '../../../wallet/application/services/wallet.service';
 
 // Default commission percentages per level (used when plan has no configured rates)
 const DEFAULT_COMMISSION_PERCENTAGES: number[] = [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5];
@@ -43,6 +44,7 @@ export class MembershipService implements OnModuleInit {
     @Inject('DATABASE_CONNECTION') private readonly db: NodePgDatabase<typeof schema>,
     private readonly notificationService: NotificationService,
     private readonly notificationGateway: NotificationGateway,
+    private readonly walletService: WalletService,
   ) {
     this.baseUrl = this.configService.get<string>('UDDOKTAPAY_BASE_URL') || 'https://sandbox.uddoktapay.com';
     this.apiKey = this.configService.get<string>('UDDOKTAPAY_API_KEY') || '';
@@ -419,6 +421,12 @@ export class MembershipService implements OnModuleInit {
           })
           .returning();
 
+        await this.walletService.creditWallet(
+          uplineUser.id,
+          amount,
+          `Level ${level} membership commission from ${buyerName} (${plan.name} purchase)`,
+        );
+
         commissions.push({
           id: commission.id,
           fromUserId: buyerId,
@@ -434,12 +442,21 @@ export class MembershipService implements OnModuleInit {
             ? (uplineUser.info as any).name || uplineUser.username
             : uplineUser.username;
 
-          await this.notificationService.sendToUser(uplineUser.id, {
+          const notification = await this.notificationService.sendToUser(uplineUser.id, {
             title: 'Commission Earned!',
             body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyerName}'s "${plan.name}" membership purchase. Level ${level} referral commission.`,
             icon: 'payments',
             category: 'app',
             createdBy: buyerId,
+          });
+
+          this.notificationGateway.notifyUser(uplineUser.id, {
+            id: notification.id,
+            title: 'Commission Earned!',
+            body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyerName}'s "${plan.name}" membership purchase. Level ${level} referral commission.`,
+            icon: 'payments',
+            category: 'app',
+            createdAt: notification.createdAt?.toISOString() || new Date().toISOString(),
           });
         } catch (err) {
           console.error(`Failed to send commission notification to ${uplineUser.id}:`, err);
