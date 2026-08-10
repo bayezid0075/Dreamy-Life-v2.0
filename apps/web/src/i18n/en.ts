@@ -598,6 +598,7 @@ const en = {
   // Side Drawer
   refer: 'Refer:',
   main: 'Main',
+  shop: 'Shop',
   admin: 'Admin',
   groupAndContact: 'Group & Contact',
   telegramGroup: 'Telegram Group',

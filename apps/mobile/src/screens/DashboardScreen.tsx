@@ -148,13 +148,7 @@ export default function DashboardScreen() {
     router.replace('/login');
   };
 
-  const copyReferCode = () => {
-    if (user?.ownRefercode) {
-      import('expo-clipboard').then(module => {
-        module.setString(user.ownRefercode);
-      });
-    }
-  };
+  const copyReferCode = () => {};
 
   if (loading) {
     return (
