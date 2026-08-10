@@ -572,6 +572,7 @@ const bn = {
   // Side Drawer
   refer: 'রেফার:',
   main: 'প্রধান',
+  shop: 'দোকান',
   admin: 'অ্যাডমিন',
   manageNotifications: 'বিজ্ঞপ্তি পরিচালনা',
   products: 'পণ্য',

@@ -572,6 +572,7 @@ const en = {
   // Side Drawer
   refer: 'Refer:',
   main: 'MAIN',
+  shop: 'Shop',
   admin: 'Admin',
   manageNotifications: 'Manage Notifications',
   products: 'Products',

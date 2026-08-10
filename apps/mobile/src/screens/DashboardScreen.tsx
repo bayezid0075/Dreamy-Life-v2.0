@@ -10,6 +10,7 @@ import {
   Animated,
   TextInput,
   useWindowDimensions,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/shared/stores/authStore';
@@ -23,6 +24,7 @@ import { useNotificationStore } from '@/shared/stores/notificationStore';
 import { useI18n } from '../shared/i18n';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const LOGO = require('../../assets/logo.png');
 
 const PRIMARY_ACTIONS = [
   { icon: '📦', label: 'addParcel', bg: '#e9fdff', activeBg: '#2d666d' },
@@ -87,7 +89,8 @@ export default function DashboardScreen() {
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const { unreadCount: unreadNotifCount, setUnreadCount: setUnreadNotifCount } = useNotificationStore();
   const [hasVendor, setHasVendor] = useState<boolean | null>(null);
-  const [vendorExpanded, setVendorExpanded] = useState(false);
+  const [shopExpanded, setShopExpanded] = useState(false);
+  const [pressedItem, setPressedItem] = useState<string | null>(null);
   const drawerAnim = useRef(new Animated.Value(-320)).current;
 
   useEffect(() => {
@@ -145,7 +148,13 @@ export default function DashboardScreen() {
     router.replace('/login');
   };
 
-  const copyReferCode = () => {};
+  const copyReferCode = () => {
+    if (user?.ownRefercode) {
+      import('expo-clipboard').then(module => {
+        module.setString(user.ownRefercode);
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -351,137 +360,155 @@ export default function DashboardScreen() {
               <View style={styles.drawerOverlay} />
               <View style={styles.drawerContent}>
                 <View style={styles.drawerHeader}>
-                  <Text style={styles.drawerTitle}>{t('dreamyLife')}</Text>
-                  <TouchableOpacity onPress={toggleDrawer}>
+                  <View style={styles.drawerHeaderLeft}>
+                    <Image source={LOGO} style={styles.drawerLogo} />
+                    <Text style={styles.drawerTitle}>{t('dreamyLife')}</Text>
+                  </View>
+                  <TouchableOpacity onPress={toggleDrawer} style={styles.drawerCloseBtn}>
                     <Text style={styles.drawerClose}>✕</Text>
                   </TouchableOpacity>
                 </View>
 
-                <GlassPanel borderRadius={16} style={styles.userCard}>
+                <View style={styles.userCard}>
                   <View style={styles.userRow}>
                     <View style={styles.userAvatar}>
-                      <Text style={styles.userAvatarText}>👤</Text>
+                      {user?.avatarUrl ? (
+                        <Image source={{ uri: user.avatarUrl }} style={styles.userAvatarImage} />
+                      ) : (
+                        <Text style={styles.userAvatarText}>👤</Text>
+                      )}
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text style={styles.userName}>{user?.username || 'User'}</Text>
+                    <View style={styles.userInfo}>
+                      <Text style={styles.userName}>{user?.username || 'User'}</Text>
+                      <View style={styles.userBadgesRow}>
+                        <View style={styles.roleBadge}>
+                          <Text style={styles.roleBadgeText}>👤 {user?.memberStatus || 'user'}</Text>
+                        </View>
                         {user?.isVerified ? (
                           <View style={styles.verifiedBadge}>
                             <Text style={styles.verifiedBadgeText}>✓ {t('verified')}</Text>
                           </View>
                         ) : (
                           <View style={styles.notVerifiedBadge}>
-                            <Text style={styles.notVerifiedBadgeText}>{t('notVerified')}</Text>
+                            <Text style={styles.notVerifiedBadgeText}>⊘ {t('notVerified')}</Text>
                           </View>
                         )}
                       </View>
-                      <View style={styles.memberBadge}>
-                        <Text style={styles.memberBadgeText}>⭐ {user?.memberStatus || 'user'}</Text>
-                      </View>
                     </View>
                   </View>
-                  <View style={styles.referRow}>
-                    <Text style={styles.referLabel}>{t('refer')} </Text>
-                    <Text style={styles.referCode}>{user?.ownRefercode || 'N/A'}</Text>
-                    <TouchableOpacity onPress={copyReferCode}>
+
+                  {!user?.isVerified ? (
+                    <TouchableOpacity
+                      style={styles.verifyNowBtn}
+                      onPress={() => { toggleDrawer(); router.push('/membership'); }}
+                    >
+                      <Text style={styles.verifyNowIcon}>🔒</Text>
+                      <Text style={styles.verifyNowText}>{t('verifyNow')}</Text>
+                      <Text style={styles.verifyNowArrow}>→</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.verifiedBanner}>
+                      <Text style={styles.verifiedBannerIcon}>✅</Text>
+                      <Text style={styles.verifiedBannerText}>{t('accountVerifiedText')}</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoRowIcon}>📱</Text>
+                    <Text style={styles.infoRowText}>{user?.phoneNumber || '01234567890'}</Text>
+                  </View>
+
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoRowLabel}>{t('refer')} </Text>
+                    <Text style={styles.infoRowCode}>{user?.ownRefercode || 'N/A'}</Text>
+                    <TouchableOpacity onPress={copyReferCode} style={styles.copyBtn}>
                       <Text style={styles.copyIcon}>📋</Text>
                     </TouchableOpacity>
                   </View>
-                </GlassPanel>
-
-                {!user?.isVerified && (
-                  <TouchableOpacity
-                    style={styles.verifyNowBtn}
-                    onPress={() => { toggleDrawer(); router.push('/membership'); }}
-                  >
-                    <Text style={styles.verifyNowIcon}>🔒</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.verifyNowText}>{t('verifyNow')}</Text>
-                      <Text style={styles.verifyNowSubtext}>{t('purchaseMembershipToVerify')}</Text>
-                    </View>
-                    <Text style={styles.verifyNowArrow}>→</Text>
-                  </TouchableOpacity>
-                )}
-
-                {user?.isVerified && (
-                  <View style={styles.verifiedBanner}>
-                    <Text style={styles.verifiedBannerIcon}>✅</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.verifiedBannerText}>{t('accountVerifiedText')}</Text>
-                      <Text style={styles.verifiedBannerSubtext}>{t('yourAccountIsVerified')}</Text>
-                    </View>
-                  </View>
-                )}
+                </View>
 
                 <View style={styles.drawerNav}>
                   <Text style={styles.drawerSectionTitle}>{t('main')}</Text>
-                  <TouchableOpacity style={[styles.drawerItem, styles.drawerItemActive]}>
+                  <TouchableOpacity
+                    style={[styles.drawerItem, pressedItem === 'dashboard' && styles.drawerItemActive]}
+                    onPress={() => { toggleDrawer(); router.push('/dashboard'); }}
+                    onPressIn={() => setPressedItem('dashboard')}
+                    onPressOut={() => setPressedItem(null)}
+                  >
                     <Text style={styles.drawerItemIcon}>🏠</Text>
-                    <Text style={styles.drawerItemTextActive}>{t('dashboard')}</Text>
+                    <Text style={[styles.drawerItemText, pressedItem === 'dashboard' && styles.drawerItemTextActive]}>{t('dashboard')}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/recharge'); }}>
-                    <Text style={styles.drawerItemIcon}>📱</Text>
-                    <Text style={styles.drawerItemText}>{t('mobileRecharge')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/social-feed'); }}>
-                    <Text style={styles.drawerItemIcon}>📢</Text>
-                    <Text style={styles.drawerItemText}>{t('socialFeed')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/referral'); }}>
-                    <Text style={styles.drawerItemIcon}>🔗</Text>
-                    <Text style={styles.drawerItemText}>{t('referral')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/membership'); }}>
-                    <Text style={styles.drawerItemIcon}>💳</Text>
-                    <Text style={styles.drawerItemText}>{t('membership')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/wallet'); }}>
+                  <TouchableOpacity
+                    style={[styles.drawerItem, pressedItem === 'wallet' && styles.drawerItemActive]}
+                    onPress={() => { toggleDrawer(); router.push('/wallet'); }}
+                    onPressIn={() => setPressedItem('wallet')}
+                    onPressOut={() => setPressedItem(null)}
+                  >
                     <Text style={styles.drawerItemIcon}>👛</Text>
-                    <Text style={styles.drawerItemText}>{t('wallet')}</Text>
+                    <Text style={[styles.drawerItemText, pressedItem === 'wallet' && styles.drawerItemTextActive]}>{t('wallet')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.drawerItem, pressedItem === 'referral' && styles.drawerItemActive]}
+                    onPress={() => { toggleDrawer(); router.push('/referral'); }}
+                    onPressIn={() => setPressedItem('referral')}
+                    onPressOut={() => setPressedItem(null)}
+                  >
+                    <Text style={styles.drawerItemIcon}>🔗</Text>
+                    <Text style={[styles.drawerItemText, pressedItem === 'referral' && styles.drawerItemTextActive]}>{t('referral')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.drawerItem, pressedItem === 'membership' && styles.drawerItemActive]}
+                    onPress={() => { toggleDrawer(); router.push('/membership'); }}
+                    onPressIn={() => setPressedItem('membership')}
+                    onPressOut={() => setPressedItem(null)}
+                  >
+                    <Text style={styles.drawerItemIcon}>💳</Text>
+                    <Text style={[styles.drawerItemText, pressedItem === 'membership' && styles.drawerItemTextActive]}>{t('membership')}</Text>
                   </TouchableOpacity>
 
-                  <Text style={[styles.drawerSectionTitle, { marginTop: 16 }]}>{t('vendor').toUpperCase()}</Text>
-                  {hasVendor === false ? (
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => { toggleDrawer(); router.push('/vendor/apply'); }}>
-                      <Text style={styles.drawerItemIcon}>🏪</Text>
-                      <Text style={styles.drawerItemText}>{t('becomeAVendor')}</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        style={styles.drawerItem}
-                        onPress={() => setVendorExpanded(!vendorExpanded)}
-                      >
-                        <Text style={styles.drawerItemIcon}>🏪</Text>
-                        <Text style={styles.drawerItemText}>{t('vendor')}</Text>
-                        <Text style={styles.drawerArrow}>{vendorExpanded ? '▲' : '▼'}</Text>
-                      </TouchableOpacity>
-                      {vendorExpanded && (
-                        <View style={styles.vendorSubMenu}>
-                          <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/dashboard'); }}>
-                            <Text style={styles.vendorSubIcon}>📊</Text>
-                            <Text style={styles.vendorSubText}>{t('dashboard')}</Text>
+                  <Text style={[styles.drawerSectionTitle, { marginTop: 20 }]}>{t('shop').toUpperCase()}</Text>
+                  <TouchableOpacity
+                    style={styles.drawerItem}
+                    onPress={() => setShopExpanded(!shopExpanded)}
+                  >
+                    <Text style={styles.drawerItemIcon}>🏪</Text>
+                    <Text style={styles.drawerItemText}>{t('resellerShop')}</Text>
+                    <Text style={styles.drawerArrow}>{shopExpanded ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
+                  {shopExpanded && (
+                    <View style={styles.shopSubMenu}>
+                      {hasVendor === false ? (
+                        <TouchableOpacity style={styles.shopSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/apply'); }}>
+                          <Text style={styles.shopSubIcon}>➕</Text>
+                          <Text style={styles.shopSubText}>{t('becomeAVendor')}</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <>
+                          <TouchableOpacity style={styles.shopSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/dashboard'); }}>
+                            <Text style={styles.shopSubIcon}>📊</Text>
+                            <Text style={styles.shopSubText}>{t('vendorDashboard')}</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/products'); }}>
-                            <Text style={styles.vendorSubIcon}>📦</Text>
-                            <Text style={styles.vendorSubText}>{t('inventory')}</Text>
+                          <TouchableOpacity style={styles.shopSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/products'); }}>
+                            <Text style={styles.shopSubIcon}>📦</Text>
+                            <Text style={styles.shopSubText}>{t('inventory')}</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/products/create'); }}>
-                            <Text style={styles.vendorSubIcon}>➕</Text>
-                            <Text style={styles.vendorSubText}>{t('addProduct')}</Text>
+                          <TouchableOpacity style={styles.shopSubItem} onPress={() => { toggleDrawer(); router.push('/vendor/products/create'); }}>
+                            <Text style={styles.shopSubIcon}>➕</Text>
+                            <Text style={styles.shopSubText}>{t('addProduct')}</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity style={styles.vendorSubItem} onPress={() => { toggleDrawer(); router.push('/reseller-shop'); }}>
-                            <Text style={styles.vendorSubIcon}>🛒</Text>
-                            <Text style={styles.vendorSubText}>{t('myShop')}</Text>
+                          <TouchableOpacity style={styles.shopSubItem} onPress={() => { toggleDrawer(); router.push('/reseller-shop'); }}>
+                            <Text style={styles.shopSubIcon}>🛒</Text>
+                            <Text style={styles.shopSubText}>{t('myShop')}</Text>
                           </TouchableOpacity>
-                        </View>
+                        </>
                       )}
-                    </>
+                    </View>
                   )}
                 </View>
 
                 <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                  <Text style={styles.logoutText}>🚪 {t('logout')}</Text>
+                  <Text style={styles.logoutIcon}>🚪</Text>
+                  <Text style={styles.logoutText}>{t('logout')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.version}>v1.0.0</Text>
               </View>
@@ -762,9 +789,26 @@ const styles = StyleSheet.create({
   drawerOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.7)' },
   drawerContent: { flex: 1, padding: 24, paddingTop: 56 },
   drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  drawerHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  drawerLogo: { width: 40, height: 40, borderRadius: 20 },
   drawerTitle: { fontSize: 18, fontWeight: '700', color: '#5d5e64' },
-  drawerClose: { fontSize: 18, color: '#45474b' },
-  userCard: { marginBottom: 32, padding: 20 },
+  drawerCloseBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
+  drawerClose: { fontSize: 14, color: '#45474b' },
+
+  // User Card
+  userCard: {
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
   userRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
   userAvatar: {
     width: 52,
@@ -780,83 +824,79 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+    overflow: 'hidden',
   },
+  userAvatarImage: { width: 48, height: 48, borderRadius: 24 },
   userAvatarText: { fontSize: 24 },
-  userName: { fontSize: 18, fontWeight: '700', color: '#1c1b1b' },
-  memberBadge: { marginTop: 4 },
-  memberBadgeText: { fontSize: 11, fontWeight: '600', color: '#5d5e64' },
+  userInfo: { flex: 1 },
+  userName: { fontSize: 16, fontWeight: '700', color: '#1c1b1b', marginBottom: 4 },
+  userBadgesRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  roleBadge: {
+    backgroundColor: 'rgba(45, 102, 109, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  roleBadgeText: { fontSize: 10, fontWeight: '600', color: '#2d666d' },
   verifiedBadge: {
     backgroundColor: 'rgba(45, 102, 109, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(45, 102, 109, 0.3)',
   },
-  verifiedBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#2d666d',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
+  verifiedBadgeText: { fontSize: 10, fontWeight: '700', color: '#2d666d' },
   notVerifiedBadge: {
     backgroundColor: 'rgba(186, 26, 26, 0.1)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(186, 26, 26, 0.2)',
   },
-  notVerifiedBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#ba1a1a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  referRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  referLabel: { fontSize: 12, fontWeight: '600', color: '#45474b' },
-  referCode: { color: '#5d5e64', letterSpacing: 2, fontSize: 12, fontWeight: '700' },
-  copyIcon: { fontSize: 14, marginLeft: 8 },
+  notVerifiedBadgeText: { fontSize: 10, fontWeight: '700', color: '#ba1a1a' },
+
+  // Verify Now Button
   verifyNowBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(45, 102, 109, 0.1)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(45, 102, 109, 0.3)',
-    borderStyle: 'dashed',
-    gap: 12,
+    backgroundColor: '#2d666d',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    gap: 8,
   },
-  verifyNowIcon: { fontSize: 24 },
-  verifyNowText: { fontSize: 15, fontWeight: '700', color: '#2d666d' },
-  verifyNowSubtext: { fontSize: 11, color: '#45474b', marginTop: 2 },
-  verifyNowArrow: { fontSize: 18, fontWeight: '700', color: '#2d666d' },
+  verifyNowIcon: { fontSize: 16 },
+  verifyNowText: { flex: 1, fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  verifyNowArrow: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
+
+  // Verified Banner
   verifiedBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(45, 102, 109, 0.08)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(45, 102, 109, 0.2)',
-    gap: 12,
+    backgroundColor: 'rgba(45, 102, 109, 0.1)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    gap: 8,
   },
-  verifiedBannerIcon: { fontSize: 24 },
-  verifiedBannerText: { fontSize: 15, fontWeight: '700', color: '#2d666d' },
-  verifiedBannerSubtext: { fontSize: 11, color: '#45474b', marginTop: 2 },
+  verifiedBannerIcon: { fontSize: 16 },
+  verifiedBannerText: { fontSize: 14, fontWeight: '700', color: '#2d666d' },
+
+  // Info Rows (Phone, Referral)
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 8,
+  },
+  infoRowIcon: { fontSize: 14 },
+  infoRowText: { fontSize: 13, fontWeight: '600', color: '#45474b' },
+  infoRowLabel: { fontSize: 13, fontWeight: '600', color: '#45474b' },
+  infoRowCode: { flex: 1, fontSize: 13, fontWeight: '700', color: '#5d5e64', letterSpacing: 1 },
+  copyBtn: { padding: 4 },
+  copyIcon: { fontSize: 14 },
+
+  // Navigation
   drawerNav: { flex: 1 },
   drawerSectionTitle: {
     fontSize: 11,
@@ -864,36 +904,52 @@ const styles = StyleSheet.create({
     color: 'rgba(69,71,75,0.5)',
     textTransform: 'uppercase',
     letterSpacing: 2,
-    marginBottom: 12,
+    marginBottom: 8,
     paddingHorizontal: 16,
   },
-  drawerItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginBottom: 4, gap: 16 },
-  drawerItemActive: { backgroundColor: '#f8f8ff' },
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 4,
+    gap: 12,
+  },
+  drawerItemActive: { backgroundColor: 'rgba(45, 102, 109, 0.08)' },
   drawerItemIcon: { fontSize: 18 },
-  drawerItemText: { fontSize: 15, fontWeight: '600', color: '#45474b' },
-  drawerItemTextActive: { fontSize: 15, fontWeight: '600', color: '#5d5e64' },
+  drawerItemText: { fontSize: 14, fontWeight: '600', color: '#45474b' },
+  drawerItemTextActive: { fontSize: 14, fontWeight: '600', color: '#2d666d' },
   drawerArrow: { fontSize: 12, color: '#45474b', marginLeft: 'auto' },
-  vendorSubMenu: { paddingLeft: 20 },
-  vendorSubItem: {
+
+  // Shop Sub Menu
+  shopSubMenu: { paddingLeft: 20, marginTop: 4 },
+  shopSubItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
     marginBottom: 2,
-    gap: 14,
+    gap: 12,
   },
-  vendorSubIcon: { fontSize: 15 },
-  vendorSubText: { fontSize: 13, fontWeight: '600', color: '#5d5e64' },
+  shopSubIcon: { fontSize: 15 },
+  shopSubText: { fontSize: 13, fontWeight: '600', color: '#5d5e64' },
+
+  // Logout
   logoutBtn: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,218,214,0.5)',
-    borderWidth: 1,
-    borderColor: 'rgba(186,26,26,0.1)',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 218, 214, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(186, 26, 26, 0.15)',
     marginTop: 8,
+    gap: 8,
   },
-  logoutText: { fontSize: 16, fontWeight: '600', color: '#ba1a1a' },
+  logoutIcon: { fontSize: 16 },
+  logoutText: { fontSize: 15, fontWeight: '600', color: '#ba1a1a' },
   version: { textAlign: 'center', fontSize: 10, color: 'rgba(69,71,75,0.4)', marginTop: 16 },
 });
