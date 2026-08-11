@@ -221,7 +221,7 @@ export default function MarketplacePage() {
                             <p className="text-[11px] text-[#45474b] mb-2">@{job.posterUsername}</p>
                             <div className="mt-auto">
                               <div className="text-base font-bold text-[#2d666d]">
-                                ৳{Number(job.unitPay).toFixed(0)}
+                                ৳{Number(job.unitPay).toFixed(2)}
                                 <span className="text-[10px] font-normal text-[#45474b] ml-0.5">/ {t('unit')}</span>
                               </div>
                             </div>
@@ -263,7 +263,7 @@ export default function MarketplacePage() {
                             </button>
                           </div>
                           <div className="text-lg font-bold text-[#2d666d] mb-3">
-                            ৳{Number(job.unitPay).toFixed(0)}
+                            ৳{Number(job.unitPay).toFixed(2)}
                             {job.type === 'multiple' && (
                               <span className="text-xs font-normal text-[#45474b] ml-1">/ {job.totalUnits} {t('units')}</span>
                             )}
@@ -326,7 +326,7 @@ export default function MarketplacePage() {
                         <p className="text-[13px] text-[#45474b] truncate mt-0.5">{job.description}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-[18px] font-bold text-[#1c1b1b]">৳{Number(job.unitPay).toFixed(0)}<span className="text-[11px] font-normal text-[#76777b]">/unit</span></p>
+                        <p className="text-[18px] font-bold text-[#1c1b1b]">৳{Number(job.unitPay).toFixed(2)}<span className="text-[11px] font-normal text-[#76777b]">/unit</span></p>
                       </div>
                     </div>
                   </Link>

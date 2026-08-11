@@ -120,7 +120,7 @@ export default function MarketplaceScreen() {
                 <Text style={styles.remainingText}>{remainingUnits} left</Text>
               </View>
             )}
-            <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
+            <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(2)}<Text style={styles.perUnit}>/unit</Text></Text>
           </View>
           <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
           <Text style={styles.jobDescription} numberOfLines={2}>{item.description}</Text>
@@ -150,7 +150,7 @@ export default function MarketplaceScreen() {
                 {item.status.replace('_', ' ')}
               </Text>
             </View>
-            <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
+            <Text style={styles.jobAmount}>৳{Number(item.unitPay).toFixed(2)}<Text style={styles.perUnit}>/unit</Text></Text>
           </View>
           <Text style={styles.jobTitle} numberOfLines={2}>{item.title}</Text>
           <View style={styles.jobFooter}>
@@ -172,7 +172,7 @@ export default function MarketplaceScreen() {
             {item.status}
           </Text>
         </View>
-        <Text style={styles.jobAmount}>৳{Number(item.jobUnitPay).toFixed(0)}<Text style={styles.perUnit}>/unit</Text></Text>
+        <Text style={styles.jobAmount}>৳{Number(item.jobUnitPay).toFixed(2)}<Text style={styles.perUnit}>/unit</Text></Text>
       </View>
       <Text style={styles.jobTitle} numberOfLines={2}>{item.jobTitle}</Text>
       <View style={styles.jobFooter}>

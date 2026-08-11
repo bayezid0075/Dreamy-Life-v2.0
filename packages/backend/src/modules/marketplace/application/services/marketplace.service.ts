@@ -436,16 +436,13 @@ export class MarketplaceService {
     this.gateway.emitSubmissionApproved({ id: submissionId, jobId }, submission.workerId, payAmount);
     this.gateway.emitPaymentReleased(jobId, submission.workerId, payAmount);
 
-    const allSubmissions = await this.db
-      .select()
-      .from(schema.jobSubmissions)
-      .where(eq(schema.jobSubmissions.jobId, jobId));
+    const refreshedJob = await this.db
+      .select({ filledUnits: schema.jobPosts.filledUnits, totalUnits: schema.jobPosts.totalUnits })
+      .from(schema.jobPosts)
+      .where(eq(schema.jobPosts.id, jobId))
+      .then((rows) => rows[0]);
 
-    const allApproved = allSubmissions.every(
-      (s) => s.id === submissionId || s.status === 'approved'
-    );
-
-    if (allApproved) {
+    if (refreshedJob && refreshedJob.filledUnits >= refreshedJob.totalUnits) {
       await this.db
         .update(schema.jobPosts)
         .set({ status: 'completed', updatedAt: new Date() })
