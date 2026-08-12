@@ -459,6 +459,15 @@ export default function DashboardScreen() {
                     <Text style={styles.drawerItemIcon}>💳</Text>
                     <Text style={[styles.drawerItemText, pressedItem === 'membership' && styles.drawerItemTextActive]}>{t('membership')}</Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.drawerItem, pressedItem === 'withdraw' && styles.drawerItemActive]}
+                    onPress={() => { toggleDrawer(); router.push('/withdraw'); }}
+                    onPressIn={() => setPressedItem('withdraw')}
+                    onPressOut={() => setPressedItem(null)}
+                  >
+                    <Text style={styles.drawerItemIcon}>💵</Text>
+                    <Text style={[styles.drawerItemText, pressedItem === 'withdraw' && styles.drawerItemTextActive]}>{t('withdraw')}</Text>
+                  </TouchableOpacity>
 
                   <Text style={[styles.drawerSectionTitle, { marginTop: 20 }]}>{t('shop').toUpperCase()}</Text>
                   <TouchableOpacity

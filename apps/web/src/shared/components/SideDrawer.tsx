@@ -205,6 +205,16 @@ export default function SideDrawer({ isOpen, onClose, user, vendorProfile, handl
                   </div>
                   <span className="font-semibold text-sm">{t('membership')}</span>
                 </Link>
+                <Link
+                  href="/withdraw"
+                  onClick={onClose}
+                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-all duration-200 group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 group-hover:bg-amber-200 flex items-center justify-center transition-colors">
+                    <span className="material-symbols-outlined text-sm text-amber-600">account_balance_wallet</span>
+                  </div>
+                  <span className="font-semibold text-sm">{t('withdraw')}</span>
+                </Link>
               </div>
             </div>
 
