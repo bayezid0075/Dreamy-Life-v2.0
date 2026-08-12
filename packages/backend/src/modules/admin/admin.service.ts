@@ -362,6 +362,9 @@ export class AdminService {
     );
     await this.db.delete(schema.jobPosts).where(eq(schema.jobPosts.posterId, userId));
     await this.db.delete(schema.userInfo).where(eq(schema.userInfo.userId, userId));
+    // Delete social earnings and withdrawals before removing user (foreign key constraints)
+    await this.db.delete(schema.socialEarnings).where(eq(schema.socialEarnings.userId, userId));
+    await this.db.delete(schema.socialWithdrawals).where(eq(schema.socialWithdrawals.userId, userId));
     await this.db.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
     await this.db.delete(schema.users).where(eq(schema.users.id, userId));
 
