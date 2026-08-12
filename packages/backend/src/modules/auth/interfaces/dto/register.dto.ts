@@ -38,12 +38,11 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Referral code from an existing user (8 digits)',
     example: '12345678',
   })
-  @IsOptional()
   @IsString()
   @Matches(/^\d{8}$/, { message: 'Referral code must be 8 digits' })
-  referCode?: string;
+  referCode: string;
 }
