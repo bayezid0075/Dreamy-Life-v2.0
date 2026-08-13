@@ -88,7 +88,7 @@ export default function PostJobScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
       allowsMultipleSelection: true,
-      selectionLimit: 5 - images.length,
+      selectionLimit: 10 - images.length,
     });
 
     if (result.canceled || !result.assets.length) return;
@@ -201,7 +201,7 @@ export default function PostJobScreen() {
         </View>
 
         {/* Image Upload Zone */}
-        <Text style={styles.label}>Job Images (max 5)</Text>
+        <Text style={styles.label}>Job Images (max 10)</Text>
         <View style={styles.imageGrid}>
           {images.map((img, index) => (
             <View key={index} style={styles.imageThumb}>
@@ -221,7 +221,7 @@ export default function PostJobScreen() {
               )}
             </View>
           ))}
-          {images.length < 5 && (
+          {images.length < 10 && (
             <TouchableOpacity style={styles.imageAddBtn} onPress={pickImages}>
               <Text style={styles.imageAddIcon}>+</Text>
               <Text style={styles.imageAddText}>Add</Text>

@@ -11,13 +11,14 @@ import {
   Image,
   Modal,
   Dimensions,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import AuroraBackground from '@/shared/components/AuroraBackground';
 import TopBar from '@/shared/components/TopBar';
-import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
+import { resolveMediaUrl, isImageUrl, fileNameFromUrl } from '@/shared/utils/resolveMediaUrl';
 import { useMarketplaceSocket } from '@/shared/hooks/useMarketplaceSocket';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
@@ -56,7 +57,7 @@ interface SelectedFile {
   size: number;
 }
 
-const MAX_FILES = 5;
+const MAX_FILES = 10;
 
 export default function JobDetailScreen() {
   const router = useRouter();
@@ -75,7 +76,7 @@ export default function JobDetailScreen() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
 
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useMarketplaceSocket({
@@ -151,6 +152,17 @@ export default function JobDetailScreen() {
 
   const removeFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const openLightbox = (urls: string[], url: string) => {
+    const images = urls.filter(isImageUrl);
+    const index = images.indexOf(url);
+    if (index >= 0) setLightbox({ images, index });
+  };
+
+  const openFile = (url: string) => {
+    const resolved = resolveMediaUrl(url) || url;
+    Linking.openURL(resolved).catch(() => {});
   };
 
   const uploadFiles = async (files: SelectedFile[]): Promise<string[]> => {
@@ -328,7 +340,7 @@ export default function JobDetailScreen() {
               }}
             >
               {job.mediaUrls.map((url, i) => (
-                <TouchableOpacity key={i} onPress={() => setLightboxUrl(url)}>
+                <TouchableOpacity key={i} onPress={() => openLightbox(job.mediaUrls, url)}>
                   <Image
                     source={{ uri: resolveMediaUrl(url) || url }}
                     style={styles.slideImage}
@@ -446,6 +458,21 @@ export default function JobDetailScreen() {
                   </View>
                 </View>
                 <Text style={styles.submissionProof}>{s.proof}</Text>
+                {s.proofMediaUrls && s.proofMediaUrls.length > 0 && (
+                  <View style={styles.proofImageRow}>
+                    {s.proofMediaUrls.map((url: string, i: number) =>
+                      isImageUrl(url) ? (
+                        <TouchableOpacity key={i} onPress={() => openLightbox(s.proofMediaUrls, url)}>
+                          <Image source={{ uri: resolveMediaUrl(url) || url }} style={styles.proofThumb} />
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity key={i} style={styles.fileChip} onPress={() => openFile(url)}>
+                          <Text style={styles.fileChipText} numberOfLines={1}>📄 {fileNameFromUrl(url)}</Text>
+                        </TouchableOpacity>
+                      )
+                    )}
+                  </View>
+                )}
                 {s.status === 'rejected' && s.posterComment && (
                   <View style={styles.feedbackBox}>
                     <Text style={styles.feedbackLabel}>Feedback:</Text>
@@ -484,6 +511,21 @@ export default function JobDetailScreen() {
                   <Text style={styles.submissionDate}>{new Date(s.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <Text style={styles.submissionProof}>{s.proof}</Text>
+                {s.proofMediaUrls && s.proofMediaUrls.length > 0 && (
+                  <View style={styles.proofImageRow}>
+                    {s.proofMediaUrls.map((url: string, i: number) =>
+                      isImageUrl(url) ? (
+                        <TouchableOpacity key={i} onPress={() => openLightbox(s.proofMediaUrls, url)}>
+                          <Image source={{ uri: resolveMediaUrl(url) || url }} style={styles.proofThumb} />
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity key={i} style={styles.fileChip} onPress={() => openFile(url)}>
+                          <Text style={styles.fileChipText} numberOfLines={1}>📄 {fileNameFromUrl(url)}</Text>
+                        </TouchableOpacity>
+                      )
+                    )}
+                  </View>
+                )}
 
                 <View style={styles.actionRow}>
                   <TouchableOpacity
@@ -566,20 +608,46 @@ export default function JobDetailScreen() {
       </Modal>
 
       {/* Lightbox */}
-      <Modal visible={!!lightboxUrl} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.lightboxOverlay}
-          onPress={() => setLightboxUrl(null)}
-          activeOpacity={1}
-        >
-          {lightboxUrl && (
-            <Image
-              source={{ uri: resolveMediaUrl(lightboxUrl) || lightboxUrl }}
-              style={styles.lightboxImage}
-              resizeMode="contain"
-            />
+      <Modal visible={!!lightbox} transparent animationType="fade">
+        <View style={styles.lightboxOverlay}>
+          {lightbox && (
+            <>
+              <TouchableOpacity
+                style={styles.lightboxImageWrap}
+                onPress={() => setLightbox(null)}
+                activeOpacity={1}
+              >
+                <Image
+                  source={{ uri: resolveMediaUrl(lightbox.images[lightbox.index]) || lightbox.images[lightbox.index] }}
+                  style={styles.lightboxImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+              {lightbox.images.length > 1 && (
+                <>
+                  <TouchableOpacity
+                    style={styles.lightboxNav}
+                    onPress={() => setLightbox((l) => l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : l)}
+                  >
+                    <Text style={styles.lightboxNavText}>‹</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.lightboxNav, styles.lightboxNavRight]}
+                    onPress={() => setLightbox((l) => l ? { ...l, index: (l.index + 1) % l.images.length } : l)}
+                  >
+                    <Text style={styles.lightboxNavText}>›</Text>
+                  </TouchableOpacity>
+                  <View style={styles.lightboxCounter}>
+                    <Text style={styles.lightboxCounterText}>{lightbox.index + 1} / {lightbox.images.length}</Text>
+                  </View>
+                </>
+              )}
+            </>
           )}
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.lightboxClose} onPress={() => setLightbox(null)}>
+            <Text style={styles.lightboxCloseText}>✕</Text>
+          </TouchableOpacity>
+        </View>
       </Modal>
     </View>
   );
@@ -647,6 +715,10 @@ const styles = StyleSheet.create({
   statusTextApproved: { color: '#2d666d' },
   statusTextRejected: { color: '#78555e' },
   submissionProof: { fontSize: 13, color: '#45474b', marginBottom: 8 },
+  proofImageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  proofThumb: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#e5e2e1' },
+  fileChip: { maxWidth: 200, backgroundColor: '#e5e2e1', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, justifyContent: 'center' },
+  fileChipText: { fontSize: 11, fontWeight: '600', color: '#45474b' },
 
   posterSubmissionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   submissionUser: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -683,5 +755,13 @@ const styles = StyleSheet.create({
   modalRejectText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
   lightboxOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  lightboxImageWrap: { width: '100%', alignItems: 'center', justifyContent: 'center' },
   lightboxImage: { width: SCREEN_WIDTH, height: SCREEN_WIDTH },
+  lightboxClose: { position: 'absolute', top: 60, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.25)', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  lightboxCloseText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  lightboxNav: { position: 'absolute', left: 12, top: '50%', marginTop: -22, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.25)', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  lightboxNavRight: { left: undefined, right: 12 },
+  lightboxNavText: { color: '#fff', fontSize: 28, fontWeight: '700', lineHeight: 30 },
+  lightboxCounter: { position: 'absolute', bottom: 40, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  lightboxCounterText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 });

@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
-import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
+import { resolveMediaUrl, isImageUrl, fileNameFromUrl } from '@/shared/utils/resolveMediaUrl';
 import { useMarketplaceSocket } from '@/hooks/useMarketplaceSocket';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -45,7 +45,7 @@ export default function JobDetailPage() {
   const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [proofPreviews, setProofPreviews] = useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
   const [rejectModal, setRejectModal] = useState<{ open: boolean; submissionId: string | null }>({ open: false, submissionId: null });
   const [rejectComment, setRejectComment] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,8 +107,8 @@ export default function JobDetailPage() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (proofFiles.length + files.length > 5) {
-      alert('Maximum 5 files allowed');
+    if (proofFiles.length + files.length > 10) {
+      alert('Maximum 10 files allowed');
       return;
     }
     setProofFiles((prev) => [...prev, ...files]);
@@ -124,6 +124,17 @@ export default function JobDetailPage() {
   const removeProofFile = (index: number) => {
     setProofFiles((prev) => prev.filter((_, i) => i !== index));
     setProofPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const openLightbox = (urls: string[], url: string) => {
+    const images = urls.filter(isImageUrl);
+    const index = images.indexOf(url);
+    if (index >= 0) setLightbox({ images, index });
+  };
+
+  const openFile = (url: string) => {
+    const resolved = resolveMediaUrl(url) || url;
+    window.open(resolved, '_blank', 'noopener,noreferrer');
   };
 
   const uploadFiles = async (files: File[]): Promise<string[]> => {
@@ -297,7 +308,7 @@ export default function JobDetailPage() {
                       src={resolveMediaUrl(url) || url}
                       alt={`Job image ${i + 1}`}
                       className="w-full h-full object-cover cursor-pointer"
-                      onClick={() => setLightboxImage(url)}
+                      onClick={() => openLightbox(job.mediaUrls, url)}
                     />
                   </div>
                 ))}
@@ -399,7 +410,7 @@ export default function JobDetailPage() {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e5e2e1] text-[#45474b] text-[12px] font-semibold mb-3 hover:bg-[#d8d5d3] transition-colors"
             >
               <span className="material-symbols-outlined text-[16px]">attach_file</span>
-              Attach Files ({proofFiles.length}/5)
+              Attach Files ({proofFiles.length}/10)
             </button>
 
             {/* File Previews */}
@@ -446,9 +457,16 @@ export default function JobDetailPage() {
                 <p className="text-[13px] text-[#45474b]">{s.proof}</p>
                 {s.proofMediaUrls && s.proofMediaUrls.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {s.proofMediaUrls.map((url: string, i: number) => (
-                      <img key={i} src={resolveMediaUrl(url) || url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-                    ))}
+                    {s.proofMediaUrls.map((url: string, i: number) =>
+                      isImageUrl(url) ? (
+                        <img key={i} src={resolveMediaUrl(url) || url} alt="" onClick={() => openLightbox(s.proofMediaUrls, url)} className="w-12 h-12 rounded-lg object-cover cursor-pointer" />
+                      ) : (
+                        <button key={i} type="button" onClick={() => openFile(url)} className="inline-flex items-center gap-1.5 max-w-[160px] px-2.5 py-1.5 rounded-lg bg-[#e5e2e1] text-[#45474b] text-[11px] font-semibold hover:bg-[#d8d5d3] transition-colors">
+                          <span className="material-symbols-outlined text-[14px]">description</span>
+                          <span className="truncate">{fileNameFromUrl(url)}</span>
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
                 {s.status === 'rejected' && s.posterComment && (
@@ -490,9 +508,16 @@ export default function JobDetailPage() {
                 <p className="text-[13px] text-[#45474b] mb-2">{s.proof}</p>
                 {s.proofMediaUrls && s.proofMediaUrls.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {s.proofMediaUrls.map((url: string, i: number) => (
-                      <img key={i} src={resolveMediaUrl(url) || url} alt="" className="w-16 h-16 rounded-lg object-cover" />
-                    ))}
+                    {s.proofMediaUrls.map((url: string, i: number) =>
+                      isImageUrl(url) ? (
+                        <img key={i} src={resolveMediaUrl(url) || url} alt="" onClick={() => openLightbox(s.proofMediaUrls, url)} className="w-16 h-16 rounded-lg object-cover cursor-pointer" />
+                      ) : (
+                        <button key={i} type="button" onClick={() => openFile(url)} className="inline-flex items-center gap-1.5 max-w-[200px] px-2.5 py-1.5 rounded-lg bg-[#e5e2e1] text-[#45474b] text-[11px] font-semibold hover:bg-[#d8d5d3] transition-colors">
+                          <span className="material-symbols-outlined text-[14px]">description</span>
+                          <span className="truncate">{fileNameFromUrl(url)}</span>
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -561,18 +586,37 @@ export default function JobDetailPage() {
       )}
 
       {/* Image Lightbox */}
-      {lightboxImage && (
+      {lightbox && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
-          onClick={() => setLightboxImage(null)}
+          onClick={() => setLightbox(null)}
         >
           <img
-            src={resolveMediaUrl(lightboxImage) || lightboxImage}
+            src={resolveMediaUrl(lightbox.images[lightbox.index]) || lightbox.images[lightbox.index]}
             alt="Full size"
             className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
           />
+          {lightbox.images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((l) => l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : l); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((l) => l ? { ...l, index: (l.index + 1) % l.images.length } : l); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/80 text-sm font-semibold bg-black/30 px-3 py-1 rounded-full">
+                {lightbox.index + 1} / {lightbox.images.length}
+              </div>
+            </>
+          )}
           <button
-            onClick={() => setLightboxImage(null)}
+            onClick={() => setLightbox(null)}
             className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
           >
             <span className="material-symbols-outlined">close</span>

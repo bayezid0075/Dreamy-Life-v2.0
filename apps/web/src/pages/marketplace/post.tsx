@@ -71,7 +71,7 @@ export default function PostJobPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files).filter(f => f.size <= 10 * 1024 * 1024);
-      setImages(prev => [...prev, ...newFiles].slice(0, 5));
+      setImages(prev => [...prev, ...newFiles].slice(0, 10));
     }
   };
 
@@ -260,7 +260,7 @@ export default function PostJobPage() {
               </div>
               <div className="text-center">
                 <p className="text-sm font-bold text-[#1c1b1b] mb-2">Click to upload or drag and drop</p>
-                <p className="text-xs text-[#45474b] tracking-wide">PNG, JPG, GIF up to 10MB (max 5 files)</p>
+                <p className="text-xs text-[#45474b] tracking-wide">PNG, JPG, GIF up to 10MB (max 10 files)</p>
               </div>
             </div>
           </section>
