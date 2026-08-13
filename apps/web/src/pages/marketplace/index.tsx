@@ -218,7 +218,6 @@ export default function MarketplacePage() {
                           {/* Content Section */}
                           <div className="p-3 flex-1 flex flex-col">
                             <h3 className="font-bold text-sm text-[#1c1b1b] leading-tight line-clamp-2 mb-1">{job.title}</h3>
-                            <p className="text-[11px] text-[#45474b] mb-2">@{job.posterUsername}</p>
                             <div className="mt-auto">
                               <div className="text-base font-bold text-[#2d666d]">
                                 ৳{Number(job.unitPay).toFixed(2)}
@@ -255,7 +254,6 @@ export default function MarketplacePage() {
                               </div>
                               <div>
                                 <h3 className="font-bold text-lg text-[#1c1b1b] leading-tight">{job.title}</h3>
-                                <p className="text-sm text-[#45474b]">@{job.posterUsername}</p>
                               </div>
                             </div>
                             <button className="text-[#45474b] hover:text-[#78555e] transition-colors">
