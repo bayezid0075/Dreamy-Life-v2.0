@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -46,6 +47,11 @@ export class AdminMarketplaceController {
   @Patch('jobs/:id/reject')
   async rejectJob(@Param('id') jobId: string) {
     return this.marketplaceService.adminRejectJob(jobId);
+  }
+
+  @Delete('jobs/:id')
+  async deleteJob(@Param('id') jobId: string) {
+    return this.marketplaceService.adminDeleteJob(jobId);
   }
 
   // ─── Settings ──────────────────────────────────────────────────────────

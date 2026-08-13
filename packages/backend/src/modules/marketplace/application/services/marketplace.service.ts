@@ -625,6 +625,41 @@ export class MarketplaceService {
     return { success: true };
   }
 
+  async adminDeleteJob(jobId: string) {
+    const [job] = await this.db
+      .select()
+      .from(schema.jobPosts)
+      .where(eq(schema.jobPosts.id, jobId));
+
+    if (!job) throw new NotFoundException('Job not found');
+
+    // Refund any held escrow back to the poster before deleting
+    const [escrow] = await this.db
+      .select()
+      .from(schema.jobEscrow)
+      .where(
+        and(
+          eq(schema.jobEscrow.jobId, jobId),
+          eq(schema.jobEscrow.status, 'held'),
+        )
+      );
+
+    if (escrow) {
+      await this.walletService.creditFunds(job.posterId, Number(escrow.amount), `Refund for deleted job: ${job.title}`);
+    }
+
+    // Delete child records first (FK order: submissions -> assignments/bids -> escrow -> job)
+    await this.db.delete(schema.jobSubmissions).where(eq(schema.jobSubmissions.jobId, jobId));
+    await this.db.delete(schema.jobAssignments).where(eq(schema.jobAssignments.jobId, jobId));
+    await this.db.delete(schema.jobBids).where(eq(schema.jobBids.jobId, jobId));
+    await this.db.delete(schema.jobEscrow).where(eq(schema.jobEscrow.jobId, jobId));
+    await this.db.delete(schema.jobPosts).where(eq(schema.jobPosts.id, jobId));
+
+    this.gateway.emitJobDeleted(jobId);
+
+    return { success: true };
+  }
+
   async adminGetJobs(query: { page?: number; limit?: number; status?: string }) {
     const page = query.page || 1;
     const limit = query.limit || 20;

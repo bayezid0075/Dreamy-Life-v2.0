@@ -76,6 +76,11 @@ export default function JobDetailPage() {
         fetchJob();
       }
     },
+    onJobDeleted: (data: any) => {
+      if (data.jobId === id) {
+        setJob(null);
+      }
+    },
   });
 
   useEffect(() => {

@@ -8,6 +8,7 @@ import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../../i18n';
 import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
+import { useMarketplaceSocket } from '@/hooks/useMarketplaceSocket';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -45,6 +46,13 @@ export default function MarketplacePage() {
     if (!accessToken) return;
     fetchAll();
   }, [accessToken]);
+
+  // Keep the job list in sync when an admin deletes a job
+  useMarketplaceSocket(accessToken, {
+    onJobDeleted: () => {
+      fetchAll();
+    },
+  });
 
   const fetchAll = async () => {
     setLoading(true);

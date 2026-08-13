@@ -143,4 +143,9 @@ export class MarketplaceGateway implements OnGatewayConnection, OnGatewayDisconn
   emitJobUpdated(job: any) {
     this.server.to(`job:${job.id}`).emit('job:updated', { job });
   }
+
+  emitJobDeleted(jobId: string) {
+    this.server.emit('job:deleted', { jobId });
+    this.server.to(`job:${jobId}`).emit('job:deleted', { jobId });
+  }
 }

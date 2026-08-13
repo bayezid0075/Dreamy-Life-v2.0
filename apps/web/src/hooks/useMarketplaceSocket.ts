@@ -54,6 +54,7 @@ export function useMarketplaceSocket(
     onJobCancelled?: (data: any) => void;
     onPaymentReleased?: (data: any) => void;
     onJobUpdated?: (data: any) => void;
+    onJobDeleted?: (data: any) => void;
   }
 ) {
   const socketRef = useRef<Socket | null>(null);
@@ -73,6 +74,7 @@ export function useMarketplaceSocket(
     if (handlers.onJobCancelled) socket.on('job:cancelled', handlers.onJobCancelled);
     if (handlers.onPaymentReleased) socket.on('job:payment:released', handlers.onPaymentReleased);
     if (handlers.onJobUpdated) socket.on('job:updated', handlers.onJobUpdated);
+    if (handlers.onJobDeleted) socket.on('job:deleted', handlers.onJobDeleted);
 
     return () => {
       if (handlers.onJobCreated) socket.off('job:created', handlers.onJobCreated);
@@ -84,6 +86,7 @@ export function useMarketplaceSocket(
       if (handlers.onJobCancelled) socket.off('job:cancelled', handlers.onJobCancelled);
       if (handlers.onPaymentReleased) socket.off('job:payment:released', handlers.onPaymentReleased);
       if (handlers.onJobUpdated) socket.off('job:updated', handlers.onJobUpdated);
+      if (handlers.onJobDeleted) socket.off('job:deleted', handlers.onJobDeleted);
     };
   }, [token]);
 

@@ -145,6 +145,30 @@ export default function MarketplacePage() {
     }
   };
 
+  const handleDelete = async (jobId: string) => {
+    const token = getToken();
+    const job = jobs.find((j) => j.id === jobId);
+    if (!confirm(`Delete this job${job ? ` "${job.title}"` : ''}? Held escrow will be refunded to the poster. This cannot be undone.`)) return;
+    setActionLoading(jobId);
+    try {
+      const res = await fetch(`${API_URL}/admin/marketplace/jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        fetchJobs();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.message || 'Failed to delete job');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete job');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleSaveSettings = async () => {
     setSettingsSaving(true);
     try {
@@ -393,24 +417,33 @@ export default function MarketplacePage() {
                         <span>{job.totalUnits} units</span>
                       </div>
                     </div>
-                    {job.status === 'pending_approval' && (
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          onClick={() => handleApprove(job.id)}
-                          disabled={actionLoading === job.id}
-                          className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-                        >
-                          {actionLoading === job.id ? '...' : 'Approve'}
-                        </button>
-                        <button
-                          onClick={() => handleReject(job.id)}
-                          disabled={actionLoading === job.id}
-                          className="px-4 py-2 rounded-lg bg-red-100 text-red-700 text-sm font-medium hover:bg-red-200 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex gap-2 ml-4">
+                      {job.status === 'pending_approval' && (
+                        <>
+                          <button
+                            onClick={() => handleApprove(job.id)}
+                            disabled={actionLoading === job.id}
+                            className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                          >
+                            {actionLoading === job.id ? '...' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={() => handleReject(job.id)}
+                            disabled={actionLoading === job.id}
+                            className="px-4 py-2 rounded-lg bg-red-100 text-red-700 text-sm font-medium hover:bg-red-200 disabled:opacity-50"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleDelete(job.id)}
+                        disabled={actionLoading === job.id}
+                        className="px-4 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {actionLoading === job.id ? '...' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
