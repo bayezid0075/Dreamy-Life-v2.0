@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Inject, ConflictException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, sql, like, or, desc, count, sum, asc, and } from 'drizzle-orm';
+import { eq, sql, like, or, desc, count, sum, asc, and, inArray } from 'drizzle-orm';
 import * as schema from '../../infrastructure/database/schema';
 import { PasswordService } from '../auth/domain/services/password.service';
 import { JwtService } from '@nestjs/jwt';
@@ -304,69 +304,176 @@ export class AdminService {
       throw new NotFoundException('Cannot delete super admin users');
     }
 
-    // Delete all records referencing this user across all tables
-    await this.db.delete(schema.notifications).where(eq(schema.notifications.createdBy, userId));
-    await this.db.delete(schema.notificationRecipients).where(eq(schema.notificationRecipients.userId, userId));
-    await this.db.delete(schema.notificationTemplates).where(eq(schema.notificationTemplates.createdBy, userId));
-    await this.db.delete(schema.pushTokens).where(eq(schema.pushTokens.userId, userId));
-    await this.db.delete(schema.comments).where(eq(schema.comments.authorId, userId));
-    await this.db.delete(schema.commentLikes).where(eq(schema.commentLikes.userId, userId));
-    await this.db.delete(schema.postLikes).where(eq(schema.postLikes.userId, userId));
-    await this.db.delete(schema.posts).where(eq(schema.posts.authorId, userId));
-    await this.db.delete(schema.friendRequests).where(
-      or(eq(schema.friendRequests.senderId, userId), eq(schema.friendRequests.receiverId, userId)),
-    );
-    await this.db.delete(schema.friends).where(
-      or(eq(schema.friends.userId, userId), eq(schema.friends.friendId, userId)),
-    );
-    await this.db.delete(schema.follows).where(
-      or(eq(schema.follows.followerId, userId), eq(schema.follows.followingId, userId)),
-    );
-    await this.db.delete(schema.conversationMembers).where(eq(schema.conversationMembers.userId, userId));
-    await this.db.delete(schema.messageReads).where(eq(schema.messageReads.userId, userId));
-    await this.db.delete(schema.messages).where(eq(schema.messages.senderId, userId));
-    await this.db.delete(schema.conversations).where(eq(schema.conversations.createdBy, userId));
-    await this.db.delete(schema.commissions).where(
-      or(eq(schema.commissions.fromUserId, userId), eq(schema.commissions.toUserId, userId)),
-    );
-    await this.db.delete(schema.membershipPurchases).where(eq(schema.membershipPurchases.userId, userId));
-    await this.db.delete(schema.membershipPayments).where(eq(schema.membershipPayments.userId, userId));
-    await this.db.delete(schema.referrals).where(
-      or(eq(schema.referrals.referrerId, userId), eq(schema.referrals.referredId, userId)),
-    );
-    await this.db.delete(schema.userWallets).where(eq(schema.userWallets.userId, userId));
-    await this.db.delete(schema.userFunds).where(eq(schema.userFunds.userId, userId));
-    await this.db.delete(schema.userPoints).where(eq(schema.userPoints.userId, userId));
-    await this.db.delete(schema.walletTransactions).where(eq(schema.walletTransactions.userId, userId));
-    await this.db.delete(schema.fundTransactions).where(eq(schema.fundTransactions.userId, userId));
-    await this.db.delete(schema.pointTransactions).where(eq(schema.pointTransactions.userId, userId));
-    await this.db.delete(schema.fundPayments).where(eq(schema.fundPayments.userId, userId));
-    await this.db.delete(schema.withdrawals).where(eq(schema.withdrawals.userId, userId));
-    await this.db.delete(schema.vendorPayments).where(eq(schema.vendorPayments.userId, userId));
-    await this.db.delete(schema.resellerOrders).where(eq(schema.resellerOrders.resellerId, userId));
-    // Delete shipments for this user's vendors
-    const userVendors = await this.db.select({ id: schema.vendors.id }).from(schema.vendors).where(eq(schema.vendors.userId, userId));
-    for (const v of userVendors) {
-      await this.db.delete(schema.shipments).where(eq(schema.shipments.vendorId, v.id));
-    }
-    await this.db.delete(schema.vendors).where(eq(schema.vendors.userId, userId));
-    await this.db.delete(schema.rechargeOrders).where(eq(schema.rechargeOrders.userId, userId));
-    await this.db.delete(schema.rechargeCommissions).where(
-      or(eq(schema.rechargeCommissions.fromUserId, userId), eq(schema.rechargeCommissions.toUserId, userId)),
-    );
-    await this.db.delete(schema.jobSubmissions).where(eq(schema.jobSubmissions.workerId, userId));
-    await this.db.delete(schema.jobAssignments).where(eq(schema.jobAssignments.workerId, userId));
-    await this.db.delete(schema.jobBids).where(eq(schema.jobBids.bidderId, userId));
-    await this.db.delete(schema.jobEscrow).where(
-      or(eq(schema.jobEscrow.posterId, userId), eq(schema.jobEscrow.releasedTo, userId)),
-    );
-    await this.db.delete(schema.jobPosts).where(eq(schema.jobPosts.posterId, userId));
-    await this.db.delete(schema.userInfo).where(eq(schema.userInfo.userId, userId));
-    // Delete social earnings and withdrawals before removing user (foreign key constraints)
-    await this.db.delete(schema.socialEarnings).where(eq(schema.socialEarnings.userId, userId));
-    await this.db.delete(schema.socialWithdrawals).where(eq(schema.socialWithdrawals.userId, userId));
-    await this.db.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
-    await this.db.delete(schema.users).where(eq(schema.users.id, userId));
+    // Everything runs in one transaction: if any FK cleanup fails, the whole
+    // deletion rolls back instead of leaving the DB half-deleted.
+    await this.db.transaction(async (tx) => {
+      // IDs of rows owned by this user. Other users' rows reference these
+      // (likes/comments on the user's posts, bids on the user's jobs, products
+      // in the user's shops, ...), so they must be removed first.
+      const [
+        ownedPostRows,
+        ownedCommentRows,
+        ownedConversationRows,
+        ownedMessageRows,
+        ownedNotificationRows,
+        ownedJobPostRows,
+        ownedVendorRows,
+      ] = await Promise.all([
+        tx.select({ id: schema.posts.id }).from(schema.posts).where(eq(schema.posts.authorId, userId)),
+        tx.select({ id: schema.comments.id }).from(schema.comments).where(eq(schema.comments.authorId, userId)),
+        tx.select({ id: schema.conversations.id }).from(schema.conversations).where(eq(schema.conversations.createdBy, userId)),
+        tx.select({ id: schema.messages.id }).from(schema.messages).where(eq(schema.messages.senderId, userId)),
+        tx.select({ id: schema.notifications.id }).from(schema.notifications).where(eq(schema.notifications.createdBy, userId)),
+        tx.select({ id: schema.jobPosts.id }).from(schema.jobPosts).where(eq(schema.jobPosts.posterId, userId)),
+        tx.select({ id: schema.vendors.id }).from(schema.vendors).where(eq(schema.vendors.userId, userId)),
+      ]);
+
+      const postIds = ownedPostRows.map((r) => r.id);
+      const commentIds = ownedCommentRows.map((r) => r.id);
+      const conversationIds = ownedConversationRows.map((r) => r.id);
+      const messageIds = ownedMessageRows.map((r) => r.id);
+      const notificationIds = ownedNotificationRows.map((r) => r.id);
+      const jobPostIds = ownedJobPostRows.map((r) => r.id);
+      const vendorIds = ownedVendorRows.map((r) => r.id);
+
+      // ── Social: comment_likes → comments, post_likes → posts ──────────
+      if (commentIds.length) {
+        await tx.delete(schema.commentLikes).where(inArray(schema.commentLikes.commentId, commentIds));
+      }
+      if (postIds.length) {
+        // Comments by OTHER users on the user's posts may themselves be liked
+        const commentsOnPostRows = await tx
+          .select({ id: schema.comments.id })
+          .from(schema.comments)
+          .where(inArray(schema.comments.postId, postIds));
+        const commentsOnPostIds = commentsOnPostRows.map((r) => r.id);
+        if (commentsOnPostIds.length) {
+          await tx.delete(schema.commentLikes).where(inArray(schema.commentLikes.commentId, commentsOnPostIds));
+        }
+      }
+      await tx.delete(schema.commentLikes).where(eq(schema.commentLikes.userId, userId));
+      if (postIds.length) {
+        await tx.delete(schema.postLikes).where(inArray(schema.postLikes.postId, postIds));
+        await tx.delete(schema.comments).where(inArray(schema.comments.postId, postIds));
+      }
+      await tx.delete(schema.postLikes).where(eq(schema.postLikes.userId, userId));
+      await tx.delete(schema.comments).where(eq(schema.comments.authorId, userId));
+      await tx.delete(schema.posts).where(eq(schema.posts.authorId, userId));
+
+      // ── Chat: message_reads → messages → conversation_members → conversations ──
+      if (messageIds.length) {
+        await tx.delete(schema.messageReads).where(inArray(schema.messageReads.messageId, messageIds));
+      }
+      if (conversationIds.length) {
+        // Read receipts for ALL messages in the user's conversations (including
+        // messages sent by other users) must go before those messages do.
+        const messagesInConversationRows = await tx
+          .select({ id: schema.messages.id })
+          .from(schema.messages)
+          .where(inArray(schema.messages.conversationId, conversationIds));
+        const messagesInConversationIds = messagesInConversationRows.map((r) => r.id);
+        if (messagesInConversationIds.length) {
+          await tx.delete(schema.messageReads).where(inArray(schema.messageReads.messageId, messagesInConversationIds));
+        }
+      }
+      await tx.delete(schema.messageReads).where(eq(schema.messageReads.userId, userId));
+      if (conversationIds.length) {
+        await tx.delete(schema.messages).where(inArray(schema.messages.conversationId, conversationIds));
+        await tx.delete(schema.conversationMembers).where(inArray(schema.conversationMembers.conversationId, conversationIds));
+      }
+      await tx.delete(schema.messages).where(eq(schema.messages.senderId, userId));
+      await tx.delete(schema.conversationMembers).where(eq(schema.conversationMembers.userId, userId));
+      await tx.delete(schema.conversations).where(eq(schema.conversations.createdBy, userId));
+
+      // ── Notifications: recipients → notifications, then templates / push tokens ──
+      if (notificationIds.length) {
+        await tx.delete(schema.notificationRecipients).where(inArray(schema.notificationRecipients.notificationId, notificationIds));
+      }
+      await tx.delete(schema.notificationRecipients).where(eq(schema.notificationRecipients.userId, userId));
+      await tx.delete(schema.notifications).where(eq(schema.notifications.createdBy, userId));
+      await tx.delete(schema.notificationTemplates).where(eq(schema.notificationTemplates.createdBy, userId));
+      await tx.delete(schema.pushTokens).where(eq(schema.pushTokens.userId, userId));
+
+      // ── Friends / follows ──
+      await tx.delete(schema.friendRequests).where(
+        or(eq(schema.friendRequests.senderId, userId), eq(schema.friendRequests.receiverId, userId)),
+      );
+      await tx.delete(schema.friends).where(
+        or(eq(schema.friends.userId, userId), eq(schema.friends.friendId, userId)),
+      );
+      await tx.delete(schema.follows).where(
+        or(eq(schema.follows.followerId, userId), eq(schema.follows.followingId, userId)),
+      );
+
+      // ── Marketplace: submissions/assignments/bids → escrow → job posts ──
+      if (jobPostIds.length) {
+        await tx.delete(schema.jobSubmissions).where(inArray(schema.jobSubmissions.jobId, jobPostIds));
+        await tx.delete(schema.jobAssignments).where(inArray(schema.jobAssignments.jobId, jobPostIds));
+        await tx.delete(schema.jobBids).where(inArray(schema.jobBids.jobId, jobPostIds));
+        await tx.delete(schema.jobEscrow).where(inArray(schema.jobEscrow.jobId, jobPostIds));
+      }
+      await tx.delete(schema.jobSubmissions).where(eq(schema.jobSubmissions.workerId, userId));
+      await tx.delete(schema.jobAssignments).where(eq(schema.jobAssignments.workerId, userId));
+      await tx.delete(schema.jobBids).where(eq(schema.jobBids.bidderId, userId));
+      await tx.delete(schema.jobEscrow).where(
+        or(eq(schema.jobEscrow.posterId, userId), eq(schema.jobEscrow.releasedTo, userId)),
+      );
+      await tx.delete(schema.jobPosts).where(eq(schema.jobPosts.posterId, userId));
+
+      // ── Referrals / commissions / memberships ──
+      await tx.delete(schema.commissions).where(
+        or(eq(schema.commissions.fromUserId, userId), eq(schema.commissions.toUserId, userId)),
+      );
+      await tx.delete(schema.membershipPurchases).where(eq(schema.membershipPurchases.userId, userId));
+      await tx.delete(schema.membershipPayments).where(eq(schema.membershipPayments.userId, userId));
+      await tx.delete(schema.referrals).where(
+        or(eq(schema.referrals.referrerId, userId), eq(schema.referrals.referredId, userId)),
+      );
+
+      // ── Reseller: shipments → orders → products → vendors ──
+      if (vendorIds.length) {
+        await tx.delete(schema.shipments).where(inArray(schema.shipments.vendorId, vendorIds));
+        await tx.delete(schema.resellerOrders).where(inArray(schema.resellerOrders.vendorId, vendorIds));
+        await tx.delete(schema.products).where(inArray(schema.products.vendorId, vendorIds));
+      }
+      // This user's own reseller orders on other vendors' shops (with their shipments)
+      const resellerOrderRows = await tx
+        .select({ id: schema.resellerOrders.id })
+        .from(schema.resellerOrders)
+        .where(eq(schema.resellerOrders.resellerId, userId));
+      const resellerOrderIds = resellerOrderRows.map((r) => r.id);
+      if (resellerOrderIds.length) {
+        await tx.delete(schema.shipments).where(inArray(schema.shipments.orderId, resellerOrderIds));
+        await tx.delete(schema.resellerOrders).where(inArray(schema.resellerOrders.id, resellerOrderIds));
+      }
+      await tx.delete(schema.vendors).where(eq(schema.vendors.userId, userId));
+      await tx.delete(schema.vendorPayments).where(eq(schema.vendorPayments.userId, userId));
+
+      // ── Recharge ──
+      await tx.delete(schema.rechargeCommissions).where(
+        or(eq(schema.rechargeCommissions.fromUserId, userId), eq(schema.rechargeCommissions.toUserId, userId)),
+      );
+      await tx.delete(schema.rechargeOrders).where(eq(schema.rechargeOrders.userId, userId));
+
+      // ── Wallets / funds / points / withdrawals ──
+      await tx.delete(schema.walletTransactions).where(eq(schema.walletTransactions.userId, userId));
+      await tx.delete(schema.fundTransactions).where(eq(schema.fundTransactions.userId, userId));
+      await tx.delete(schema.pointTransactions).where(eq(schema.pointTransactions.userId, userId));
+      await tx.delete(schema.fundPayments).where(eq(schema.fundPayments.userId, userId));
+      await tx.delete(schema.withdrawals).where(eq(schema.withdrawals.userId, userId));
+      await tx.delete(schema.userWallets).where(eq(schema.userWallets.userId, userId));
+      await tx.delete(schema.userFunds).where(eq(schema.userFunds.userId, userId));
+      await tx.delete(schema.userPoints).where(eq(schema.userPoints.userId, userId));
+
+      // ── Profile / sessions / social earnings & withdrawals ──
+      await tx.delete(schema.userInfo).where(eq(schema.userInfo.userId, userId));
+      await tx.delete(schema.socialEarnings).where(eq(schema.socialEarnings.userId, userId));
+      await tx.delete(schema.socialWithdrawals).where(eq(schema.socialWithdrawals.userId, userId));
+      await tx.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
+
+      // ── Finally the user row itself ──
+      await tx.delete(schema.users).where(eq(schema.users.id, userId));
+    });
 
     this.adminGateway.emitUserUpdate({
       type: 'user_deleted',
