@@ -70,6 +70,9 @@ export default function ProductDetailScreen() {
         ) : (
           <Text style={styles.productPrice}>৳{product.actualPrice}</Text>
         )}
+        {product.resellerMrp != null && Number(product.resellerMrp) > 0 && (
+          <Text style={styles.productMrp}>Reseller MRP: ৳{product.resellerMrp}</Text>
+        )}
         <Text style={styles.productShop}>by {product.shopName}</Text>
         <Text style={styles.productDesc}>{product.description || 'No description available.'}</Text>
         <Text style={styles.productStock}>📦 {product.stock} units in stock</Text>
@@ -126,6 +129,7 @@ const styles = StyleSheet.create({
   imageContainer: { height: 300, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   productName: { fontSize: 28, fontWeight: '800', color: '#1c1b1b', marginBottom: 8 },
   productPrice: { fontSize: 24, fontWeight: '700', color: '#5d5e64', marginBottom: 4 },
+  productMrp: { fontSize: 13, fontWeight: '600', color: '#45474b', marginBottom: 4 },
   productShop: { fontSize: 13, color: '#45474b', marginBottom: 12 },
   productDesc: { fontSize: 15, color: '#45474b', lineHeight: 24, marginBottom: 12 },
   productStock: { fontSize: 13, color: '#45474b', marginBottom: 20 },

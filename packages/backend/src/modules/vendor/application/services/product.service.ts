@@ -23,6 +23,7 @@ export class ProductService {
       ...p,
       actualPrice: Number(p.actualPrice),
       discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
+      resellerMrp: p.resellerMrp ? Number(p.resellerMrp) : null,
       deliveryChargeInside: Number(p.deliveryChargeInside),
       deliveryChargeOutside: Number(p.deliveryChargeOutside),
     }));
@@ -35,6 +36,7 @@ export class ProductService {
     subcategory?: string;
     actualPrice: number;
     discountPrice?: number;
+    resellerMrp?: number;
     deliveryChargeInside?: number;
     deliveryChargeOutside?: number;
     colors?: string[];
@@ -72,6 +74,7 @@ export class ProductService {
         subcategory: data.subcategory,
         actualPrice: String(data.actualPrice),
         discountPrice: data.discountPrice ? String(data.discountPrice) : null,
+        resellerMrp: data.resellerMrp ? String(data.resellerMrp) : null,
         deliveryChargeInside: String(data.deliveryChargeInside ?? 0),
         deliveryChargeOutside: String(data.deliveryChargeOutside ?? 0),
         colors: data.colors || [],
@@ -87,6 +90,7 @@ export class ProductService {
       ...product,
       actualPrice: Number(product.actualPrice),
       discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
+      resellerMrp: product.resellerMrp ? Number(product.resellerMrp) : null,
       deliveryChargeInside: Number(product.deliveryChargeInside),
       deliveryChargeOutside: Number(product.deliveryChargeOutside),
     };
@@ -99,6 +103,7 @@ export class ProductService {
     subcategory?: string;
     actualPrice?: number;
     discountPrice?: number;
+    resellerMrp?: number;
     deliveryChargeInside?: number;
     deliveryChargeOutside?: number;
     colors?: string[];
@@ -126,6 +131,7 @@ export class ProductService {
     if (data.subcategory !== undefined) updateData.subcategory = data.subcategory;
     if (data.actualPrice !== undefined) updateData.actualPrice = String(data.actualPrice);
     if (data.discountPrice !== undefined) updateData.discountPrice = data.discountPrice ? String(data.discountPrice) : null;
+    if (data.resellerMrp !== undefined) updateData.resellerMrp = data.resellerMrp ? String(data.resellerMrp) : null;
     if (data.deliveryChargeInside !== undefined) updateData.deliveryChargeInside = String(data.deliveryChargeInside);
     if (data.deliveryChargeOutside !== undefined) updateData.deliveryChargeOutside = String(data.deliveryChargeOutside);
     if (data.colors !== undefined) updateData.colors = data.colors;
@@ -144,6 +150,7 @@ export class ProductService {
       ...updated,
       actualPrice: Number(updated.actualPrice),
       discountPrice: updated.discountPrice ? Number(updated.discountPrice) : null,
+      resellerMrp: updated.resellerMrp ? Number(updated.resellerMrp) : null,
       deliveryChargeInside: Number(updated.deliveryChargeInside),
       deliveryChargeOutside: Number(updated.deliveryChargeOutside),
     };
@@ -181,6 +188,7 @@ export class ProductService {
         subcategory: schema.products.subcategory,
         actualPrice: schema.products.actualPrice,
         discountPrice: schema.products.discountPrice,
+        resellerMrp: schema.products.resellerMrp,
         deliveryChargeInside: schema.products.deliveryChargeInside,
         deliveryChargeOutside: schema.products.deliveryChargeOutside,
         colors: schema.products.colors,
@@ -210,6 +218,7 @@ export class ProductService {
       ...product[0],
       actualPrice: Number(product[0].actualPrice),
       discountPrice: product[0].discountPrice ? Number(product[0].discountPrice) : null,
+      resellerMrp: product[0].resellerMrp ? Number(product[0].resellerMrp) : null,
       deliveryChargeInside: Number(product[0].deliveryChargeInside),
       deliveryChargeOutside: Number(product[0].deliveryChargeOutside),
     };

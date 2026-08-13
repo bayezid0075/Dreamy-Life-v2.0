@@ -33,6 +33,12 @@ export class CreateProductDto {
   @Min(0)
   discountPrice?: number;
 
+  @ApiPropertyOptional({ description: 'Reseller MRP (maximum retail price resellers can charge)', example: 250.00 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  resellerMrp?: number;
+
   @ApiPropertyOptional({ description: 'Delivery charge inside Dhaka', example: 60 })
   @IsOptional()
   @IsNumber()
@@ -108,6 +114,12 @@ export class UpdateProductDto {
   @IsNumber()
   @Min(0)
   discountPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Reseller MRP (maximum retail price resellers can charge)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  resellerMrp?: number;
 
   @ApiPropertyOptional({ description: 'Delivery charge inside Dhaka' })
   @IsOptional()

@@ -49,6 +49,7 @@ export default function CreateProductPage() {
     subcategory: '',
     actualPrice: '',
     discountPrice: '',
+    resellerMrp: '',
     deliveryChargeInside: '',
     deliveryChargeOutside: '',
     stock: '',
@@ -257,6 +258,7 @@ export default function CreateProductPage() {
         subcategory: form.subcategory || undefined,
         actualPrice: parseFloat(form.actualPrice),
         discountPrice: form.discountPrice ? parseFloat(form.discountPrice) : undefined,
+        resellerMrp: form.resellerMrp ? parseFloat(form.resellerMrp) : undefined,
         deliveryChargeInside: form.deliveryChargeInside ? parseFloat(form.deliveryChargeInside) : 0,
         deliveryChargeOutside: form.deliveryChargeOutside ? parseFloat(form.deliveryChargeOutside) : 0,
         colors: colors.length > 0 ? colors : undefined,
@@ -441,6 +443,15 @@ export default function CreateProductPage() {
                       <input type="number" step="0.01" value={form.discountPrice} onChange={e => setForm({ ...form, discountPrice: e.target.value })} placeholder="0.00"
                         className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
                     </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-[#5d5e64] px-1">Reseller MRP (৳) (optional)</label>
+                  <div className="relative">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[#45474b]">৳</span>
+                    <input type="number" step="0.01" value={form.resellerMrp} onChange={e => setForm({ ...form, resellerMrp: e.target.value })} placeholder="Max retail price resellers can charge"
+                      className="w-full bg-white/50 backdrop-blur-[12px] border border-white/40 rounded-full pl-10 pr-6 py-4 text-[#1c1b1b] placeholder:text-[#45474b]/50 focus:bg-white/80 focus:border-[#98d0d7] focus:ring-4 focus:ring-[#98d0d7]/20 outline-none transition-all" />
                   </div>
                 </div>
 

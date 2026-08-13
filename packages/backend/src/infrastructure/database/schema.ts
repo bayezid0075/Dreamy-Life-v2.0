@@ -384,6 +384,7 @@ export const products = pgTable('products', {
   subcategory: varchar('subcategory', { length: 100 }),
   actualPrice: decimal('actual_price', { precision: 12, scale: 2 }).notNull(),
   discountPrice: decimal('discount_price', { precision: 12, scale: 2 }),
+  resellerMrp: decimal('reseller_mrp', { precision: 12, scale: 2 }),
   deliveryChargeInside: decimal('delivery_charge_inside', { precision: 12, scale: 2 }).notNull().default('0'),
   deliveryChargeOutside: decimal('delivery_charge_outside', { precision: 12, scale: 2 }).notNull().default('0'),
   colors: text('colors').array().default([]),

@@ -169,6 +169,11 @@ export default function ShopProductDetailPage() {
                   )}
                   <span className="text-sm text-[#45474b] bg-[#eae7e7] px-3 py-1 rounded-full">{product.category?.replace('_', ' ')}</span>
                 </div>
+                {product.resellerMrp != null && Number(product.resellerMrp) > 0 && (
+                  <p className="text-sm text-[#45474b]">
+                    Reseller MRP: <span className="font-semibold text-[#1c1b1b]">৳{product.resellerMrp}</span>
+                  </p>
+                )}
                 <p className="text-sm text-[#45474b]">by {product.shopName}</p>
               </div>
               <p className="text-base text-[#45474b] leading-relaxed">{product.description || 'No description available.'}</p>

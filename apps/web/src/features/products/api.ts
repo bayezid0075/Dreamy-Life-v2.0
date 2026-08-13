@@ -9,6 +9,7 @@ export interface Product {
   subcategory?: string;
   actualPrice: number;
   discountPrice?: number;
+  resellerMrp?: number;
   deliveryChargeInside: number;
   deliveryChargeOutside: number;
   colors: string[];
@@ -38,6 +39,7 @@ export const createProduct = async (data: {
   subcategory?: string;
   actualPrice: number;
   discountPrice?: number;
+  resellerMrp?: number;
   deliveryChargeInside?: number;
   deliveryChargeOutside?: number;
   colors?: string[];
@@ -58,6 +60,7 @@ export const updateProduct = async (id: string, data: {
   subcategory?: string;
   actualPrice?: number;
   discountPrice?: number;
+  resellerMrp?: number;
   deliveryChargeInside?: number;
   deliveryChargeOutside?: number;
   colors?: string[];
