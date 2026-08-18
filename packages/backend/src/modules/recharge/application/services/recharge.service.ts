@@ -191,7 +191,11 @@ export class RechargeService {
           .where(eq(schema.rechargeOrders.id, order.id));
 
         this.logger.debug(`Distributing commissions for order ${order.id}`);
-        await this.distributeCommissions(order.id, userId, data.amount, data.source);
+        try {
+          await this.distributeCommissions(order.id, userId, data.amount, data.source);
+        } catch (commissionError) {
+          this.logger.error(`Commission distribution failed for order ${order.id}: ${commissionError.message}`, commissionError.stack);
+        }
 
         const sourceLabel = data.source === 'drive_pack' ? 'Drive Pack' : 'Mobile Recharge';
         await this.sendRechargeNotification(userId, {
@@ -390,58 +394,106 @@ export class RechargeService {
     let level = 1;
 
     while (currentReferCode && level <= 10) {
-      const uplineUser = await this.db.query.users.findFirst({
-        where: eq(schema.users.ownRefercode, currentReferCode),
-      });
-      if (!uplineUser) break;
-
-      const percentage = percentages[level - 1] || 0;
-      if (percentage > 0) {
-        const amount = (rechargeAmount * percentage) / 100;
-
-        await this.db.insert(schema.rechargeCommissions).values({
-          rechargeOrderId: orderId,
-          fromUserId: buyerId,
-          toUserId: uplineUser.id,
-          level,
-          amount: String(amount),
-          percentage: String(percentage),
+      try {
+        const uplineUser = await this.db.query.users.findFirst({
+          where: eq(schema.users.ownRefercode, currentReferCode),
         });
-
-        await this.walletService.creditWallet(uplineUser.id, amount, `Level ${level} ${isDrivePack ? 'drive pack' : 'recharge'} commission from ${buyer.username}`);
-
-        try {
-          const sourceLabel = isDrivePack ? 'Drive Pack' : 'Recharge';
-          const notification = await this.notificationService.sendToUser(uplineUser.id, {
-            title: 'Commission Earned!',
-            body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyer.username}'s ${sourceLabel}. Level ${level} referral commission.`,
-            icon: 'payments',
-            category: 'app',
-            createdBy: buyerId,
-          });
-
-          this.notificationGateway.notifyUser(uplineUser.id, {
-            id: notification.id,
-            title: 'Commission Earned!',
-            body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyer.username}'s ${sourceLabel}. Level ${level} referral commission.`,
-            icon: 'payments',
-            category: 'app',
-            createdAt: notification.createdAt?.toISOString() || new Date().toISOString(),
-          });
-        } catch (err) {
-          this.logger.error(`Failed to send commission notification to upline ${uplineUser.id}: ${err.message}`);
+        if (!uplineUser) {
+          this.logger.warn(`Upline user not found for refercode ${currentReferCode} at level ${level}, breaking chain for order ${orderId}`);
+          break;
         }
 
-        this.logger.debug(`Level ${level} commission: ${amount} (${percentage}%) -> upline ${uplineUser.id}`);
-        commissions.push({ level, amount, percentage, toUserId: uplineUser.id });
-      }
+        const percentage = percentages[level - 1] || 0;
+        if (percentage > 0) {
+          const amount = (rechargeAmount * percentage) / 100;
 
-      currentReferCode = uplineUser.referredBy || null;
-      level++;
+          await this.db.insert(schema.rechargeCommissions).values({
+            rechargeOrderId: orderId,
+            fromUserId: buyerId,
+            toUserId: uplineUser.id,
+            level,
+            amount: String(amount),
+            percentage: String(percentage),
+          });
+
+          await this.walletService.creditWallet(uplineUser.id, amount, `Level ${level} ${isDrivePack ? 'drive pack' : 'recharge'} commission from ${buyer.username}`);
+
+          try {
+            const sourceLabel = isDrivePack ? 'Drive Pack' : 'Recharge';
+            const notification = await this.notificationService.sendToUser(uplineUser.id, {
+              title: 'Commission Earned!',
+              body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyer.username}'s ${sourceLabel}. Level ${level} referral commission.`,
+              icon: 'payments',
+              category: 'app',
+              createdBy: buyerId,
+            });
+
+            this.notificationGateway.notifyUser(uplineUser.id, {
+              id: notification.id,
+              title: 'Commission Earned!',
+              body: `You earned ৳${amount.toFixed(2)} (${percentage}%) from ${buyer.username}'s ${sourceLabel}. Level ${level} referral commission.`,
+              icon: 'payments',
+              category: 'app',
+              createdAt: notification.createdAt?.toISOString() || new Date().toISOString(),
+            });
+          } catch (err) {
+            this.logger.error(`Failed to send commission notification to upline ${uplineUser.id}: ${err.message}`);
+          }
+
+          this.logger.debug(`Level ${level} commission: ${amount} (${percentage}%) -> upline ${uplineUser.id}`);
+          commissions.push({ level, amount, percentage, toUserId: uplineUser.id });
+        }
+
+        currentReferCode = uplineUser.referredBy || null;
+        level++;
+      } catch (levelError) {
+        this.logger.error(`Commission error at level ${level} for order ${orderId}: ${levelError.message}`, levelError.stack);
+        level++;
+        if (!currentReferCode) break;
+        try {
+          const failedUpline = await this.db.query.users.findFirst({
+            where: eq(schema.users.ownRefercode, currentReferCode),
+          });
+          currentReferCode = failedUpline?.referredBy || null;
+        } catch {
+          break;
+        }
+      }
     }
 
     this.logger.log(`Commission distribution complete: ${commissions.length} levels paid out`);
     return commissions;
+  }
+
+  async retryPendingCommissions() {
+    this.logger.log('Retrying pending commission distributions');
+
+    const orders = await this.db
+      .select()
+      .from(schema.rechargeOrders)
+      .where(eq(schema.rechargeOrders.status, 'success'));
+
+    const retriedOrders: string[] = [];
+
+    for (const order of orders) {
+      const existingCommissions = await this.db
+        .select()
+        .from(schema.rechargeCommissions)
+        .where(eq(schema.rechargeCommissions.rechargeOrderId, order.id));
+
+      if (existingCommissions.length === 0 && Number(order.userCommission) === 0) {
+        this.logger.log(`Retrying commission distribution for order ${order.id}`);
+        try {
+          await this.distributeCommissions(order.id, order.userId, Number(order.amount), order.source);
+          retriedOrders.push(order.id);
+        } catch (err) {
+          this.logger.error(`Retry failed for order ${order.id}: ${err.message}`);
+        }
+      }
+    }
+
+    this.logger.log(`Retry complete: ${retriedOrders.length} orders reprocessed`);
+    return { retriedCount: retriedOrders.length, retriedOrderIds: retriedOrders };
   }
 
   private async sendRechargeNotification(userId: string, data: {

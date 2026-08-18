@@ -151,6 +151,16 @@ export class RechargeController {
     return { success: true, data: result };
   }
 
+  @Post('admin/retry-commissions')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Retry failed commission distributions for successful orders (admin)' })
+  async retryCommissions() {
+    this.logger.log('POST /recharge/admin/retry-commissions');
+    const result = await this.rechargeService.retryPendingCommissions();
+    return { success: true, data: result };
+  }
+
   private extractUserId(req: Request): string {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
