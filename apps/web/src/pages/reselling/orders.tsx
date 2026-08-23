@@ -9,7 +9,6 @@ import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 import VerificationGuard from '@/shared/components/VerificationGuard';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -211,10 +210,6 @@ export default function ResellerOrdersPage() {
                 })}
               </div>
 
-              {/* Ad Banner */}
-              <div className="my-2">
-                <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
-              </div>
             </>
           )}
         </main>

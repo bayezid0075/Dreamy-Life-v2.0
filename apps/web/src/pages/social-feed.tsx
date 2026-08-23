@@ -10,7 +10,6 @@ import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -319,12 +318,6 @@ export default function FeedPage() {
 
           {posts.map((post, index) => (
             <article key={post.id} className="glass-card bg-white/80 sm:rounded-2xl overflow-hidden pt-4 pb-2 border-y sm:border border-white/60 shadow-sm">
-              {/* In-feed Ad every 6 posts */}
-              {index > 0 && index % 6 === 0 && (
-                <div className="px-4 pb-4">
-                  <AdSenseBannerAd adSlot="3051399239" format="auto" showLabel={false} />
-                </div>
-              )}
               {/* Post Header */}
               <div className="px-4 flex justify-between items-start mb-3">
                 <Link href={`/users/${post.authorId}`} className="flex items-center gap-3">
@@ -409,17 +402,12 @@ export default function FeedPage() {
           ))}
 
           {hasMore && posts.length > 0 && (
-            <>
-              <div className="mx-4 sm:mx-0">
-                <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
-              </div>
-              <button
-                onClick={() => { const next = page + 1; setPage(next); fetchPosts(next, true); }}
-                className="glass-card rounded-2xl py-3 text-center text-sm font-semibold text-[#2d666d] hover:bg-white/70 transition-colors mx-4 sm:mx-0"
-              >
-                {t('loadMore')}
-              </button>
-            </>
+            <button
+              onClick={() => { const next = page + 1; setPage(next); fetchPosts(next, true); }}
+              className="glass-card rounded-2xl py-3 text-center text-sm font-semibold text-[#2d666d] hover:bg-white/70 transition-colors mx-4 sm:mx-0"
+            >
+              {t('loadMore')}
+            </button>
           )}
         </div>
       </main>

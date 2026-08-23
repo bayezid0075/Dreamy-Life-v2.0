@@ -646,6 +646,44 @@ const bn = {
   followUs: 'আমাদের অনুসরণ করুন',
   groupsAvailable: 'টেলিগ্রাম গ্রুপ',
   myShop: 'আমার দোকান',
+
+  // Blog
+  blog: 'ব্লগ',
+  blogTitle: 'Dreamy Life ব্লগ',
+  blogSubtitle: 'Dreamy Life টিম থেকে অন্তর্দৃষ্টি, টিপস এবং আপডেট',
+  readMore: 'আরও পড়ুন',
+  backToBlog: 'ব্লগে ফিরে যান',
+  publishedOn: 'প্রকাশিত',
+  byAuthor: '{author} দ্বারা',
+  views: '{count} বার দেখা হয়েছে',
+  noBlogPosts: 'এখনো কোনো ব্লগ পোস্ট নেই',
+  tags: 'ট্যাগ',
+  shareThisPost: 'এই পোস্টটি শেয়ার করুন',
+  loadMorePosts: 'আরো পোস্ট লোড করুন',
+
+  // Admin Blog
+  blogManagement: 'ব্লগ ব্যবস্থাপনা',
+  createBlogPost: 'ব্লগ পোস্ট তৈরি করুন',
+  editBlogPost: 'ব্লগ পোস্ট সম্পাদনা করুন',
+  postTitle: 'পোস্টের শিরোনাম',
+  postExcerpt: 'সংক্ষিপ্ত বিবরণ',
+  postBody: 'বিষয়বস্তু',
+  coverImage: 'কভার ইমেজ',
+  postStatus: 'স্ট্যাটাস',
+  draft: 'ড্রাফট',
+  published: 'প্রকাশিত',
+  archived: 'সংরক্ষিত',
+  metaTitle: 'SEO শিরোনাম',
+  metaDescription: 'SEO বিবরণ',
+  slug: 'URL স্লাগ',
+  uploadCoverImage: 'কভার ইমেজ আপলোড করুন',
+  tagsInput: 'ট্যাগ (কমা-বিভক্ত)',
+
+  // Public Pages
+  aboutDreamyLife: 'Dreamy Life সম্পর্কে',
+  faqTitle: 'সচরাচর জিজ্ঞাসা',
+  privacyPolicy: 'গোপনীয়তা নীতি',
+  termsOfService: 'সেবার শর্তাবলী',
 } as const;
 
 export default bn;

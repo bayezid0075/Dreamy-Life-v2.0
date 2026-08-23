@@ -93,7 +93,6 @@ export default function LoginPage() {
         </header>
 
         {/* Main Card */}
-        <h1> অ্যাপ বর্তমান টেস্টিং চলছে । সম্পন্ন হলেই আপনারা সুন্দর মতো ব্যাবহার করতে পারবেন । </h1>
         <main className="w-full max-w-md bg-white/70 backdrop-blur-[24px] rounded-[2.5rem] p-8 md:p-10 relative z-10 flex flex-col items-center animate-fade-in-up shadow-[0_8px_32px_rgba(0,0,0,0.05)] border border-white/80">
           {/* Avatar */}
           <div className="w-20 h-20 rounded-full bg-[#f8f8ff] flex items-center justify-center mb-6 shadow-sm -translate-y-2 border border-white">

@@ -649,6 +649,44 @@ const en = {
   followUs: 'Follow Us',
   groupsAvailable: 'Telegram Groups',
   myShop: 'My Shop',
+
+  // Blog
+  blog: 'Blog',
+  blogTitle: 'Dreamy Life Blog',
+  blogSubtitle: 'Insights, tips, and updates from the Dreamy Life team',
+  readMore: 'Read More',
+  backToBlog: 'Back to Blog',
+  publishedOn: 'Published on',
+  byAuthor: 'By {author}',
+  views: '{count} views',
+  noBlogPosts: 'No blog posts yet',
+  tags: 'Tags',
+  shareThisPost: 'Share this post',
+  loadMorePosts: 'Load more posts',
+
+  // Admin Blog
+  blogManagement: 'Blog Management',
+  createBlogPost: 'Create Blog Post',
+  editBlogPost: 'Edit Blog Post',
+  postTitle: 'Post Title',
+  postExcerpt: 'Excerpt',
+  postBody: 'Body Content',
+  coverImage: 'Cover Image',
+  postStatus: 'Status',
+  draft: 'Draft',
+  published: 'Published',
+  archived: 'Archived',
+  metaTitle: 'SEO Title',
+  metaDescription: 'SEO Description',
+  slug: 'URL Slug',
+  uploadCoverImage: 'Upload Cover Image',
+  tagsInput: 'Tags (comma-separated)',
+
+  // Public Pages
+  aboutDreamyLife: 'About Dreamy Life',
+  faqTitle: 'Frequently Asked Questions',
+  privacyPolicy: 'Privacy Policy',
+  termsOfService: 'Terms of Service',
 } as const;
 
 export default en;

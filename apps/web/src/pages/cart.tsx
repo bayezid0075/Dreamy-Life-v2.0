@@ -11,7 +11,6 @@ import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../i18n';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -323,11 +322,6 @@ export default function CartPage() {
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Ad Banner */}
-              <div className="my-2">
-                <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
               </div>
 
               {/* Place Orders */}

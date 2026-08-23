@@ -6,7 +6,6 @@ import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../i18n';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 interface Operator {
   id: string;
@@ -353,10 +352,6 @@ export default function RechargePage() {
             {t('viewRechargeHistory')}
           </Link>
 
-          {/* Ad Banner */}
-          <div className="pt-4">
-            <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
-          </div>
         </main>
 
         {/* Result Modal */}

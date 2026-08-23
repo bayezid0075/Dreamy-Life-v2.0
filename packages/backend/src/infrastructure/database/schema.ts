@@ -745,3 +745,26 @@ export const socialWithdrawals = pgTable('social_withdrawals', {
   socialWithdrawUserIdx: index('social_withdraw_user_idx').on(table.userId),
   socialWithdrawStatusIdx: index('social_withdraw_status_idx').on(table.status),
 }));
+
+// ─── Blog Posts Table ──────────────────────────────────────────────────
+export const blogPosts = pgTable('blog_posts', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull(),
+  excerpt: text('excerpt'),
+  body: text('body').notNull(),
+  coverImageUrl: text('cover_image_url'),
+  authorId: uuid('author_id').references(() => admins.id).notNull(),
+  authorName: varchar('author_name', { length: 100 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('draft'),
+  tags: text('tags').array().default([]),
+  metaTitle: varchar('meta_title', { length: 255 }),
+  metaDescription: text('meta_description'),
+  viewsCount: integer('views_count').notNull().default(0),
+  publishedAt: timestamp('published_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  blogSlugIdx: uniqueIndex('blog_slug_idx').on(table.slug),
+  blogStatusIdx: index('blog_status_idx').on(table.status),
+}));

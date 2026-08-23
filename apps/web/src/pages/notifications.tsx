@@ -8,7 +8,6 @@ import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 interface UserNotification {
   id: string;
@@ -354,10 +353,6 @@ export default function NotificationsPage() {
           )}
         </div>
 
-        {/* Ad Banner */}
-        <div className="w-full max-w-2xl mx-auto my-8">
-          <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
-        </div>
       </main>
     </AuthGuard>
   );

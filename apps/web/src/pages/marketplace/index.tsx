@@ -6,7 +6,6 @@ import { useAuthStore } from '@/store/authStore';
 import AuthGuard from '@/shared/components/AuthGuard';
 import VerificationGuard from '@/shared/components/VerificationGuard';
 import { useI18n } from '../../i18n';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 import { resolveMediaUrl } from '@/shared/utils/resolveMediaUrl';
 import { useMarketplaceSocket } from '@/hooks/useMarketplaceSocket';
 
@@ -180,11 +179,6 @@ export default function MarketplacePage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full glass-input rounded-full py-4 pl-12 pr-4 text-base text-[#1c1b1b] placeholder-[#45474b] transition-shadow"
               />
-            </div>
-
-            {/* Ad Banner */}
-            <div className="my-8">
-              <AdSenseBannerAd adSlot="3051399239" format="auto" />
             </div>
 
             {/* Job Cards Grid */}

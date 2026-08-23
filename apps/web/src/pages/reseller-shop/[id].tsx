@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import AuthGuard from '@/shared/components/AuthGuard';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -178,11 +177,6 @@ export default function ShopProductDetailPage() {
               </div>
               <p className="text-base text-[#45474b] leading-relaxed">{product.description || 'No description available.'}</p>
               
-              {/* Ad Banner */}
-              <div className="py-2">
-                <AdSenseBannerAd adSlot="3051399239" format="horizontal" showLabel={false} />
-              </div>
-
               <div className="flex items-center gap-2 text-sm text-[#45474b]">
                 <span className="material-symbols-outlined text-[18px]">inventory_2</span>
                 <span>{product.stock} units in stock</span>

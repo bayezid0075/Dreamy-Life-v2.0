@@ -9,7 +9,6 @@ import DesktopHeader from '@/shared/components/DesktopHeader';
 import SideDrawer from '@/shared/components/SideDrawer';
 import AuthGuard from '@/shared/components/AuthGuard';
 import { useI18n } from '../i18n';
-import AdSenseBannerAd from '@/shared/components/ads/AdSenseBannerAd';
 
 export default function ReferralPage() {
   const { t } = useI18n();
@@ -221,11 +220,6 @@ export default function ReferralPage() {
               </button>
             </div>
           </section>
-
-          {/* Ad Banner */}
-          <div className="my-2">
-            <AdSenseBannerAd adSlot="3051399239" format="horizontal" />
-          </div>
 
           {/* Stats Grid */}
           {stats && (
