@@ -55,7 +55,6 @@ export default function RechargeScreen() {
   const [modalPhoneNumber, setModalPhoneNumber] = useState('');
   const [modalOperator, setModalOperator] = useState('');
   const [modalAmount, setModalAmount] = useState(0);
-  const [modalRemainingBalance, setModalRemainingBalance] = useState(0);
 
   useEffect(() => {
     if (params.operator) {
@@ -143,7 +142,6 @@ export default function RechargeScreen() {
         setModalPhoneNumber(phoneNumber);
         setModalOperator(selectedOperator || '');
         setModalAmount(amountNum);
-        setModalRemainingBalance(remaining);
         setModalSuccess(orderStatus === 'success');
         setModalVisible(true);
         setPhoneNumber('');
@@ -153,7 +151,6 @@ export default function RechargeScreen() {
         setModalPhoneNumber(phoneNumber);
         setModalOperator(selectedOperator || '');
         setModalAmount(amountNum);
-        setModalRemainingBalance(fundsBalance);
         setModalSuccess(false);
         setModalVisible(true);
       }
@@ -384,7 +381,6 @@ export default function RechargeScreen() {
         phoneNumber={modalPhoneNumber}
         operator={modalOperator}
         amount={modalAmount}
-        remainingBalance={modalRemainingBalance}
         onClose={handleCloseModal}
         onViewHistory={handleViewHistory}
       />

@@ -7,7 +7,6 @@ interface RechargeResultModalProps {
   phoneNumber: string;
   operator: string;
   amount: number;
-  remainingBalance: number;
   onClose: () => void;
   onViewHistory: () => void;
 }
@@ -21,13 +20,17 @@ const OPERATOR_NAMES: Record<string, string> = {
   st: 'Smart Telecom',
 };
 
+function maskPhoneNumber(phone: string): string {
+  if (phone.length !== 11) return phone;
+  return `${phone.slice(0, 3)}*****${phone.slice(-3)}`;
+}
+
 export default function RechargeResultModal({
   visible,
   success,
   phoneNumber,
   operator,
   amount,
-  remainingBalance,
   onClose,
   onViewHistory,
 }: RechargeResultModalProps) {
@@ -46,7 +49,7 @@ export default function RechargeResultModal({
           <View style={styles.detailsBox}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Phone Number</Text>
-              <Text style={styles.detailValue}>+880{phoneNumber}</Text>
+              <Text style={styles.detailValue}>+880{maskPhoneNumber(phoneNumber)}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.detailRow}>
@@ -57,11 +60,6 @@ export default function RechargeResultModal({
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Amount</Text>
               <Text style={styles.detailValue}>৳{amount.toFixed(2)}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Remaining Funds</Text>
-              <Text style={[styles.detailValue, styles.balanceValue]}>৳{remainingBalance.toFixed(2)}</Text>
             </View>
           </View>
 
@@ -153,11 +151,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1f2937',
     fontWeight: '600',
-  },
-  balanceValue: {
-    color: '#0d9488',
-    fontSize: 16,
-    fontWeight: '700',
   },
   divider: {
     height: 1,

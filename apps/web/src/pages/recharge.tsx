@@ -374,7 +374,7 @@ export default function RechargePage() {
               <div className="bg-gray-50 rounded-2xl p-5 mb-6 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500 font-medium">{t('phoneNumber')}</span>
-                  <span className="text-sm font-bold text-gray-900">+880{modalPhoneNumber}</span>
+                  <span className="text-sm font-bold text-gray-900">+880{modalPhoneNumber.length === 11 ? `${modalPhoneNumber.slice(0, 3)}*****${modalPhoneNumber.slice(-3)}` : modalPhoneNumber}</span>
                 </div>
                 <div className="border-t border-gray-200" />
                 <div className="flex justify-between items-center">
@@ -386,15 +386,6 @@ export default function RechargePage() {
                   <span className="text-sm text-gray-500 font-medium">{t('amount')}</span>
                   <span className="text-sm font-bold text-gray-900">৳{modalAmount.toFixed(2)}</span>
                 </div>
-                {modalSuccess && (
-                  <>
-                    <div className="border-t border-gray-200" />
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500 font-medium">{t('remainingFunds')}</span>
-                      <span className="text-base font-extrabold text-teal-600">৳{modalRemainingBalance.toFixed(2)}</span>
-                    </div>
-                  </>
-                )}
               </div>
 
               {/* Buttons */}
